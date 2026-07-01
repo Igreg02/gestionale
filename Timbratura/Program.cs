@@ -2,39 +2,15 @@ using DevExpress.Xpo;
 using DevExpress.Xpo.DB;
 using DevExpress.Xpo.Metadata;
 using GestionaleRendicontazione.Domain.Entities;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using GestionaleRendicontazione.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------------------------------------------------------------
-// 1. CONFIGURAZIONE DI DEVEXPRESS XPO (DATA LAYER)
-// ---------------------------------------------------------------------
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;"; // ✅ formato corretto per XPO
+    ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;";
 
-var entityTypes = new[] {
-    typeof(Company),
-    typeof(Project)
-};
+builder.Services.AddXpoInfrastructure(connectionString);
 
-var dictionary = new ReflectionDictionary();
-foreach (var t in entityTypes)
-    dictionary.GetClassInfo(t);
-
-XpoDefault.DataLayer = XpoDefault.GetDataLayer(
-    connectionString,
-    dictionary,
-    AutoCreateOption.DatabaseAndSchema
-);
-
-builder.Services.AddScoped<UnitOfWork>(sp =>
-{
-    return new UnitOfWork(XpoDefault.DataLayer);
-});
-
-// ---------------------------------------------------------------------
-// 2. REGISTRAZIONE DEI SERVIZI APPLICATIVI (DI)
-// ---------------------------------------------------------------------
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -47,75 +23,100 @@ builder.Services.AddAuthentication("Bearer")
 
 var app = builder.Build();
 
-// ---------------------------------------------------------------------
-// 3. CONFIGURAZIONE DELLA PIPELINE MIDDLEWARE (HTTP)
-// ---------------------------------------------------------------------
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
 app.UseHttpsRedirection();
 
-app.UseExceptionHandler(opt => { });
+// Prima di auth per catturare eventuali errori globali di sicurezza
+app.UseExceptionHandler(opt => { }); 
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 
 // ---------------------------------------------------------------------
-// SEED INIZIALE DEI DATI (solo se il DB è vuoto)
+// 4. SEED INIZIALE DEI DATI (Sfruttando il nuovo XpoContextService)
 // ---------------------------------------------------------------------
-using (var uow = new UnitOfWork(XpoDefault.DataLayer))
+// Recuperiamo il servizio scoped appena configurato per eseguire l'inizializzazione
+using (var scope = app.Services.CreateScope())
 {
-    if (!uow.Query<Company>().Any())
+    var xpoContext = scope.ServiceProvider.GetRequiredService<IXpoContextService>();
+
+    // Usiamo la Lambda transazionale asincrona per controllare e inserire i dati
+    await xpoContext.ExecuteTransactionAsync(async uow =>
     {
-        var company = new Company(uow)
+        // Se non ci sono aziende, popoliamo il DB
+        if (!uow.Query<Company>().Any())
         {
-            Name = "Azienda Demo",
-        };
+            var company = new Company(uow)
+            {
+                Name = "Azienda Demo",
+            };
 
-        var project = new Project(uow)
-        {
-            Name = "Progetto Demo",
-            Company = company
-        };
+            var project = new Project(uow)
+            {
+                Name = "Progetto Demo",
+                Company = company
+            };
 
-        var type = new GestionaleRendicontazione.Domain.Entities.Type(uow) // Più verboso perchè esiste System.Type
-        {
-            Name = "FIX"
-        };
+            var type = new GestionaleRendicontazione.Domain.Entities.Type(uow)
+            {
+                Name = "FIX"
+            };
 
-        var status = new Status(uow)
-        {
-            Name = "WORKING_PROGRESS"
-        };
+            var status = new Status(uow)
+            {
+                Name = "WORKING_PROGRESS"
+            };
 
-        var status2 = new Status(uow)
-        {
-            Name = "REJECTED"
-        };
+            var status2 = new Status(uow)
+            {
+                Name = "REJECTED"
+            };
 
-
-
-        var worklog = new WorkLog(uow)
-        {
-            Description = "Descrizione",
-            HoursCounter = 2,
-            Date = DateTime.UtcNow,
-            CreateAt = DateTime.UtcNow,
-            UpdateAt = DateTime.UtcNow,
-            Project = project,
-            Type = type,
-            Status = status2,
-        };
-
-        uow.CommitChanges(); // fondamentale: senza Commit, XPO non scrive nulla su disco
-    }
+            var worklog = new WorkLog(uow)
+            {
+                Description = "Descrizione",
+                HoursCounter = 2,
+                Date = DateTime.UtcNow,
+                CreateAt = DateTime.UtcNow,
+                UpdateAt = DateTime.UtcNow,
+                Project = project,
+                Type = type,
+                Status = status2,
+            };
+            
+        }
+        
+        await Task.CompletedTask;
+    });
 }
 
 app.Run();
 
+    public static class XpoProgramExtensions
+    {
+        public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, string connectionString)
+        {
+            XPDictionary dictionary = new ReflectionDictionary();
+            
+            // mappaggio xpo automatico delle Entitys
+            dictionary.GetDataStoreSchema(typeof(WorkLog).Assembly);
+
+            services.AddSingleton<IDataLayer>(sp =>
+            {
+                IDataStore store = XpoDefault.GetConnectionProvider(connectionString, AutoCreateOption.DatabaseAndSchema);
+                return new ThreadSafeDataLayer(dictionary, store);
+            });
+
+            // Registriamo il servizio Scoped per la lettura / scrittura tramite lambda
+            services.AddScoped<IXpoContextService, XpoContextService>();
+
+            return services;
+        }
+    }

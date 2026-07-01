@@ -66,21 +66,22 @@ namespace GestionaleRendicontazione.Infrastructure.Data
                 }
                 catch (Exception)
                 {
-                    // In caso di errore XPO fa automaticamente il Rollback della transazione.
+                    // RIMUOVERE (CONTROLLARE)In caso di errore XPO fa automaticamente il Rollback della transazione.
                     throw;
                 }
             }
         }
 
         // =======================
-        // 3. METODO PULIZIA CACHE
-        // ========================
+        // 3. METODO PULIZIA CACHE (TEORICA PULIZIA AUTOMATICA)
+        // =======================
         public void ClearCache()
-        {
+        {/*
             using (var session = new Session(_dataLayer))
             {
                 session.DropIdentityMap();
             }
+        */
         }
     }
 }
