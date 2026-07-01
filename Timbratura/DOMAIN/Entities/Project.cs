@@ -25,5 +25,9 @@ namespace GestionaleRendicontazione.Domain.Entities
             get => _company;
             set => SetPropertyValue(nameof(Company), ref _company, value);
         }
+
+
+        [Association("Project-WorkLog")]
+        public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }
 }

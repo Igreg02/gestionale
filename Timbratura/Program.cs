@@ -86,13 +86,33 @@ using (var uow = new UnitOfWork(XpoDefault.DataLayer))
             // altri campi...
         };
 
+        var type = new GestionaleRendicontazione.Domain.Entities.Type(uow) // Più verboso perchè esiste System.Type
+        {
+            Name = "FIX"
+        };
+
+        var status = new Status(uow)
+        {
+            Name = "WORKING_PROGRESS"
+        };
+
+        var status2 = new Status(uow)
+        {
+            Name = "REJECTED"
+        };
+
+
+
         var worklog = new WorkLog(uow)
         {
             Description = "Descrizione",
             HoursCounter = 2,
             Date = DateTime.UtcNow,
             CreateAt = DateTime.UtcNow,
-            updateAt = DateTime.UtcNow
+            updateAt = DateTime.UtcNow,
+            Project = project,
+            Type = type,
+            Status = status2,
         };
 
         uow.CommitChanges(); // fondamentale: senza Commit, XPO non scrive nulla su disco
