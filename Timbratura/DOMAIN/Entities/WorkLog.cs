@@ -2,12 +2,12 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
+        [Persistent("worklog")]
     public class WorkLog : XPObject
     {
         public WorkLog(Session session) : base(session) { }
-
         private string _description;
-        [Persistent("Description")]
+        [Persistent("description")]
         public string Description
         {
             get => _description;
@@ -15,7 +15,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private int _hoursCounter;
-        [Persistent("HoursCounter")]
+        [Persistent("hoursCounter")]
 
         public int HoursCounter
         {
@@ -24,7 +24,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private DateTime _date;
-        [Persistent("Date")]
+        [Persistent("date")]
 
         public DateTime Date
         {
@@ -33,7 +33,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private DateTime _createAt;
-        [Persistent("CreateAt")]
+        [Persistent("createAt")]
 
         public DateTime CreateAt
         {
@@ -42,7 +42,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private DateTime _updateAt;
-        [Persistent("UpdateAt")]
+        [Persistent("updateAt")]
 
         public DateTime UpdateAt
         {
@@ -60,7 +60,7 @@ namespace GestionaleRendicontazione.Domain.Entities
 
         // Le relazioni si definiscono con l'attributo Association
         private Project _project;
-        [Association("Project-WorkLog")]
+        [Association("project-WorkLog")]
         [Persistent("idProject")]
 
         public Project Project
@@ -70,7 +70,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private Type _type;
-        [Association("Type-WorkLog")]
+        [Association("type-WorkLog")]
         [Persistent("idType")]
 
         public Type Type
@@ -81,7 +81,7 @@ namespace GestionaleRendicontazione.Domain.Entities
 
         private Status _status;
         
-        [Association("Status-WorkLog")]
+        [Association("status-WorkLog")]
         [Persistent("idStatus")]
 
         public Status Status

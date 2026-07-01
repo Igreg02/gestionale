@@ -2,7 +2,7 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
-    [Persistent("Type")]
+    [Persistent("type")]
     public class Type : XPObject
     {
         public Type(Session session) : base(session) { }
@@ -17,7 +17,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         // Relazione 1-N: Una Type ha molti
-        [Association("Type-WorkLog")]
+        [Association("type-WorkLog")]
 
         public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }

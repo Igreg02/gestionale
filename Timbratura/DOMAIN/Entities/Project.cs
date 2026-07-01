@@ -2,7 +2,7 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
-    [Persistent("Project")]
+    [Persistent("project")]
     public class Project : XPObject
     {
         public Project(Session session) : base(session) { }
@@ -21,7 +21,7 @@ namespace GestionaleRendicontazione.Domain.Entities
 
         private Company _company;
         // Relazione N-1: Il progetto appartiene a una specifica Company
-        [Association("Company-Project")]
+        [Association("company-Project")]
         [Persistent("idCompany")]
         public Company Company
         {
@@ -32,7 +32,7 @@ namespace GestionaleRendicontazione.Domain.Entities
 
 
 
-        [Association("Project-WorkLog")]
+        [Association("project-WorkLog")]
 
         public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }

@@ -2,7 +2,7 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
-    [Persistent("Status")]
+    [Persistent("status")]
     public class Status : XPObject
     {
         public Status(Session session) : base(session) { }
@@ -17,7 +17,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         // Relazione 1-N: Una Status ha molti 
-        [Association("Status-WorkLog")]
+        [Association("status-WorkLog")]
         public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }
 }

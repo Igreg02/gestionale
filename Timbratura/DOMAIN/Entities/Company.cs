@@ -2,7 +2,7 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
-    [Persistent("Company")]
+    [Persistent("company")]
     public class Company : XPObject
     {
         public Company(Session session) : base(session) { }
@@ -26,7 +26,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         // Relazione 1-N: Una Company ha molti
-        [Association("Company-Project")]
+        [Association("company-Project")]
         public XPCollection<Project> Project => GetCollection<Project>(nameof(Project));
     }
 }
