@@ -42,14 +42,47 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
 
+
+
+
+
+
+
+
         // Le relazioni si definiscono con l'attributo Association
         private Project _project;
-        [Association("Project-WorkLogs")]
+        [Association("Project-WorkLog")]
         public Project Project
         {
             get => _project;
             set => SetPropertyValue(nameof(Project), ref _project, value);
         }
 
+        private Type _type;
+        [Association("Type-WorkLog")]
+        public Type Type
+        {
+            get => _type;
+            set => SetPropertyValue(nameof(Type), ref _type, value);
+        }
+
+        private Status _status;
+        [Association("Status-WorkLog")]
+        public Status Status
+        {
+            get => _status;
+            set => SetPropertyValue(nameof(Status), ref _status, value);
+        }
+
+/*
+        private Employee _employee;
+        [Association("Employee-WorkLogs")]
+        public Employee _employee
+        {
+            get => __employee;
+            set => SetPropertyValue(nameof(Employee), ref _employee, value);
+        }
+
+*/
     }
 }
