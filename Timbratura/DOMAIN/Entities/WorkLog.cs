@@ -7,6 +7,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         public WorkLog(Session session) : base(session) { }
 
         private string _description;
+        [Persistent("Description")]
         public string Description
         {
             get => _description;
@@ -14,6 +15,8 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private int _hoursCounter;
+        [Persistent("HoursCounter")]
+
         public int HoursCounter
         {
             get => _hoursCounter;
@@ -21,6 +24,8 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private DateTime _date;
+        [Persistent("Date")]
+
         public DateTime Date
         {
             get => _date;
@@ -28,6 +33,8 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private DateTime _createAt;
+        [Persistent("CreateAt")]
+
         public DateTime CreateAt
         {
             get => _createAt;
@@ -35,10 +42,12 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private DateTime _updateAt;
-        public DateTime updateAt
+        [Persistent("UpdateAt")]
+
+        public DateTime UpdateAt
         {
             get => _updateAt;
-            set => SetPropertyValue(nameof(updateAt), ref _updateAt, value);
+            set => SetPropertyValue(nameof(UpdateAt), ref _updateAt, value);
         }
 
 
@@ -52,6 +61,8 @@ namespace GestionaleRendicontazione.Domain.Entities
         // Le relazioni si definiscono con l'attributo Association
         private Project _project;
         [Association("Project-WorkLog")]
+        [Persistent("idProject")]
+
         public Project Project
         {
             get => _project;
@@ -60,6 +71,8 @@ namespace GestionaleRendicontazione.Domain.Entities
 
         private Type _type;
         [Association("Type-WorkLog")]
+        [Persistent("idType")]
+
         public Type Type
         {
             get => _type;
@@ -67,7 +80,10 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private Status _status;
+        
         [Association("Status-WorkLog")]
+        [Persistent("idStatus")]
+
         public Status Status
         {
             get => _status;
@@ -77,6 +93,7 @@ namespace GestionaleRendicontazione.Domain.Entities
 /*
         private Employee _employee;
         [Association("Employee-WorkLogs")]
+        [Persistent("idEmployee")]
         public Employee _employee
         {
             get => __employee;

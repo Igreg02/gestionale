@@ -8,7 +8,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         public Type(Session session) : base(session) { }
 
         private string _name;
-        [Size(255)] // Corrisponde al varchar del database
+        [Size(255)]
         [Persistent("name")]
         public string Name
         {
@@ -16,8 +16,9 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
-        // Relazione 1-N: Una Type ha molti 
+        // Relazione 1-N: Una Type ha molti
         [Association("Type-WorkLog")]
+
         public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }
 }

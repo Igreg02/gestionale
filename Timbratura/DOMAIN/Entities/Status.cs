@@ -8,7 +8,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         public Status(Session session) : base(session) { }
 
         private string _name;
-        [Size(255)] // Corrisponde al varchar del database
+        [Size(255)]
         [Persistent("name")]
         public string Name
         {

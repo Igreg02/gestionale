@@ -76,14 +76,12 @@ using (var uow = new UnitOfWork(XpoDefault.DataLayer))
         var company = new Company(uow)
         {
             Name = "Azienda Demo",
-            // altri campi obbligatori...
         };
 
         var project = new Project(uow)
         {
             Name = "Progetto Demo",
             Company = company
-            // altri campi...
         };
 
         var type = new GestionaleRendicontazione.Domain.Entities.Type(uow) // Più verboso perchè esiste System.Type
@@ -109,7 +107,7 @@ using (var uow = new UnitOfWork(XpoDefault.DataLayer))
             HoursCounter = 2,
             Date = DateTime.UtcNow,
             CreateAt = DateTime.UtcNow,
-            updateAt = DateTime.UtcNow,
+            UpdateAt = DateTime.UtcNow,
             Project = project,
             Type = type,
             Status = status2,

@@ -16,10 +16,13 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
+
+
+
         private Company _company;
         // Relazione N-1: Il progetto appartiene a una specifica Company
         [Association("Company-Project")]
-        [Persistent("idCompany")] // Chiave esterna sul database
+        [Persistent("idCompany")]
         public Company Company
         {
             get => _company;
@@ -27,7 +30,10 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
 
+
+
         [Association("Project-WorkLog")]
+
         public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }
 }

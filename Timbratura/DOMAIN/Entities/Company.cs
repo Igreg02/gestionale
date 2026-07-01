@@ -8,7 +8,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         public Company(Session session) : base(session) { }
 
         private string _name;
-        [Size(255)] // Corrisponde al varchar del database
+        [Size(255)]
         [Persistent("name")]
         public string Name
         {
@@ -25,7 +25,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Email), ref _email, value);
         }
 
-        // Relazione 1-N: Una Company ha molti 
+        // Relazione 1-N: Una Company ha molti
         [Association("Company-Project")]
         public XPCollection<Project> Project => GetCollection<Project>(nameof(Project));
     }
