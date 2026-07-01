@@ -86,6 +86,15 @@ using (var uow = new UnitOfWork(XpoDefault.DataLayer))
             // altri campi...
         };
 
+        var worklog = new WorkLog(uow)
+        {
+            Description = "Descrizione",
+            HoursCounter = 2,
+            Date = DateTime.UtcNow,
+            CreateAt = DateTime.UtcNow,
+            updateAt = DateTime.UtcNow
+        };
+
         uow.CommitChanges(); // fondamentale: senza Commit, XPO non scrive nulla su disco
     }
 }

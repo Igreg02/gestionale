@@ -18,7 +18,7 @@ namespace GestionaleRendicontazione.Domain.Entities
 
         private Company _company;
         // Relazione N-1: Il progetto appartiene a una specifica Company
-        [Association("Company-Projects")]
+        [Association("Company-Project")]
         [Persistent("idCompany")] // Chiave esterna sul database
         public Company Company
         {
