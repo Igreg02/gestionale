@@ -5,10 +5,8 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
-    // PermissionPolicyUser estende BaseObject (XPBaseObject) — ha già Oid Guid, persistenza, session.
+    // PermissionPolicyUser estende BaseObject (XPBaseObject) —Possiede Oid Guid, persistenza, session.
     // In più fornisce UserName, Email, IsActive, Roles collection, password hashing, lockout.
-    // Non si può ereditare anche da XPObject direttamente (no multi-inheritance in C#),
-    // ma funzionalmente PermissionPolicyUser È già un BaseObject con Oid Guid.
     [Persistent("Employee")]
     [DefaultClassOptions]
     public class Employee : PermissionPolicyUser
@@ -40,13 +38,14 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(HireDate), ref _hireDate, value);
         }
 
-
-
-
-
-
-
-
+        private string _passwordHash;
+        [Persistent("passwordHash")]
+        [Size(1024)]
+        public string PasswordHash
+        {
+            get => _passwordHash;
+            set => SetPropertyValue(nameof(PasswordHash), ref _passwordHash, value);
+        }
 
         [Association("Employee-WorkLogs")]
         public XPCollection<WorkLog> WorkLogs => GetCollection<WorkLog>(nameof(WorkLogs));

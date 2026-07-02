@@ -1,9 +1,16 @@
+using System.Text;
 using DevExpress.Xpo;
 using DevExpress.Xpo.DB;
 using DevExpress.Xpo.Metadata;
+using GestionaleRendicontazione.Api.Services.Jwt;
 using GestionaleRendicontazione.Domain.Entities;
+using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Dataaccess.Datacontext;
 using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
+using GestionaleRendicontazione.Dataaccess.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,11 +23,45 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddAuthentication("Bearer")
+// ---------------------------------------------------------------------
+// AUTENTICAZIONE JWT self-issued (TDD §1: "JWT Bearer Token (ASP.NET Core Identity / OAuth2)")
+// ---------------------------------------------------------------------
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var jwtSecretKey = jwtSection["SecretKey"] ?? string.Empty;
+var jwtIssuer = jwtSection["Issuer"] ?? string.Empty;
+var jwtAudience = jwtSection["Audience"] ?? string.Empty;
+
+// Validazione del token in ingresso. La chiave è la stessa usata in JwtTokenService
+// per la firma (HMAC-SHA256). ClockSkew = 0 per non allungare artificialmente la vita del token.
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // parametri di convalida JWT
+        options.RequireHttpsMetadata = true;
+        options.SaveToken = true;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
+            ClockSkew = TimeSpan.Zero,
+            // Mappiamo il claim "sub" sul NameIdentifier di ClaimsPrincipal, comodo per HttpContext.User.
+            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
+        };
     });
+
+builder.Services.AddAuthorization();
+
+// PasswordHasher di Microsoft.Extensions.Identity: usato da AuthService per
+// hashare e verificare la password degli Employee.
+builder.Services.AddSingleton<PasswordHasher<Employee>>();
+
+// Servizi applicativi.
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
@@ -46,7 +87,8 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var dbContextService = scope.ServiceProvider.GetRequiredService<IDbContextService>();
-    await DataSeeder.SeedAsync(dbContextService);
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<PasswordHasher<Employee>>();
+    await DataSeeder.SeedAsync(dbContextService, passwordHasher);
 }
 
 app.Run();
