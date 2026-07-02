@@ -14,19 +14,19 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Description), ref _description, value);
         }
 
-        private int _hoursCounter;
+        private float _hoursCounter;
         [Persistent("hoursCounter")]
 
-        public int HoursCounter
+        public float HoursCounter
         {
             get => _hoursCounter;
             set => SetPropertyValue(nameof(HoursCounter), ref _hoursCounter, value);
         }
 
-        private DateTime _date;
+        private DateOnly _date;
         [Persistent("date")]
 
-        public DateTime Date
+        public DateOnly Date
         {
             get => _date;
             set => SetPropertyValue(nameof(Date), ref _date, value);
@@ -49,12 +49,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             get => _updateAt;
             set => SetPropertyValue(nameof(UpdateAt), ref _updateAt, value);
         }
-
-
-
-
-
-
 
 
 

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using DevExpress.Data.Filtering;
 using DevExpress.Xpo;
+using DevExpress.Persistent.BaseImpl.PermissionPolicy;
 using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -9,7 +10,6 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-
     public class AuthService : IAuthService
     {
         private readonly IDbContextService _dbContextService;
@@ -35,7 +35,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return Task.FromResult<LoginResponseDto?>(null);
             }
 
-            // Sola lettura: la password va verificata, l'utente recuperato, nessuna scrittura qui.
             var response = _dbContextService.ExecuteReadOnly(session =>
             {
                 var user = session.FindObject<Employee>(
@@ -48,7 +47,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 if (string.IsNullOrEmpty(user.PasswordHash))
                 {
-                    // Utente presente ma senza hash: rifiuto l'autenticazione.
                     return null;
                 }
 
@@ -58,11 +56,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     return null;
                 }
 
-                // Aggiorna il contatore/hash solo se l'algoritmo di hash è cambiato (SuccessRehash).
                 if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
                 {
                     var newHash = _passwordHasher.HashPassword(user, request.Password);
-                    // Riscrittura: eseguita in una sessione separata di UnitOfWork.
                     _dbContextService.ReadWrite(async uow =>
                     {
                         var reload = await uow.GetObjectByKeyAsync<Employee>(user.Oid);
@@ -86,6 +82,70 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(response);
         }
 
+        public async Task<RegisterResponseDto?> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request is null 
+                || string.IsNullOrWhiteSpace(request.UserName) 
+                || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return null;
+            }
+
+            var userExists = _dbContextService.ExecuteReadOnly(session =>
+            {
+                return session.FindObject<Employee>(new BinaryOperator(nameof(Employee.UserName), request.UserName)) is not null;
+            });
+
+            if (userExists)
+            {
+                return null;
+            }
+
+            RegisterResponseDto? responseDto = null;
+
+            await _dbContextService.ReadWrite(async uow =>
+            {
+                var newEmployee = new Employee(uow)
+                {
+                    UserName = request.UserName,
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    IsActive = true
+                };
+
+                newEmployee.PasswordHash = _passwordHasher.HashPassword(newEmployee, request.Password);
+
+                // Assegnazione del ruolo di default "User" sul database
+                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
+                
+                if (userRole != null)
+                {
+                    newEmployee.Roles.Add(userRole);
+                }
+                else
+                {
+                    var defaultRole = new PermissionPolicyRole(uow)
+                    {
+                        Name = "User",
+                        IsAdministrative = false
+                    };
+                    newEmployee.Roles.Add(defaultRole);
+                }
+
+                await uow.CommitChangesAsync(cancellationToken);
+
+                responseDto = new RegisterResponseDto(
+                    newEmployee.Oid,
+                    newEmployee.UserName,
+                    newEmployee.FirstName,
+                    newEmployee.LastName,
+                    newEmployee.IsActive
+                );
+            });
+
+            return responseDto;
+        }
+
         private static string BuildDisplayName(Employee user)
         {
             var first = user.FirstName?.Trim() ?? string.Empty;
@@ -98,26 +158,18 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             var claims = new List<Claim>
             {
-                // Claim standard "sub" = identificativo univoco dell'utente (Oid XPO).
                 new Claim("sub", user.Oid.ToString()),
                 new Claim("jti", Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
                 new Claim(ClaimTypes.NameIdentifier, user.Oid.ToString())
             };
 
-            // Aggiungo i ruoli XAF, se presenti.
             foreach (var role in user.Roles)
             {
                 if (!string.IsNullOrWhiteSpace(role.Name))
                 {
                     claims.Add(new Claim(ClaimTypes.Role, role.Name));
                 }
-            }
-
-            // Ruolo di default: ogni utente autenticato è almeno "User".
-            if (!claims.Any(c => c.Type == ClaimTypes.Role))
-            {
-                claims.Add(new Claim(ClaimTypes.Role, "User"));
             }
 
             return claims;

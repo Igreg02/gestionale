@@ -2,6 +2,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using Microsoft.AspNetCore.Identity;
+using DevExpress.Persistent.BaseImpl.PermissionPolicy;
 
 namespace GestionaleRendicontazione.Dataaccess.Datacontext
 {
@@ -43,12 +44,36 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     {
                         Description = "Descrizione",
                         HoursCounter = 2,
-                        Date = DateTime.UtcNow,
+                        Date = DateOnly.FromDateTime(DateTime.UtcNow),
                         CreateAt = DateTime.UtcNow,
                         UpdateAt = DateTime.UtcNow,
                         Project = project,
                         Type = type,
                         Status = status2,
+                    };
+                }
+
+
+                                // 1. Gestione/Definizione dei Ruoli
+                // Cerchiamo il ruolo "Admin" nel DB, se non esiste lo creiamo
+                var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
+                if (adminRole == null)
+                {
+                    adminRole = new PermissionPolicyRole(uow)
+                    {
+                        Name = "Admin",
+                        IsAdministrative = true // Questa flag rende il ruolo un vero amministratore XAF totale
+                    };
+                }
+
+                // Puoi definire anche altri ruoli qui (es. User, Manager) se necessario:
+                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
+                if (userRole == null)
+                {
+                    userRole = new PermissionPolicyRole(uow)
+                    {
+                        Name = "User",
+                        IsAdministrative = false
                     };
                 }
 
@@ -60,10 +85,11 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                         UserName = "admin",
                         FirstName = "Admin",
                         LastName = "Default",
-                        HireDate = DateTime.UtcNow,
                         IsActive = true,
                         PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
                     };
+                    admin.Roles.Add(adminRole);
+                    await uow.CommitChangesAsync();
                 }
 
                 await Task.CompletedTask;

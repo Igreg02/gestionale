@@ -29,15 +29,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(LastName), ref _lastName, value);
         }
 
-        // Data assunzione
-        private DateTime _hireDate;
-        [Persistent("hireDate")]
-        public DateTime HireDate
-        {
-            get => _hireDate;
-            set => SetPropertyValue(nameof(HireDate), ref _hireDate, value);
-        }
-
         private string _passwordHash;
         [Persistent("passwordHash")]
         [Size(1024)]
