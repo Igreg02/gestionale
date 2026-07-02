@@ -90,16 +90,14 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Status), ref _status, value);
         }
 
-/*
+        // Relazione N-1: un WorkLog appartiene a un Employee
         private Employee _employee;
         [Association("Employee-WorkLogs")]
         [Persistent("idEmployee")]
-        public Employee _employee
+        public Employee Employee
         {
-            get => __employee;
+            get => _employee;
             set => SetPropertyValue(nameof(Employee), ref _employee, value);
         }
-
-*/
     }
 }
