@@ -1,16 +1,17 @@
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
+using Microsoft.AspNetCore.Identity;
 
 namespace GestionaleRendicontazione.Dataaccess.Datacontext
 {
     public static class DataSeeder
     {
-        public static async Task SeedAsync(IDbContextService DbContextService)
+        public static async Task SeedAsync(IDbContextService DbContextService, PasswordHasher<Employee> passwordHasher)
         {
             await DbContextService.ReadWrite(async uow =>
             {
-                if (!uow.Query<Company>().Any()&&   true) /* true -> scrive in assenza di dati | false -> scrive sempre*/ 
+                if (!uow.Query<Company>().Any() && true) /* true -> scrive in assenza di dati | false -> scrive sempre*/
                 {
                     var company = new Company(uow)
                     {
@@ -51,8 +52,23 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     };
                 }
 
+                // Seed utente admin di default (idempotente: salta se esiste già un Employee con questo UserName).
+                if (uow.Query<Employee>().Any(e => e.UserName == "admin") == false)
+                {
+                    var admin = new Employee(uow)
+                    {
+                        UserName = "admin",
+                        FirstName = "Admin",
+                        LastName = "Default",
+                        HireDate = DateTime.UtcNow,
+                        IsActive = true,
+                        PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
+                    };
+                }
+
                 await Task.CompletedTask;
             });
         }
     }
 }
+
