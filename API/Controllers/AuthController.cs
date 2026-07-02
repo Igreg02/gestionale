@@ -68,5 +68,35 @@ namespace GestionaleRendicontazione.Api.Controllers
             _logger.LogInformation("Logout richiesto per {UserName}", userName);
             return NoContent();
         }
+
+        /// <summary>
+        /// Registra un nuovo utente nel sistema.
+        /// </summary>
+        [HttpPost("register")]
+        [AllowAnonymous] // TODO: SETTARE SOLO ADMIN
+        [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            var result = await _authService.RegisterAsync(request, cancellationToken);
+
+            if (result is null)
+            {
+                _logger.LogWarning("Registrazione fallita per userName={UserName}", request.UserName);
+                return Problem(
+                    title: "Registrazione fallita",
+                    detail: "Impossibile creare l'utente. Lo userName potrebbe essere già in uso o la password non soddisfa i requisiti.",
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
+            }
+
+            _logger.LogInformation("Registrazione completata con successo per userName={UserName}", request.UserName);
+            return Ok(result);
+        }
     }
 }

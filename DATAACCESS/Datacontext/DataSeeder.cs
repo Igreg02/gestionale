@@ -43,7 +43,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     {
                         Description = "Descrizione",
                         HoursCounter = 2,
-                        Date = DateTime.UtcNow,
+                        Date = DateOnly.FromDateTime(DateTime.UtcNow),
                         CreateAt = DateTime.UtcNow,
                         UpdateAt = DateTime.UtcNow,
                         Project = project,
@@ -60,7 +60,6 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                         UserName = "admin",
                         FirstName = "Admin",
                         LastName = "Default",
-                        HireDate = DateTime.UtcNow,
                         IsActive = true,
                         PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
                     };

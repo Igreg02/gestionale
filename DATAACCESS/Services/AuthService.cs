@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-
+    
     public class AuthService : IAuthService
     {
         private readonly IDbContextService _dbContextService;
@@ -84,6 +84,59 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             });
 
             return Task.FromResult(response);
+        }
+
+        public async Task<RegisterResponseDto?> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request is null 
+                || string.IsNullOrWhiteSpace(request.UserName) 
+                || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return null;
+            }
+
+            // 1. Controllo preliminare di univocità dello UserName (in sola lettura)
+            var userExists = _dbContextService.ExecuteReadOnly(session =>
+            {
+                return session.FindObject<Employee>(new BinaryOperator(nameof(Employee.UserName), request.UserName)) is not null;
+            });
+
+            if (userExists)
+            {
+                return null; // Ritorna null se lo username è già registrato
+            }
+
+            RegisterResponseDto? responseDto = null;
+
+            // 2. Operazione di scrittura asincrona all'interno della UnitOfWork
+            await _dbContextService.ReadWrite(async uow =>
+            {
+                // Istanza del nuovo Employee agganciata alla sessione/uow corrente di XPO
+                var newEmployee = new Employee(uow)
+                {
+                    UserName = request.UserName,
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    IsActive = true
+                };
+
+                // Generazione dell'hash sicuro della password tramite PasswordHasher
+                newEmployee.PasswordHash = _passwordHasher.HashPassword(newEmployee, request.Password);
+
+                // Salvataggio effettivo nel database transazionale
+                await uow.CommitChangesAsync(cancellationToken);
+
+                // Mappatura dei dati per la risposta finale
+                responseDto = new RegisterResponseDto(
+                    newEmployee.Oid,
+                    newEmployee.UserName,
+                    newEmployee.FirstName,
+                    newEmployee.LastName,
+                    newEmployee.IsActive
+                );
+            });
+
+            return responseDto;
         }
 
         private static string BuildDisplayName(Employee user)
