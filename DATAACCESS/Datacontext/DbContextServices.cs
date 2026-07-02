@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using DevExpress.Xpo;
 
-namespace GestionaleRendicontazione.Infrastructure.Data
+namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
 {
-    public interface IXpoContextService
+    public interface IDbContextService
     {
         // Sola Lettura
         T ExecuteReadOnly<T>(Func<Session, T> query);
@@ -15,12 +15,12 @@ namespace GestionaleRendicontazione.Infrastructure.Data
         void ClearCache();
     }
 
-    public class XpoContextService : IXpoContextService
+    public class DbContextService : IDbContextService
     {
         private readonly IDataLayer _dataLayer;
 
         // Il DataLayer viene iniettato ed è unico per l'applicazione (Singleton)
-        public XpoContextService(IDataLayer dataLayer)
+        public DbContextService(IDataLayer dataLayer)
         {
             _dataLayer = dataLayer;
         }

@@ -2,7 +2,7 @@ using DevExpress.Xpo;
 using DevExpress.Xpo.DB;
 using DevExpress.Xpo.Metadata;
 using GestionaleRendicontazione.Domain.Entities;
-using GestionaleRendicontazione.Infrastructure.Data;
+using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,7 +45,7 @@ app.MapControllers();
 // Recuperiamo il servizio scoped appena configurato per eseguire l'inizializzazione
 using (var scope = app.Services.CreateScope())
 {
-    var xpoContext = scope.ServiceProvider.GetRequiredService<IXpoContextService>();
+    var xpoContext = scope.ServiceProvider.GetRequiredService<IDbContextService>();
 
     // Usiamo la Lambda transazionale asincrona per controllare e inserire i dati
     await xpoContext.ExecuteTransactionAsync(async uow =>
@@ -99,6 +99,11 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
+
+
+
+
+
     public static class XpoProgramExtensions
     {
         public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, string connectionString)
@@ -115,7 +120,7 @@ app.Run();
             });
 
             // Registriamo il servizio Scoped per la lettura / scrittura tramite lambda
-            services.AddScoped<IXpoContextService, XpoContextService>();
+            services.AddScoped<IDbContextService, DbContextService>();
 
             return services;
         }
