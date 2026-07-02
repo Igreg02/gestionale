@@ -26,6 +26,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 
 
 
+        // TODO: AGGIUNGERE MESSAGGIO D'ERRORE PER LOGIN FALLITO
 
         [HttpPost("login")]
         [AllowAnonymous]
@@ -55,9 +56,6 @@ namespace GestionaleRendicontazione.Api.Controllers
             return Ok(result);
         }
 
-
-
-
         [HttpPost("logout")]
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -73,7 +71,8 @@ namespace GestionaleRendicontazione.Api.Controllers
         /// Registra un nuovo utente nel sistema.
         /// </summary>
         [HttpPost("register")]
-        [AllowAnonymous] // TODO: SETTARE SOLO ADMIN
+        [Authorize] // TODO: FORSEEEEEEEE SI RIESCE A CREARE UN UTENTE ANCHE DA NON LOGGATI (CONTROLLARE IL TOKEN SALVATO QUANDO SI CANCELLA IL DB E RIAVVIA IL PROGRAMMA)
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
