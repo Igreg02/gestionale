@@ -2,25 +2,24 @@ using System;
 using System.Threading.Tasks;
 using DevExpress.Xpo;
 
-namespace GestionaleRendicontazione.Infrastructure.Data
+namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
 {
-    public interface IXpoContextService
+    public interface IDbContextService
     {
         // Sola Lettura
         T ExecuteReadOnly<T>(Func<Session, T> query);
         void ExecuteReadOnly(Action<Session> query);
 
         // Lettura e Scrittura
-        Task ExecuteTransactionAsync(Func<UnitOfWork, Task> operation);
-        void ClearCache();
+        Task ReadWrite(Func<UnitOfWork, Task> operation);
     }
 
-    public class XpoContextService : IXpoContextService
+    public class DbContextService : IDbContextService
     {
         private readonly IDataLayer _dataLayer;
 
         // Il DataLayer viene iniettato ed è unico per l'applicazione (Singleton)
-        public XpoContextService(IDataLayer dataLayer)
+        public DbContextService(IDataLayer dataLayer)
         {
             _dataLayer = dataLayer;
         }
@@ -53,7 +52,7 @@ namespace GestionaleRendicontazione.Infrastructure.Data
         // ==========================
         // 2. ASYNC LETTURA/SCRITTURA
         // ==========================
-        public async Task ExecuteTransactionAsync(Func<UnitOfWork, Task> operation)
+        public async Task ReadWrite(Func<UnitOfWork, Task> operation)
         {
             using (var uow = new UnitOfWork(_dataLayer))
             {
@@ -66,7 +65,7 @@ namespace GestionaleRendicontazione.Infrastructure.Data
                 }
                 catch (Exception)
                 {
-                    // RIMUOVERE (CONTROLLARE)In caso di errore XPO fa automaticamente il Rollback della transazione.
+                    // futuro log errore
                     throw;
                 }
             }
@@ -75,13 +74,6 @@ namespace GestionaleRendicontazione.Infrastructure.Data
         // =======================
         // 3. METODO PULIZIA CACHE (TEORICA PULIZIA AUTOMATICA)
         // =======================
-        public void ClearCache()
-        {/*
-            using (var session = new Session(_dataLayer))
-            {
-                session.DropIdentityMap();
-            }
-        */
-        }
+
     }
 }
