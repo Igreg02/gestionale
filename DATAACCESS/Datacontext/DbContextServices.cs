@@ -11,8 +11,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         void ExecuteReadOnly(Action<Session> query);
 
         // Lettura e Scrittura
-        Task ExecuteTransactionAsync(Func<UnitOfWork, Task> operation);
-        void ClearCache();
+        Task ReadWrite(Func<UnitOfWork, Task> operation);
     }
 
     public class DbContextService : IDbContextService
@@ -53,7 +52,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         // ==========================
         // 2. ASYNC LETTURA/SCRITTURA
         // ==========================
-        public async Task ExecuteTransactionAsync(Func<UnitOfWork, Task> operation)
+        public async Task ReadWrite(Func<UnitOfWork, Task> operation)
         {
             using (var uow = new UnitOfWork(_dataLayer))
             {
@@ -66,7 +65,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
                 }
                 catch (Exception)
                 {
-                    // RIMUOVERE (CONTROLLARE)In caso di errore XPO fa automaticamente il Rollback della transazione.
+                    // futuro log errore
                     throw;
                 }
             }
@@ -75,13 +74,6 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         // =======================
         // 3. METODO PULIZIA CACHE (TEORICA PULIZIA AUTOMATICA)
         // =======================
-        public void ClearCache()
-        {/*
-            using (var session = new Session(_dataLayer))
-            {
-                session.DropIdentityMap();
-            }
-        */
-        }
+
     }
 }
