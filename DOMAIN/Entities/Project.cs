@@ -17,7 +17,6 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
 
         private Company _company;
-        // Relazione N-1: Il progetto appartiene a una specifica Company
         [Association("company-Project")]
         [Persistent("idCompany")]
         public Company Company

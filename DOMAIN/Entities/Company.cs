@@ -25,7 +25,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Email), ref _email, value);
         }
 
-        // Relazione 1-N: Una Company ha molti
         [Association("company-Project")]
         public XPCollection<Project> Project => GetCollection<Project>(nameof(Project));
     }

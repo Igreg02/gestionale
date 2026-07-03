@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 
-
+//TODO: IMPLEMENTARE
 namespace GestionaleRendicontazione.Api.Controllers
 {
     [ApiController]
@@ -19,17 +19,6 @@ namespace GestionaleRendicontazione.Api.Controllers
             _authService = authService;
             _logger = logger;
         }
-
-
-
-
-
-
-
-
-
-
-
 
     }
 }

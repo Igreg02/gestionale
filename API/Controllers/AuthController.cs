@@ -5,11 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GestionaleRendicontazione.Api.Controllers
 {
-    /// <summary>
-    /// Controller di autenticazione. Espone gli endpoint di login e logout in coerenza
-    /// con il TDD (JWT Bearer Token, header Authorization). Conforme al §3 del TDD:
-    /// risposte JSON, 401 per credenziali errate, ProblemDetails (RFC 7807) per gli errori.
-    /// </summary>
+
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -67,9 +63,6 @@ namespace GestionaleRendicontazione.Api.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// Registra un nuovo utente nel sistema.
-        /// </summary>
         [HttpPost("register")]
         [Authorize]
         [Authorize(Roles = "Admin")]
