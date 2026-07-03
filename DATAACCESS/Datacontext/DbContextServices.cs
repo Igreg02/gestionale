@@ -1,18 +1,9 @@
-using System;
-using System.Threading.Tasks;
 using DevExpress.Xpo;
+using GestionaleRendicontazione.Domain.Interfaces;
 
 namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
 {
-    public interface IDbContextService
-    {
-        // Sola Lettura
-        T ExecuteReadOnly<T>(Func<Session, T> query);
-        void ExecuteReadOnly(Action<Session> query);
 
-        // Lettura e Scrittura
-        Task ReadWrite(Func<UnitOfWork, Task> operation);
-    }
 
     public class DbContextService : IDbContextService
     {
@@ -24,9 +15,12 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
             _dataLayer = dataLayer;
         }
 
-        // ===============
-        // 1. SOLA LETTURA
-        // ===============
+
+
+
+
+
+
         public T ExecuteReadOnly<T>(Func<Session, T> query)
         {
             using (var session = new Session(_dataLayer))
@@ -49,9 +43,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
             }
         }
 
-        // ==========================
-        // 2. ASYNC LETTURA/SCRITTURA
-        // ==========================
+
         public async Task ReadWrite(Func<UnitOfWork, Task> operation)
         {
             using (var uow = new UnitOfWork(_dataLayer))
@@ -70,10 +62,5 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
                 }
             }
         }
-
-        // =======================
-        // 3. METODO PULIZIA CACHE (TEORICA PULIZIA AUTOMATICA)
-        // =======================
-
     }
 }

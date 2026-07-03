@@ -1,8 +1,8 @@
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
-using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using Microsoft.AspNetCore.Identity;
 using DevExpress.Persistent.BaseImpl.PermissionPolicy;
+using GestionaleRendicontazione.Domain.Interfaces;
 
 namespace GestionaleRendicontazione.Dataaccess.Datacontext
 {

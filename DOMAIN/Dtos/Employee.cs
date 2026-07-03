@@ -6,7 +6,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
     /// Server -> Client
     /// </summary>
 
-    public class Employee
+    public class EmployeeDto
     {
         public class Response
         {

@@ -30,11 +30,11 @@ namespace GestionaleRendicontazione.Api.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
-        [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthDto.LoginResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login(
-            [FromBody] LoginRequestDto request,
+            [FromBody] AuthDto.LoginRequestDto request,
             CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
@@ -71,12 +71,12 @@ namespace GestionaleRendicontazione.Api.Controllers
         /// Registra un nuovo utente nel sistema.
         /// </summary>
         [HttpPost("register")]
-        [Authorize] // TODO: FORSEEEEEEEE SI RIESCE A CREARE UN UTENTE ANCHE DA NON LOGGATI (CONTROLLARE IL TOKEN SALVATO QUANDO SI CANCELLA IL DB E RIAVVIA IL PROGRAMMA)
+        [Authorize]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(RegisterResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(AuthDto.RegisterResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
-        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Register([FromBody] AuthDto.RegisterRequestDto request, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
             {

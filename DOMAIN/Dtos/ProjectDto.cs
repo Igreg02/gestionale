@@ -5,7 +5,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
     /// Server -> Client
     /// </summary>
     /// 
-    public class Project
+    public class ProjectDto
     {
         public class Response
         {
