@@ -1,12 +1,12 @@
 namespace GestionaleRendicontazione.Domain.Dtos
 {
     /// <summary>
-    /// Contenitore dei DTO relativi a WorkLog.
+    /// Contenitore dei DTO relativi a WorkLog
     /// </summary>
     public class WorkLogDto
     {
         /// <summary>
-        /// Server -> Client (visibile solo agli Admin)
+        /// Server -> Client
         /// </summary>
         public class Response
         {
@@ -18,21 +18,32 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             public DateOnly Date { get; set; }
 
-            public DateTime CreateAt { get; set; }
-
             public int IdProject { get; set; }
 
-            public int IdEmployee { get; set; }
+            public string ProjectName {get; set; }
 
             public int IdType { get; set; }
 
+            public string TypeName {get; set; }
+
             public int IdStatus { get; set; }
+
+            public string StatusName {get; set; }
+
         }
 
+            public class Delete
+        {
+            public int Oid { get; set; }
+            public int IdProject { get; set; }
+
+            public string NameProject { get; set; }
+        }
+        
         /// <summary>
-        /// Client -> Server (usato dai lavoratori per creare/aggiornare un WorkLog)
+        /// Client -> Server
         /// </summary>
-        public class Create
+            public class Create
         {
             public string Description { get; set; }
 
@@ -47,7 +58,8 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public int IdStatus { get; set; }
         }
 
-            public class CreateAsAdmin
+
+            public class Update
         {
             public string Description { get; set; }
 
@@ -61,5 +73,8 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             public int IdStatus { get; set; }
         }
+
+
+        
     }
 }
