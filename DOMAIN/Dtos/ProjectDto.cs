@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 namespace GestionaleRendicontazione.Domain.Dtos
 {
     /// <summary>
@@ -9,7 +10,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
         public class Response
         {
             public int Oid { get; set; }
-
             public string Name { get; set; }
 
             public int IdCompany { get; set; }
@@ -41,23 +41,23 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         public class Create
         {
-
-            public int Oid { get; set; }
-
+            
+            [Required(ErrorMessage = "Il nome del progetto è obbligatorio.")]
+            [MaxLength(255)]
             public string Name { get; set; }
 
+            [Required(ErrorMessage = "L'azienda di appartenenza è obbligatoria.")]
             public int IdCompany { get; set; }
-
-            public string CompanyName { get; set; }
         }
-
-
 
         public class Update
         {
+            [Required(ErrorMessage = "Il nome del progetto è obbligatorio.")]
+            [MaxLength(255)]
             public string Name { get; set; }
 
-            public string CompanyName { get; set; }
+            [Required(ErrorMessage = "L'azienda di appartenenza è obbligatoria.")]
+            public int IdCompany { get; set; }
         }
     }
 }
