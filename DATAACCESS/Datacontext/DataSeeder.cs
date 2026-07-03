@@ -1,8 +1,8 @@
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
-using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using Microsoft.AspNetCore.Identity;
 using DevExpress.Persistent.BaseImpl.PermissionPolicy;
+using GestionaleRendicontazione.Domain.Interfaces;
 
 namespace GestionaleRendicontazione.Dataaccess.Datacontext
 {
@@ -54,7 +54,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                 }
 
 
-                                // 1. Gestione/Definizione dei Ruoli
+                
                 // Cerchiamo il ruolo "Admin" nel DB, se non esiste lo creiamo
                 var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
                 if (adminRole == null)
@@ -66,7 +66,6 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     };
                 }
 
-                // Puoi definire anche altri ruoli qui (es. User, Manager) se necessario:
                 var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
                 if (userRole == null)
                 {
@@ -77,7 +76,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     };
                 }
 
-                // Seed utente admin di default (idempotente: salta se esiste già un Employee con questo UserName).
+                // Seed utente admin di default (salta se esiste già un Employee con questo UserName).
                 if (uow.Query<Employee>().Any(e => e.UserName == "admin") == false)
                 {
                     var admin = new Employee(uow)

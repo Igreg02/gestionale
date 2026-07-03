@@ -2,7 +2,6 @@ using System.Security.Claims;
 using DevExpress.Data.Filtering;
 using DevExpress.Xpo;
 using DevExpress.Persistent.BaseImpl.PermissionPolicy;
-using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
@@ -26,13 +25,13 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _passwordHasher = passwordHasher;
         }
 
-        public Task<LoginResponseDto?> LoginAsync(LoginRequestDto request, CancellationToken cancellationToken = default)
+        public Task<AuthDto.LoginResponseDto?> LoginAsync(AuthDto.LoginRequestDto request, CancellationToken cancellationToken = default)
         {
             if (request is null
                 || string.IsNullOrWhiteSpace(request.UserName)
                 || string.IsNullOrWhiteSpace(request.Password))
             {
-                return Task.FromResult<LoginResponseDto?>(null);
+                return Task.FromResult<AuthDto.LoginResponseDto?>(null);
             }
 
             var response = _dbContextService.ExecuteReadOnly(session =>
@@ -76,13 +75,13 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 var displayName = BuildDisplayName(user);
 
-                return new LoginResponseDto(token, expiresAt, user.UserName, displayName);
+                return new AuthDto.LoginResponseDto(token, expiresAt, user.UserName, displayName);
             });
 
             return Task.FromResult(response);
         }
 
-        public async Task<RegisterResponseDto?> RegisterAsync(RegisterRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<AuthDto.RegisterResponseDto?> RegisterAsync(AuthDto.RegisterRequestDto request, CancellationToken cancellationToken = default)
         {
             if (request is null 
                 || string.IsNullOrWhiteSpace(request.UserName) 
@@ -101,7 +100,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return null;
             }
 
-            RegisterResponseDto? responseDto = null;
+            AuthDto.RegisterResponseDto? responseDto = null;
 
             await _dbContextService.ReadWrite(async uow =>
             {
@@ -134,7 +133,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 await uow.CommitChangesAsync(cancellationToken);
 
-                responseDto = new RegisterResponseDto(
+                responseDto = new AuthDto.RegisterResponseDto(
                     newEmployee.Oid,
                     newEmployee.UserName,
                     newEmployee.FirstName,

@@ -16,11 +16,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
-
-
-
         private Company _company;
-        // Relazione N-1: Il progetto appartiene a una specifica Company
         [Association("company-Project")]
         [Persistent("idCompany")]
         public Company Company
@@ -28,8 +24,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             get => _company;
             set => SetPropertyValue(nameof(Company), ref _company, value);
         }
-
-
 
 
         [Association("project-WorkLog")]

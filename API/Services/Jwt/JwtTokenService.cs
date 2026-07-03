@@ -6,11 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GestionaleRendicontazione.Api.Services.Jwt
 {
-    /// <summary>
-    /// Implementazione self-issued di <see cref="IJwtTokenService"/>: firma HMAC-SHA256
-    /// con chiave simmetrica letta dalla sezione "Jwt" di appsettings.json.
-    /// Coerente con la specifica del TDD §1 e §3.1 (JWT Bearer Token).
-    /// </summary>
     public class JwtTokenService : IJwtTokenService
     {
         private readonly SigningCredentials _signingCredentials;

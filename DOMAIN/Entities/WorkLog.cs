@@ -50,9 +50,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(UpdateAt), ref _updateAt, value);
         }
 
-
-
-        // Le relazioni si definiscono con l'attributo Association
         private Project _project;
         [Association("project-WorkLog")]
         [Persistent("idProject")]
@@ -84,7 +81,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Status), ref _status, value);
         }
 
-        // Relazione N-1: un WorkLog appartiene a un Employee
         private Employee _employee;
         [Association("Employee-WorkLogs")]
         [Persistent("idEmployee")]

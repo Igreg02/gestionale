@@ -16,7 +16,6 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
-        // Relazione 1-N: Una Status ha molti 
         [Association("status-WorkLog")]
         public XPCollection<WorkLog> WorkLog => GetCollection<WorkLog>(nameof(WorkLog));
     }
