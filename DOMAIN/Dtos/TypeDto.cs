@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace GestionaleRendicontazione.Domain.Dtos
 {
     /// <summary>
@@ -35,12 +37,15 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         public class Create
         {
+            [Required(ErrorMessage = "La tipologia deve avere un nome")]
+
             public string Name { get; set; }
 
         }
 
         public class Update
         {
+            [Required(ErrorMessage = "La tipologia deve avere un nome")]
             public string Name { get; set; }
 
         }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace GestionaleRendicontazione.Domain.Dtos
 {
     /// <summary>
@@ -19,7 +21,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
         public class Delete
         {
             public int Oid { get; set; }
-
             public string Name { get; set; }
 
         }
@@ -36,9 +37,12 @@ namespace GestionaleRendicontazione.Domain.Dtos
         public class Create
         {
 
-
+            [Required(ErrorMessage = "Devi inserire il nome dell'azienda")]
+            [MaxLength(255)]
             public string Name { get; set; }
 
+            [Required(ErrorMessage = "Devi inserire il l'email dell'azienda")]
+            [EmailAddress]
             public string email { get; set; }
 
         }
@@ -47,8 +51,13 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         public class Update
         {
+            [Required(ErrorMessage = "Devi inserire il nome dell'azienda")]
+
+            [MaxLength(255)]
             public string Name { get; set; }
 
+            [Required(ErrorMessage = "Devi inserire il l'email dell'azienda")]
+            [EmailAddress]
             public string email { get; set; }
         }
     }
