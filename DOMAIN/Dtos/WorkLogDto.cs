@@ -72,15 +72,27 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             public class Update
         {
+            [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
+
             public string Description { get; set; }
+
+            [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
 
             public float HoursCounter { get; set; }
 
+            [Required(ErrorMessage = "Devi indicare il giorno in cui è stato svolto il lavoro")]
+
             public DateOnly Date { get; set; }
+
+            [Required(ErrorMessage = "Devi indicare l'ID di quale progetto si fa riferimento")]
 
             public int IdProject { get; set; }
 
+            [Required(ErrorMessage = "Devi indicare l'ID del tipo di lavoto che hai svolto")]
+
             public int IdType { get; set; }
+
+            [Required(ErrorMessage = "Devi indicare l'ID dello stato del lavoro")]
 
             public int IdStatus { get; set; }
         }
