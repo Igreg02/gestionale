@@ -62,6 +62,7 @@ builder.Services.AddSingleton<PasswordHasher<Employee>>();
 // Servizi applicativi.
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IWorkLogService, WorkLogAdminService>();
 
 var app = builder.Build();
 

@@ -3,9 +3,18 @@ using DevExpress.Xpo;
 namespace GestionaleRendicontazione.Domain.Entities
 {
         [Persistent("worklog")]
-    public class WorkLog : XPObject
+    public class WorkLog : XPCustomObject
     {
         public WorkLog(Session session) : base(session) { }
+
+        private Guid _id;
+        [Key(AutoGenerate = true)]
+        [Persistent("id")]
+        public Guid Id
+        {
+            get => _id;
+            set => SetPropertyValue(nameof(Id), ref _id, value);
+        }
         private string _description;
         [Persistent("description")]
         public string Description

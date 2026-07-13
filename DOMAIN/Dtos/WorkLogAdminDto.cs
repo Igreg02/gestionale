@@ -12,7 +12,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
         /// </summary>
         public class Response
         {
-            public int Oid { get; set; }
+            public Guid Id { get; set; }
 
             public string Description { get; set; }
 
@@ -25,28 +25,28 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public DateTime UpdateAt {get;set;}
 
 
-            public int IdProject { get; set; }
+            public Guid IdProject { get; set; }
             public string ProjectName {get; set;}
 
-            public int IdEmploy { get; set; }
+            public Guid IdEmploy { get; set; }
 
             public string EmployeeName {get; set;}
 
-            public int IdType { get; set; }
+            public Guid IdType { get; set; }
             public string TypeName {get; set;}
 
-            public int IdStatus { get; set; }
+            public Guid IdStatus { get; set; }
 
             public string StatusName {get; set;}
 
         }
 
             public class Delete
-        {
-            public int Oid { get; set; }
-            public int IdEmployee { get; set; }
+            {
+            public Guid Id { get; set; }
+            public Guid IdEmployee { get; set; }
             public string EmployeeName {get; set;}
-            public int IdProject { get; set; }
+            public Guid IdProject { get; set; }
             public string ProjectName {get; set;}
         }
 
@@ -54,7 +54,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
         /// Client -> Server
         /// </summary>
             public class Create
-        {
+            {
             [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
             public string Description { get; set; }
 
@@ -69,21 +69,21 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public DateTime UpdateAt {get;set;}
 
             [Required(ErrorMessage = "Devi indicare l'ID di quale progetto si fa riferimento")]
-            public int IdProject { get; set; }
+            public Guid IdProject { get; set; }
 
             [Required(ErrorMessage = "Devi indicare l'ID del dipendente che svolto il lavoro")]
-            public int IdEmployee { get; set; }
+            public Guid IdEmployee { get; set; }
 
             [Required(ErrorMessage = "Devi indicare l'ID del tipo di lavoro che è stato svolto")]
-            public int IdType { get; set; }
+            public Guid IdType { get; set; }
 
             [Required(ErrorMessage = "Devi indicare l'ID dello stato del lavoro")]
-            public int IdStatus { get; set; }
+            public Guid IdStatus { get; set; }
         }
 
 
             public class Update
-        {
+            {
             [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
             public string Description { get; set; }
 
@@ -94,13 +94,13 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public DateOnly Date { get; set; }
 
             [Required(ErrorMessage = "Devi indicare l'ID di quale progetto si fa riferimento")]
-            public int IdProject { get; set; }
+            public Guid IdProject { get; set; }
 
             [Required(ErrorMessage = "Devi indicare l'ID del tipo di lavoto che hai svolto")]
-            public int IdType { get; set; }
+            public Guid IdType { get; set; }
 
             [Required(ErrorMessage = "Devi indicare l'ID dello stato del lavoro")]
-            public int IdStatus { get; set; }
+            public Guid IdStatus { get; set; }
         }
 
 

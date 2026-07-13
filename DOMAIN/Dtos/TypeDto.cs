@@ -10,7 +10,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
     {
         public class Response
         {
-            public int Oid { get; set; }
+            public Guid id { get; set; }
 
             public string Name { get; set; }
 
