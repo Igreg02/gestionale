@@ -28,7 +28,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var query = session.Query<WorkLog>()
-                    .Where(w => !w.IsDeleted
+                    .Where(w => !w.IsWorkLogDeleted
                                 && w.Employee != null
                                 && w.Employee.Oid == currentEmployeeOid);
 
@@ -57,7 +57,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var w = session.GetObjectByKey<WorkLog>(id);
-                if (w is null || w.IsDeleted) return null;
+                if (w is null || w.IsWorkLogDeleted) return null;
                 if (w.Employee == null || w.Employee.Oid != currentEmployeeOid) return null;
                 return WorkLogMapper.ToResponse(w);
             }));
@@ -89,7 +89,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Date = dto.Date,
                     CreateAt = now,
                     UpdateAt = now,
-                    IsDeleted = false,
+                    IsWorkLogDeleted = false,
                     Project = project,
                     Type = type,
                     Status = status,
@@ -110,7 +110,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return await _dbContextService.ReadWrite<WorkLogAdminDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsDeleted) return null;
+                if (entity == null || entity.IsWorkLogDeleted) return null;
                 if (entity.Employee == null || entity.Employee.Oid != currentEmployeeOid) return null;
 
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
@@ -138,11 +138,11 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return await _dbContextService.ReadWrite<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsDeleted) return false;
+                if (entity == null || entity.IsWorkLogDeleted) return false;
                 if (entity.Employee == null || entity.Employee.Oid != currentEmployeeOid) return false;
 
-                entity.IsDeleted = true;
-                entity.DeletedAt = DateTime.UtcNow;
+                entity.IsWorkLogDeleted = true;
+                entity.UpdateAt = DateTime.UtcNow;
                 entity.UpdateAt = DateTime.UtcNow;
                 await uow.CommitChangesAsync(ct);
                 return true;

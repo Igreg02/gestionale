@@ -6,7 +6,7 @@ using GestionaleRendicontazione.Domain.Interfaces;
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
     /// <summary>
-    /// Aggrega i Worklog attivi (IsDeleted = false) in un intervallo di date.
+    /// Aggrega i Worklog attivi (IsWorkLogDeleted = false) in un intervallo di date.
     /// Restituisce null quando l'FK radice (Project o Employee) non esiste.
     /// </summary>
     public class ReportService : IReportService
@@ -30,7 +30,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (project is null) return (ProjectReportDto.Response?)null;
 
                 var worklogs = session.Query<WorkLog>()
-                    .Where(w => !w.IsDeleted
+                    .Where(w => !w.IsWorkLogDeleted
                                 && w.Project != null
                                 && w.Project.Id == projectId
                                 && w.Date >= from
@@ -119,7 +119,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (employee is null) return (EmployeeReportDto.Response?)null;
 
                 var worklogs = session.Query<WorkLog>()
-                    .Where(w => !w.IsDeleted
+                    .Where(w => !w.IsWorkLogDeleted
                                 && w.Employee != null
                                 && w.Employee.Oid == employeeId
                                 && w.Date >= from

@@ -5,7 +5,7 @@ using GestionaleRendicontazione.Domain.Interfaces;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-    public class WorkLogAdminService : IWorkLogService
+    public class WorkLogAdminService : IWorkLogAdminService
     {
         private readonly IDbContextService _dbContextService;
 
@@ -16,12 +16,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<WorkLogAdminDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ExecuteReadOnly(session =>
+            return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var obj = session.GetObjectByKey<WorkLog>(id);
-                if (obj is null || obj.IsDeleted) return null;
+                if (obj is null || obj.IsWorkLogDeleted) return null;
                 return WorkLogMapper.ToResponse(obj);
-            });
+            }));
         }
 
         public async Task<List<WorkLogAdminDto.Response>> GetAllAsync(
@@ -32,9 +32,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             string? statusName = null,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ExecuteReadOnly(session =>
+            return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var query = session.Query<WorkLog>().Where(w => !w.IsDeleted);
+                var query = session.Query<WorkLog>().Where(w => !w.IsWorkLogDeleted);
 
                 if (employeeId.HasValue)
                 {
@@ -69,7 +69,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .ThenByDescending(w => w.UpdateAt)
                     .Select(WorkLogMapper.ToResponse)
                     .ToList();
-            });
+            }));
         }
 
         public async Task<WorkLogAdminDto.Response> CreateAsync(WorkLogAdminDto.Create dto, CancellationToken ct = default)
@@ -92,7 +92,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Date = dto.Date,
                     CreateAt = now,
                     UpdateAt = now,
-                    IsDeleted = false,
+                    IsWorkLogDeleted = false,
                     Project = project,
                     Type = type,
                     Status = status,
@@ -109,7 +109,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return await _dbContextService.ReadWrite<WorkLogAdminDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsDeleted) return null;
+                if (entity == null || entity.IsWorkLogDeleted) return null;
 
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
@@ -136,10 +136,10 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return await _dbContextService.ReadWrite<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsDeleted) return false;
+                if (entity == null || entity.IsWorkLogDeleted) return false;
 
-                entity.IsDeleted = true;
-                entity.DeletedAt = DateTime.UtcNow;
+                entity.IsWorkLogDeleted = true;
+                entity.UpdateAt = DateTime.UtcNow;
                 entity.UpdateAt = DateTime.UtcNow;
                 await uow.CommitChangesAsync(ct);
                 return true;

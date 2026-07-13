@@ -22,7 +22,7 @@ namespace GestionaleRendicontazione.Domain.Interfaces
 
         Task<WorkLogAdminDto.Response?> UpdateAsync(Guid id, WorkLogAdminDto.Update dto, CancellationToken ct = default);
 
-        /// <summary>Soft delete: imposta IsDeleted + DeletedAt.</summary>
+        /// <summary>Soft delete: imposta IsWorkLogDeleted (campo custom di WorkLog).</summary>
         Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
     }
 }

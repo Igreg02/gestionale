@@ -62,7 +62,7 @@ builder.Services.AddSingleton<PasswordHasher<Employee>>();
 // Servizi applicativi.
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IWorkLogService, WorkLogAdminService>();
+builder.Services.AddScoped<IWorkLogAdminService, WorkLogAdminService>();
 builder.Services.AddScoped<IWorkLogUserService, WorkLogUserService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
 builder.Services.AddScoped<IEmployeeService, EmployeeService>();

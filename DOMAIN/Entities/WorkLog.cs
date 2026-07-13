@@ -61,18 +61,10 @@ namespace GestionaleRendicontazione.Domain.Entities
 
         private bool _isDeleted;
         [Persistent("isDeleted")]
-        public bool IsDeleted
+        public bool IsWorkLogDeleted
         {
             get => _isDeleted;
-            set => SetPropertyValue(nameof(IsDeleted), ref _isDeleted, value);
-        }
-
-        private DateTime? _deletedAt;
-        [Persistent("deletedAt")]
-        public DateTime? DeletedAt
-        {
-            get => _deletedAt;
-            set => SetPropertyValue(nameof(DeletedAt), ref _deletedAt, value);
+            set => SetPropertyValue(nameof(IsWorkLogDeleted), ref _isDeleted, value);
         }
 
         private Project _project;

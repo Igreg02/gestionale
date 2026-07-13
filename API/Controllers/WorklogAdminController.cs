@@ -11,10 +11,10 @@ namespace GestionaleRendicontazione.Api.Controllers
     [Authorize(Roles = "Admin")]
     public class WorklogAdminController : ControllerBase
     {
-        private readonly IWorkLogService _workLogService;
+        private readonly IWorkLogAdminService _workLogService;
         private readonly ILogger<WorklogAdminController> _logger;
 
-        public WorklogAdminController(IWorkLogService workLogService, ILogger<WorklogAdminController> logger)
+        public WorklogAdminController(IWorkLogAdminService workLogService, ILogger<WorklogAdminController> logger)
         {
             _workLogService = workLogService;
             _logger = logger;
