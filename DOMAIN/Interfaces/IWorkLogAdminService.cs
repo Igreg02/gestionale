@@ -1,9 +1,8 @@
-using DevExpress.Data.Filtering;
 using GestionaleRendicontazione.Domain.Dtos;
 
 namespace GestionaleRendicontazione.Domain.Interfaces
 {
-    public interface IWorkLogService
+    public interface IWorkLogAdminService
     {
         /// <summary>
         /// Filtri supportati: EmployeeId, ProjectId, DateFrom, DateTo, StatusId, StatusName.
