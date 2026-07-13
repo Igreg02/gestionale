@@ -5,46 +5,32 @@ using GestionaleRendicontazione.Domain.Interfaces;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-    public class WorkLogAdminService : IWorkLogService
+    /// <summary>
+    /// Implementazione di <see cref="IWorkLogUserService"/>: tutte le operazioni
+    /// sono filtrate sull'Oid del dipendente autenticato. Il mapper condiviso
+    /// <see cref="WorkLogMapper"/> evita la duplicazione della proiezione.
+    /// </summary>
+    public class WorkLogUserService : IWorkLogUserService
     {
         private readonly IDbContextService _dbContextService;
 
-        public WorkLogAdminService(IDbContextService dbContextService)
+        public WorkLogUserService(IDbContextService dbContextService)
         {
             _dbContextService = dbContextService;
         }
 
-        public async Task<WorkLogAdminDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            return await _dbContextService.ExecuteReadOnly(session =>
-            {
-                var obj = session.GetObjectByKey<WorkLog>(id);
-                if (obj is null || obj.IsDeleted) return null;
-                return WorkLogMapper.ToResponse(obj);
-            });
-        }
-
-        public async Task<List<WorkLogAdminDto.Response>> GetAllAsync(
-            Guid? employeeId = null,
-            Guid? projectId = null,
+        public Task<List<WorkLogAdminDto.Response>> GetAllAsync(
+            Guid currentEmployeeOid,
             DateOnly? dateFrom = null,
             DateOnly? dateTo = null,
-            string? statusName = null,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ExecuteReadOnly(session =>
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var query = session.Query<WorkLog>().Where(w => !w.IsDeleted);
-
-                if (employeeId.HasValue)
-                {
-                    query = query.Where(w => w.Employee != null && w.Employee.Oid == employeeId.Value);
-                }
-
-                if (projectId.HasValue)
-                {
-                    query = query.Where(w => w.Project != null && w.Project.Id == projectId.Value);
-                }
+                var query = session.Query<WorkLog>()
+                    .Where(w => !w.IsDeleted
+                                && w.Employee != null
+                                && w.Employee.Oid == currentEmployeeOid);
 
                 if (dateFrom.HasValue)
                 {
@@ -58,30 +44,41 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     query = query.Where(w => w.Date <= to);
                 }
 
-                if (!string.IsNullOrWhiteSpace(statusName))
-                {
-                    var trimmed = statusName.Trim();
-                    query = query.Where(w => w.Status != null && w.Status.Name == trimmed);
-                }
-
                 return query
                     .OrderByDescending(w => w.Date)
                     .ThenByDescending(w => w.UpdateAt)
                     .Select(WorkLogMapper.ToResponse)
                     .ToList();
-            });
+            }));
         }
 
-        public async Task<WorkLogAdminDto.Response> CreateAsync(WorkLogAdminDto.Create dto, CancellationToken ct = default)
+        public Task<WorkLogAdminDto.Response?> GetByIdAsync(Guid id, Guid currentEmployeeOid, CancellationToken ct = default)
+        {
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            {
+                var w = session.GetObjectByKey<WorkLog>(id);
+                if (w is null || w.IsDeleted) return null;
+                if (w.Employee == null || w.Employee.Oid != currentEmployeeOid) return null;
+                return WorkLogMapper.ToResponse(w);
+            }));
+        }
+
+        public async Task<WorkLogAdminDto.Response> CreateAsync(
+            WorkLogAdminDto.Create dto,
+            Guid currentEmployeeOid,
+            CancellationToken ct = default)
         {
             return await _dbContextService.ReadWrite<WorkLogAdminDto.Response>(async uow =>
             {
+                // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
+                var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeOid, ct)
+                    ?? throw new InvalidOperationException("Dipendente autenticato non trovato");
+
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
                 var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-                var employee = await uow.GetObjectByKeyAsync<Employee>(dto.IdEmployee, ct);
 
-                if (project == null || type == null || status == null || employee == null)
+                if (project == null || type == null || status == null)
                     throw new InvalidOperationException("Una delle FK fornite non esiste");
 
                 var now = DateTime.UtcNow;
@@ -104,12 +101,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             });
         }
 
-        public async Task<WorkLogAdminDto.Response?> UpdateAsync(Guid id, WorkLogAdminDto.Update dto, CancellationToken ct = default)
+        public async Task<WorkLogAdminDto.Response?> UpdateAsync(
+            Guid id,
+            WorkLogAdminDto.Update dto,
+            Guid currentEmployeeOid,
+            CancellationToken ct = default)
         {
             return await _dbContextService.ReadWrite<WorkLogAdminDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsDeleted) return null;
+                if (entity.Employee == null || entity.Employee.Oid != currentEmployeeOid) return null;
 
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
@@ -131,12 +133,13 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             });
         }
 
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
+        public async Task<bool> DeleteAsync(Guid id, Guid currentEmployeeOid, CancellationToken ct = default)
         {
             return await _dbContextService.ReadWrite<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsDeleted) return false;
+                if (entity.Employee == null || entity.Employee.Oid != currentEmployeeOid) return false;
 
                 entity.IsDeleted = true;
                 entity.DeletedAt = DateTime.UtcNow;

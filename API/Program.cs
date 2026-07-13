@@ -63,6 +63,13 @@ builder.Services.AddSingleton<PasswordHasher<Employee>>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IWorkLogService, WorkLogAdminService>();
+builder.Services.AddScoped<IWorkLogUserService, WorkLogUserService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
+builder.Services.AddScoped<IEmployeeService, EmployeeService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IStatusService, StatusService>();
+builder.Services.AddScoped<ITypeService, TypeService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
