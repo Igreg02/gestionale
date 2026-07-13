@@ -7,6 +7,9 @@ namespace GestionaleRendicontazione.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
+    [Authorize(Roles = "Admin")]
+
     [Produces("application/json")]
     public class CompanyController : ControllerBase
     {
@@ -20,7 +23,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         [ProducesResponseType(typeof(List<CompanyDto.Response>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<List<CompanyDto.Response>>> GetAll(CancellationToken ct)
@@ -30,7 +32,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpGet("{id:guid}", Name = "GetCompanyById")]
-        [Authorize]
         [ProducesResponseType(typeof(CompanyDto.Response), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -42,7 +43,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(CompanyDto.Response), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -58,7 +58,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(CompanyDto.Response), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -77,7 +76,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
