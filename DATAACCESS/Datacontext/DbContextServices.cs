@@ -28,7 +28,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         {
             using (var session = new Session(_dataLayer))
             {
-                session.TrackPropertiesModifications = false;
+                session.TrackPropertiesModifications = false; // Risparmio risorse è in readonly
 
                 query(session);
             }
@@ -43,6 +43,22 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
                 {
                     await operation(uow);
                     await uow.CommitChangesAsync();
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+            }
+        }
+                public async Task<T> ReadWrite<T>(Func<UnitOfWork, Task<T>> operation)
+        {
+            using (var uow = new UnitOfWork(_dataLayer))
+            {
+                try
+                {
+                    var result = await operation(uow);
+                    await uow.CommitChangesAsync();
+                    return result;
                 }
                 catch (Exception)
                 {

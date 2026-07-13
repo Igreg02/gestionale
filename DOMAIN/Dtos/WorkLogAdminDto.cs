@@ -20,12 +20,15 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             public DateOnly Date { get; set; }
 
-            public DateTime CreateAt { get; set; }
+            public DateTime CreateAt {get;set;}
+
+            public DateTime UpdateAt {get;set;}
+
 
             public int IdProject { get; set; }
             public string ProjectName {get; set;}
 
-            public int IdEmployee { get; set; }
+            public int IdEmploy { get; set; }
 
             public string EmployeeName {get; set;}
 
@@ -54,12 +57,16 @@ namespace GestionaleRendicontazione.Domain.Dtos
         {
             [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
             public string Description { get; set; }
-            
+
             [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
             public float HoursCounter { get; set; }
 
             [Required(ErrorMessage = "Devi indicare il giorno in cui è stato svolto il lavoro")]
             public DateOnly Date { get; set; }
+
+            public DateTime CreateAt {get;set;}
+
+            public DateTime UpdateAt {get;set;}
 
             [Required(ErrorMessage = "Devi indicare l'ID di quale progetto si fa riferimento")]
             public int IdProject { get; set; }
@@ -69,7 +76,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             [Required(ErrorMessage = "Devi indicare l'ID del tipo di lavoro che è stato svolto")]
             public int IdType { get; set; }
-            
+
             [Required(ErrorMessage = "Devi indicare l'ID dello stato del lavoro")]
             public int IdStatus { get; set; }
         }
@@ -96,6 +103,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public int IdStatus { get; set; }
         }
 
-        
+
     }
 }

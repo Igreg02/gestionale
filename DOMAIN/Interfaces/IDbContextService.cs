@@ -11,5 +11,7 @@ namespace GestionaleRendicontazione.Domain.Interfaces
 
         // Lettura e Scrittura
         Task ReadWrite(Func<UnitOfWork, Task> operation);
+        Task<T> ReadWrite<T>(Func<UnitOfWork, Task<T>> operation);
+
     }
     }
