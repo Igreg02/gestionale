@@ -59,6 +59,22 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(UpdateAt), ref _updateAt, value);
         }
 
+        private bool _isDeleted;
+        [Persistent("isDeleted")]
+        public bool IsDeleted
+        {
+            get => _isDeleted;
+            set => SetPropertyValue(nameof(IsDeleted), ref _isDeleted, value);
+        }
+
+        private DateTime? _deletedAt;
+        [Persistent("deletedAt")]
+        public DateTime? DeletedAt
+        {
+            get => _deletedAt;
+            set => SetPropertyValue(nameof(DeletedAt), ref _deletedAt, value);
+        }
+
         private Project _project;
         [Association("project-WorkLog")]
         [Persistent("idProject")]
