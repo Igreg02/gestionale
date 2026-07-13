@@ -64,9 +64,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             [Required(ErrorMessage = "Devi indicare il giorno in cui è stato svolto il lavoro")]
             public DateOnly Date { get; set; }
 
-            public DateTime CreateAt {get;set;}
-
-            public DateTime UpdateAt {get;set;}
+            // CreateAt / UpdateAt sono impostati dal server, il client non li manda.
 
             [Required(ErrorMessage = "Devi indicare l'ID di quale progetto si fa riferimento")]
             public Guid IdProject { get; set; }
