@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -30,8 +31,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var query = session.Query<WorkLog>()
-                    .Where(w => !w.IsWorkLogDeleted
-                                && w.Employee != null
+                    .Active()
+                    .Where(w => w.Employee != null
                                 && w.Employee.Oid == currentEmployeeOid);
 
                 if (dateFrom.HasValue)

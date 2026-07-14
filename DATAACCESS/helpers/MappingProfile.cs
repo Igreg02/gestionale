@@ -12,7 +12,8 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
             CreateMap<Company, CompanyDto.Response>();
 
             // Employee
-            CreateMap<Employee, EmployeeDto.Response>();
+            CreateMap<Employee, EmployeeDto.Response>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Oid));
 
             // Project
             CreateMap<Project, ProjectDto.Response>()
@@ -20,8 +21,7 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                 .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : string.Empty));
 
             // Status
-            CreateMap<Status, StatusDto.Response>()
-                .ForMember(dest => dest.id, opt => opt.MapFrom(src => src.Id));
+            CreateMap<Status, StatusDto.Response>();
 
             // Type
             CreateMap<Domain.Entities.Type, TypeDto.Response>();
@@ -30,7 +30,7 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
             CreateMap<WorkLog, WorkLogDto.Admin.Response>()
                 .ForMember(dest => dest.IdProject, opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : Guid.Empty))
                 .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : string.Empty))
-                .ForMember(dest => dest.IdEmploy, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Oid : Guid.Empty))
+                .ForMember(dest => dest.IdEmployee, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.Oid : Guid.Empty))
                 .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? src.Employee.UserName : string.Empty))
                 .ForMember(dest => dest.IdType, opt => opt.MapFrom(src => src.Type != null ? src.Type.Id : Guid.Empty))
                 .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type != null ? src.Type.Name : string.Empty))

@@ -41,7 +41,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
         }
 
         public record RegisterResponseDto(
-            Guid id,
+            Guid Id,
             string UserName,
             string FirstName,
             string LastName,

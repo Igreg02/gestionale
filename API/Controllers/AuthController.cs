@@ -12,11 +12,16 @@ namespace GestionaleRendicontazione.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ITokenBlacklistService _blacklistService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            ITokenBlacklistService blacklistService,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _blacklistService = blacklistService;
             _logger = logger;
         }
 
@@ -58,12 +63,25 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Logout()
         {
-            // Recupera lo username esplicito cercando prima ClaimTypes.Name, poi unique_name
             var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                            ?? User.FindFirst("unique_name")?.Value
                            ?? User.Identity?.Name
                            ?? "(sconosciuto)";
-            _logger.LogInformation("Logout richiesto per {UserName}", userName);
+
+            var jti = User.FindFirst("jti")?.Value;
+            var expClaim = User.FindFirst("exp")?.Value;
+            if (!string.IsNullOrEmpty(jti))
+            {
+                var expiresAt = DateTime.UtcNow.AddHours(1); // fallback
+                if (long.TryParse(expClaim, out var expUnix))
+                {
+                    expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+                }
+                _blacklistService.BlacklistToken(jti, expiresAt);
+                _logger.LogInformation("Token JTI={Jti} inserito in blacklist per {UserName}", jti, userName);
+            }
+
+            _logger.LogInformation("Logout completato per {UserName}", userName);
             return NoContent();
         }
 

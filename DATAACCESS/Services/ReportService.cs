@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -33,8 +34,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (project is null) return (ProjectReportDto.Response?)null;
 
                 var worklogs = session.Query<WorkLog>()
-                    .Where(w => !w.IsWorkLogDeleted
-                                && w.Project != null
+                    .Active()
+                    .Where(w => w.Project != null
                                 && w.Project.Id == projectId
                                 && w.Date >= from
                                 && w.Date <= to)
@@ -122,8 +123,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (employee is null) return (EmployeeReportDto.Response?)null;
 
                 var worklogs = session.Query<WorkLog>()
-                    .Where(w => !w.IsWorkLogDeleted
-                                && w.Employee != null
+                    .Active()
+                    .Where(w => w.Employee != null
                                 && w.Employee.Oid == employeeId
                                 && w.Date >= from
                                 && w.Date <= to)
