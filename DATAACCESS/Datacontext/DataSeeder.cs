@@ -50,6 +50,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                         Project = project,
                         Type = type,
                         Status = status2,
+                        IsWorkLogDeleted = false
                     };
                 }
 

@@ -14,17 +14,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _dbContextService = dbContextService;
         }
 
-        public async Task<WorkLogAdminDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public async Task<WorkLogDto.Admin.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
             return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var obj = session.GetObjectByKey<WorkLog>(id);
                 if (obj is null || obj.IsWorkLogDeleted) return null;
-                return WorkLogMapper.ToResponse(obj);
+                return WorkLogMapper.ToAdminResponse(obj);
             }));
         }
 
-        public async Task<List<WorkLogAdminDto.Response>> GetAllAsync(
+        public async Task<List<WorkLogDto.Admin.Response>> GetAllAsync(
             Guid? employeeId = null,
             Guid? projectId = null,
             DateOnly? dateFrom = null,
@@ -33,7 +33,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             CancellationToken ct = default)
         {
             return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {
+            {   
                 var query = session.Query<WorkLog>().Where(w => !w.IsWorkLogDeleted);
 
                 if (employeeId.HasValue)
@@ -67,14 +67,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return query
                     .OrderByDescending(w => w.Date)
                     .ThenByDescending(w => w.UpdateAt)
-                    .Select(WorkLogMapper.ToResponse)
+                    .Select(WorkLogMapper.ToAdminResponse)
                     .ToList();
             }));
         }
 
-        public async Task<WorkLogAdminDto.Response> CreateAsync(WorkLogAdminDto.Create dto, CancellationToken ct = default)
+        public async Task<WorkLogDto.Admin.Response> CreateAsync(WorkLogDto.Admin.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogAdminDto.Response>(async uow =>
+            return await _dbContextService.ReadWrite<WorkLogDto.Admin.Response>(async uow =>
             {
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
@@ -100,13 +100,13 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 };
 
                 await uow.CommitChangesAsync(ct);
-                return WorkLogMapper.ToResponse(entity);
+                return WorkLogMapper.ToAdminResponse(entity);
             });
         }
 
-        public async Task<WorkLogAdminDto.Response?> UpdateAsync(Guid id, WorkLogAdminDto.Update dto, CancellationToken ct = default)
+        public async Task<WorkLogDto.Admin.Response?> UpdateAsync(Guid id, WorkLogDto.Admin.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogAdminDto.Response?>(async uow =>
+            return await _dbContextService.ReadWrite<WorkLogDto.Admin.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
@@ -127,7 +127,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 entity.UpdateAt = DateTime.UtcNow;
 
                 await uow.CommitChangesAsync(ct);
-                return WorkLogMapper.ToResponse(entity);
+                return WorkLogMapper.ToAdminResponse(entity);
             });
         }
 

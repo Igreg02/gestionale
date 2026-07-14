@@ -180,3 +180,51 @@ curl.exe -X PUT http://localhost:5182/api/project/{id} -H "Authorization: Bearer
 ```bash
 curl.exe -X DELETE http://localhost:5182/api/project/{id} -H "Authorization: Bearer $TOKEN" -H "accept: application/json" -H "Content-Type: application/json"
 ```
+
+## Worklog
+
+> Endpoint unico `api/worklog`: il comportamento cambia in base al ruolo del `$TOKEN` usato.
+> - Con token **Admin**: `Get` accetta i filtri `employeeId`, `projectId`, `dateFrom`, `dateTo`, `statusName` e opera su tutti i dipendenti; in `POST`/`PUT` `idEmployee` viene usato per davvero.
+> - Con token **User**: `Get` accetta solo `dateFrom`/`dateTo` e restituisce/modifica solo i worklog del dipendente autenticato. Il body di `POST` richiede comunque un `idEmployee` valido (per via della validazione), ma il server lo **ignora** e usa sempre l'Oid del token.
+
+### Get (Admin, con filtri)
+
+```bash
+curl.exe -X GET "http://localhost:5182/api/worklog?employeeId={id}&projectId={id}&dateFrom=2026-07-01&dateTo=2026-07-31&statusName=Approvato" -H "Authorization: Bearer $TOKEN" -i
+```
+
+### Get (User, solo proprie)
+
+```bash
+curl.exe -X GET "http://localhost:5182/api/worklog?dateFrom=2026-07-01&dateTo=2026-07-31" -H "Authorization: Bearer $TOKEN" -i
+```
+
+### Get{ID}
+
+```bash
+curl.exe -X GET http://localhost:5182/api/worklog/{id} -H "Authorization: Bearer $TOKEN" -i
+```
+
+### POST (Admin)
+
+```bash
+curl.exe -X POST http://localhost:5182/api/worklog -H "Authorization: Bearer $TOKEN" -H "accept: application/json" -H "Content-Type: application/json" -d '{\"description\": \"SONO MARIO E SONO GAY\", \"hoursCounter\": 8, \"date\": \"2026-07-14\", \"idProject\": \"d0a3402a-a7fd-4a8c-aef5-26c3850a348e\", \"idEmployee\": \"3685f964-0a41-4a9a-883f-30317b961786\", \"idType\": \"5370d468-847a-4153-b0ce-fc2fc71c34c3\", \"idStatus\": \"c32e3dcc-777e-447c-96c9-a222230e0c58\"}' -i
+```
+
+### POST (User)
+
+```bash
+curl.exe -X POST http://localhost:5182/api/worklog -H "Authorization: Bearer $TOKEN" -H "accept: application/json" -H "Content-Type: application/json" -d '{\"description\": \"Sviluppo API worklog\", \"hoursCounter\": 8, \"date\": \"2026-07-14\", \"idProject\": \"d0a3402a-a7fd-4a8c-aef5-26c3850a348e\", \"idType\": \"5370d468-847a-4153-b0ce-fc2fc71c34c3\", \"idStatus\": \"21fd64e2-7233-4186-baa3-8fc121f7d6ee\"}' -i
+```
+
+### PUT
+
+```bash
+curl.exe -X PUT http://localhost:5182/api/worklog/{id} -H "Authorization: Bearer $TOKEN" -H "accept: application/json" -H "Content-Type: application/json" -d '{\"description\": \"Aggiornamento worklog\", \"hoursCounter\": 6, \"date\": \"2026-07-14\", \"idProject\": \"436329e0-d7e7-400c-8ce3-e616849909f8\", \"idType\": \"{idType}\", \"idStatus\": \"{idStatus}\"}' -i
+```
+
+### DELETE
+
+```bash
+curl.exe -X DELETE http://localhost:5182/api/worklog/{id} -H "Authorization: Bearer $TOKEN" -H "accept: application/json" -H "Content-Type: application/json"
+```

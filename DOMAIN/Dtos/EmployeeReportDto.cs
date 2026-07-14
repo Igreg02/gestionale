@@ -23,7 +23,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public List<DailyTotal> ByDay { get; set; } = new();
             public List<ProjectBucket> ByProject { get; set; } = new();
 
-            public List<WorkLogAdminDto.Response> WorkLogs { get; set; } = new();
+            public List<WorkLogDto.Admin.Response> WorkLogs { get; set; } = new();
         }
 
         public class Bucket

@@ -19,7 +19,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _dbContextService = dbContextService;
         }
 
-        public Task<List<WorkLogAdminDto.Response>> GetAllAsync(
+        public Task<List<WorkLogDto.User.Response>> GetAllAsync(
             Guid currentEmployeeOid,
             DateOnly? dateFrom = null,
             DateOnly? dateTo = null,
@@ -47,28 +47,28 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return query
                     .OrderByDescending(w => w.Date)
                     .ThenByDescending(w => w.UpdateAt)
-                    .Select(WorkLogMapper.ToResponse)
+                    .Select(WorkLogMapper.ToUserResponse)
                     .ToList();
             }));
         }
 
-        public Task<WorkLogAdminDto.Response?> GetByIdAsync(Guid id, Guid currentEmployeeOid, CancellationToken ct = default)
+        public Task<WorkLogDto.User.Response?> GetByIdAsync(Guid id, Guid currentEmployeeOid, CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var w = session.GetObjectByKey<WorkLog>(id);
                 if (w is null || w.IsWorkLogDeleted) return null;
                 if (w.Employee == null || w.Employee.Oid != currentEmployeeOid) return null;
-                return WorkLogMapper.ToResponse(w);
+                return WorkLogMapper.ToUserResponse(w);
             }));
         }
 
-        public async Task<WorkLogAdminDto.Response> CreateAsync(
-            WorkLogAdminDto.Create dto,
+        public async Task<WorkLogDto.User.Response> CreateAsync(
+            WorkLogDto.User.Create dto,
             Guid currentEmployeeOid,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogAdminDto.Response>(async uow =>
+            return await _dbContextService.ReadWrite<WorkLogDto.User.Response>(async uow =>
             {
                 // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
                 var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeOid, ct)
@@ -97,17 +97,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 };
 
                 await uow.CommitChangesAsync(ct);
-                return WorkLogMapper.ToResponse(entity);
+                return WorkLogMapper.ToUserResponse(entity);
             });
         }
 
-        public async Task<WorkLogAdminDto.Response?> UpdateAsync(
+        public async Task<WorkLogDto.User.Response?> UpdateAsync(
             Guid id,
-            WorkLogAdminDto.Update dto,
+            WorkLogDto.User.Update dto,
             Guid currentEmployeeOid,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogAdminDto.Response?>(async uow =>
+            return await _dbContextService.ReadWrite<WorkLogDto.User.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
@@ -129,7 +129,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 entity.UpdateAt = DateTime.UtcNow;
 
                 await uow.CommitChangesAsync(ct);
-                return WorkLogMapper.ToResponse(entity);
+                return WorkLogMapper.ToUserResponse(entity);
             });
         }
 

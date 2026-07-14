@@ -38,7 +38,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderBy(w => w.Date)
                     .ToList();
 
-                var responses = worklogs.Select(WorkLogMapper.ToResponse).ToList();
+                var responses = worklogs.Select(WorkLogMapper.ToAdminResponse).ToList();
 
                 var byType = worklogs
                     .GroupBy(w => w.Type?.Name ?? string.Empty)
@@ -127,7 +127,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderBy(w => w.Date)
                     .ToList();
 
-                var responses = worklogs.Select(WorkLogMapper.ToResponse).ToList();
+                var responses = worklogs.Select(WorkLogMapper.ToAdminResponse).ToList();
 
                 var byType = worklogs
                     .GroupBy(w => w.Type?.Name ?? string.Empty)
