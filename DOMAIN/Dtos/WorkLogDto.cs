@@ -32,7 +32,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public Guid IdProject { get; set; }
                 public string ProjectName { get; set; } = string.Empty;
 
-                public Guid IdEmploy { get; set; }
+                public Guid IdEmployee { get; set; }
                 public string EmployeeName { get; set; } = string.Empty;
 
                 public Guid IdType { get; set; }

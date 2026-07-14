@@ -13,6 +13,9 @@ namespace GestionaleRendicontazione.Domain.Entities
     {
         public Employee(Session session) : base(session) { }
 
+        [PersistentAlias(nameof(Oid))]
+        public Guid Id => Oid;
+
         private string _firstName = string.Empty;
         [Persistent("firstName")]
         public string FirstName
