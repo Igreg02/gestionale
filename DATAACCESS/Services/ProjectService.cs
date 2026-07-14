@@ -52,7 +52,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Name = dto.Name,
                     Company = company
                 };
-                await uow.CommitChangesAsync(ct);
                 return ToResponse(entity);
             });
         }
@@ -69,7 +68,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 entity.Name = dto.Name;
                 entity.Company = company;
-                await uow.CommitChangesAsync(ct);
                 return ToResponse(entity);
             });
         }
@@ -80,8 +78,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return false;
+
+                if (entity.WorkLog != null && entity.WorkLog.Any())
+                {
+                    throw new InvalidOperationException(
+                        $"Impossibile eliminare il progetto '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
+                }
+
                 uow.Delete(entity);
-                await uow.CommitChangesAsync(ct);
                 return true;
             });
         }

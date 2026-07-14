@@ -12,83 +12,82 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
         {
             await DbContextService.ReadWrite(async uow =>
             {
-                if (!uow.Query<Company>().Any() && true) /* true -> scrive in assenza di dati | false -> scrive sempre*/
+                if (uow.Query<Company>().Any())
                 {
-                    var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
-                    if (adminRole == null)
-                    {
-                        adminRole = new PermissionPolicyRole(uow)
-                        {
-                            Name = "Admin",
-                        };
-                    }
+                    await Task.CompletedTask;
+                    return;
+                }
 
-                    var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
-                    if (userRole == null)
+                var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
+                if (adminRole == null)
+                {
+                    adminRole = new PermissionPolicyRole(uow)
                     {
-                        userRole = new PermissionPolicyRole(uow)
-                        {
-                            Name = "User",
-                        };
-                    }
-
-                    //if (uow.Query<Employee>().Any(e => e.UserName == "admin") == false)
-                    //{
-                    var admin = new Employee(uow)
-                    {
-                        UserName = "admin",
-                        FirstName = "Admin",
-                        LastName = "Default",
-                        IsActive = true,
-                        PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
-                    };
-                    admin.Roles.Add(adminRole);
-                    await uow.CommitChangesAsync();
-                    //}
-
-                    var company = new Company(uow)
-                    {
-                        Name = "Azienda Demo",
-                    };
-
-                    var project = new Project(uow)
-                    {
-                        Name = "Progetto Demo",
-                        Company = company
-                    };
-
-                    var type = new GestionaleRendicontazione.Domain.Entities.Type(uow)
-                    {
-                        Name = "FIX"
-                    };
-
-                    var status = new Status(uow)
-                    {
-                        Name = "WORKING_PROGRESS"
-                    };
-
-                    var status2 = new Status(uow)
-                    {
-                        Name = "REJECTED"
-                    };
-
-                    var worklog = new WorkLog(uow)
-                    {
-                        Description = "Descrizione",
-                        HoursCounter = 2,
-                        Date = DateOnly.FromDateTime(DateTime.UtcNow),
-                        CreateAt = DateTime.UtcNow,
-                        UpdateAt = DateTime.UtcNow,
-                        Project = project,
-                        Type = type,
-                        Status = status2,
-                        Employee = admin,
-                        IsWorkLogDeleted = false
+                        Name = "Admin",
                     };
                 }
-                await Task.CompletedTask;
+
+                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
+                if (userRole == null)
+                {
+                    userRole = new PermissionPolicyRole(uow)
+                    {
+                        Name = "User",
+                    };
+                }
+
+                var admin = new Employee(uow)
+                {
+                    UserName = "admin",
+                    FirstName = "Admin",
+                    LastName = "Default",
+                    IsActive = true,
+                    PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
+                };
+                admin.Roles.Add(adminRole);
+
+                var company = new Company(uow)
+                {
+                    Name = "Azienda Demo",
+                };
+
+                var project = new Project(uow)
+                {
+                    Name = "Progetto Demo",
+                    Company = company
+                };
+
+                var type = new GestionaleRendicontazione.Domain.Entities.Type(uow)
+                {
+                    Name = "FIX"
+                };
+
+                var status = new Status(uow)
+                {
+                    Name = "WORKING_PROGRESS"
+                };
+
+                var status2 = new Status(uow)
+                {
+                    Name = "REJECTED"
+                };
+
+                // 3) Worklog dimostrativo: Employee = admin, non più orfano.
+                //    La FK verrà materializzata al commit finale centralizzato.
+                var worklog = new WorkLog(uow)
+                {
+                    Description = "Descrizione",
+                    HoursCounter = 2,
+                    Date = DateOnly.FromDateTime(DateTime.UtcNow),
+                    CreateAt = DateTime.UtcNow,
+                    UpdateAt = DateTime.UtcNow,
+                    Project = project,
+                    Type = type,
+                    Status = status2,
+                    Employee = admin,
+                    IsWorkLogDeleted = false
+                };
             });
         }
     }
 }
-

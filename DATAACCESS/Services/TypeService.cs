@@ -46,7 +46,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 {
                     Name = dto.Name
                 };
-                await uow.CommitChangesAsync(ct);
                 return ToResponse(entity);
             });
         }
@@ -58,7 +57,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
                 if (entity is null) return null;
                 entity.Name = dto.Name;
-                await uow.CommitChangesAsync(ct);
                 return ToResponse(entity);
             });
         }
@@ -69,8 +67,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
                 if (entity is null) return false;
+
+                if (entity.WorkLog != null && entity.WorkLog.Any())
+                {
+                    throw new InvalidOperationException(
+                        $"Impossibile eliminare il tipo '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
+                }
+
                 uow.Delete(entity);
-                await uow.CommitChangesAsync(ct);
                 return true;
             });
         }

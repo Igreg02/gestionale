@@ -46,11 +46,20 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
                 if (entity is null) return null;
+                if (!string.Equals(entity.UserName, dto.Username, StringComparison.Ordinal))
+                {
+                    var usernameTaken = uow.Query<Employee>()
+                        .Any(e => e.UserName == dto.Username && e.Oid != id);
+                    if (usernameTaken)
+                    {
+                        throw new InvalidOperationException(
+                            $"Lo username '{dto.Username}' è già utilizzato da un altro dipendente.");
+                    }
+                }
 
                 entity.UserName = dto.Username;
                 entity.FirstName = dto.FirstName;
                 entity.LastName = dto.LastName;
-                await uow.CommitChangesAsync(ct);
                 return ToResponse(entity);
             });
         }
@@ -61,8 +70,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
                 if (entity is null) return false;
+
+                if (entity.WorkLogs != null && entity.WorkLogs.Any())
+                {
+                    throw new InvalidOperationException(
+                        $"Impossibile eliminare il dipendente '{entity.UserName}': esistono {entity.WorkLogs.Count} worklog associati.");
+                }
+
                 uow.Delete(entity);
-                await uow.CommitChangesAsync(ct);
                 return true;
             });
         }

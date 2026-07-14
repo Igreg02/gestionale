@@ -46,7 +46,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey)),
             ClockSkew = TimeSpan.Zero,
-            // Mappiamo il claim "sub" sul NameIdentifier di ClaimsPrincipal, comodo per HttpContext.User.
             NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier
         };
     });
@@ -79,13 +78,62 @@ if (app.Environment.IsDevelopment()) // TODO: RIMUOVERE SWAGGHER
 }
 // app.UseHttpsRedirection(); // Disabilitato in Development per permettere HTTP
 
-// Prima di auth per catturare eventuali errori globali di sicurezza
-app.UseExceptionHandler(opt => { });
+// FIX #4: UseExceptionHandler reale.
+// Cattura qualsiasi eccezione non gestita nei controller e produce una risposta
+// ProblemDetails coerente. Mappa le InvalidOperationException (solitamente lanciate
+// dai service per "FK mancanti", "vincolo dipendenze", "username duplicato", …)
+// a 409 Conflict, lasciando il resto a 500. Viene loggato tutto.
+app.UseExceptionHandler(builder =>
+{
+    builder.Run(async context =>
+    {
+        var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+        var exception = exceptionFeature?.Error;
+        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("GlobalExceptionHandler");
+
+        if (exception is not null)
+        {
+            logger.LogError(exception, "Unhandled exception during {Method} {Path}",
+                context.Request.Method, context.Request.Path);
+        }
+
+        var (status, title) = exception switch
+        {
+            InvalidOperationException => (StatusCodes.Status409Conflict, "Operazione non valida"),
+            UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Non autorizzato"),
+            ArgumentException => (StatusCodes.Status400BadRequest, "Richiesta non valida"),
+            _ => (StatusCodes.Status500InternalServerError, "Errore interno del server")
+        };
+
+        context.Response.StatusCode = status;
+        context.Response.ContentType = "application/problem+json";
+
+        var problem = new Microsoft.AspNetCore.Mvc.ProblemDetails
+        {
+            Status = status,
+            Title = title,
+            Type = $"https://httpstatuses.io/{status}",
+            Detail = exception?.Message,
+            Instance = context.Request.Path
+        };
+
+        if (app.Services
+            .GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>()
+            .IsDevelopment())
+        {
+            problem.Extensions["traceId"] = context.TraceIdentifier;
+            problem.Extensions["stackTrace"] = exception?.StackTrace;
+        }
+
+        await context.Response.WriteAsJsonAsync(problem);
+    });
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.UseStatusCodePages(); 
+app.UseStatusCodePages();
 
 
 // ---------------------------------------------------------------------

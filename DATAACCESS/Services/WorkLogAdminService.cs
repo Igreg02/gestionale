@@ -99,7 +99,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Employee = employee
                 };
 
-                await uow.CommitChangesAsync(ct);
                 return WorkLogMapper.ToAdminResponse(entity);
             });
         }
@@ -114,8 +113,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
                 var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
+                var employee = await uow.GetObjectByKeyAsync<Employee>(dto.IdEmployee, ct);
 
-                if (project == null || type == null || status == null)
+                if (project == null || type == null || status == null || employee == null)
                     throw new InvalidOperationException("Una delle FK fornite non esiste");
 
                 entity.Description = dto.Description;
@@ -124,9 +124,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 entity.Project = project;
                 entity.Type = type;
                 entity.Status = status;
+                entity.Employee = employee;
                 entity.UpdateAt = DateTime.UtcNow;
 
-                await uow.CommitChangesAsync(ct);
                 return WorkLogMapper.ToAdminResponse(entity);
             });
         }
@@ -139,7 +139,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (entity == null || entity.IsWorkLogDeleted) return false;
 
                 entity.IsWorkLogDeleted = true;
-                await uow.CommitChangesAsync(ct);
                 return true;
             });
         }

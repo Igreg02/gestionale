@@ -45,7 +45,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(g => new ProjectReportDto.Bucket
                     {
                         Name = g.Key,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderByDescending(b => b.Hours)
@@ -56,7 +56,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(g => new ProjectReportDto.Bucket
                     {
                         Name = g.Key,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderByDescending(b => b.Hours)
@@ -67,7 +67,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(g => new ProjectReportDto.DailyTotal
                     {
                         Date = g.Key,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderBy(d => d.Date)
@@ -81,7 +81,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                         EmployeeId = g.Key,
                         UserName = g.First().Employee!.UserName ?? string.Empty,
                         FullName = BuildFullName(g.First().Employee!),
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderByDescending(e => e.Hours)
@@ -95,7 +95,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     CompanyName = project.Company?.Name ?? string.Empty,
                     From = from,
                     To = to,
-                    TotalHours = (decimal)worklogs.Sum(w => w.HoursCounter),
+                    TotalHours = worklogs.Sum(w => (decimal)w.HoursCounter),
                     TotalWorkLogs = worklogs.Count,
                     UniqueEmployees = byEmployee.Count,
                     ByType = byType,
@@ -134,7 +134,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(g => new EmployeeReportDto.Bucket
                     {
                         Name = g.Key,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderByDescending(b => b.Hours)
@@ -145,7 +145,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(g => new EmployeeReportDto.Bucket
                     {
                         Name = g.Key,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderByDescending(b => b.Hours)
@@ -156,7 +156,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(g => new EmployeeReportDto.DailyTotal
                     {
                         Date = g.Key,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderBy(d => d.Date)
@@ -169,7 +169,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     {
                         ProjectId = g.Key,
                         ProjectName = g.First().Project!.Name ?? string.Empty,
-                        Hours = (decimal)g.Sum(w => w.HoursCounter),
+                        Hours = g.Sum(w => (decimal)w.HoursCounter),
                         Count = g.Count()
                     })
                     .OrderByDescending(p => p.Hours)
@@ -182,7 +182,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     FullName = BuildFullName(employee),
                     From = from,
                     To = to,
-                    TotalHours = (decimal)worklogs.Sum(w => w.HoursCounter),
+                    TotalHours = worklogs.Sum(w => (decimal)w.HoursCounter),
                     TotalWorkLogs = worklogs.Count,
                     ByType = byType,
                     ByStatus = byStatus,

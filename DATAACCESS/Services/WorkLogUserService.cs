@@ -96,7 +96,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Employee = employee
                 };
 
-                await uow.CommitChangesAsync(ct);
                 return WorkLogMapper.ToUserResponse(entity);
             });
         }
@@ -128,7 +127,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 entity.Status = status;
                 entity.UpdateAt = DateTime.UtcNow;
 
-                await uow.CommitChangesAsync(ct);
                 return WorkLogMapper.ToUserResponse(entity);
             });
         }
@@ -143,7 +141,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 entity.IsWorkLogDeleted = true;
                 entity.UpdateAt = DateTime.UtcNow;
-                await uow.CommitChangesAsync(ct);
                 return true;
             });
         }

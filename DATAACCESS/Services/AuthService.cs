@@ -34,68 +34,72 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return null;
             }
 
-            // Catturiamo la necessità di rehash dal blocco readonly (sincrono) e la
-            // applichiamo in una UnitOfWork separata, in modo nativo asincrono.
-            (Guid Oid, string NewHash)? pendingRehash = null;
 
-            var response = _dbContextService.ExecuteReadOnly(session =>
+            var (verifyResult, newHash, userOid, userName, firstName, lastName, roles) =
+                _dbContextService.ExecuteReadOnly(session =>
             {
                 var user = session.FindObject<Employee>(
                     new BinaryOperator(nameof(Employee.UserName), request.UserName));
 
-                if (user is null)
+                if (user is null || string.IsNullOrEmpty(user.PasswordHash))
                 {
-                    return null;
+                    return (PasswordVerificationResult.Failed, string.Empty, Guid.Empty,
+                            string.Empty, string.Empty, string.Empty, Array.Empty<string>());
                 }
 
-                if (string.IsNullOrEmpty(user.PasswordHash))
+                var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+                if (result == PasswordVerificationResult.Failed)
                 {
-                    return null;
+                    return (PasswordVerificationResult.Failed, string.Empty, Guid.Empty,
+                            string.Empty, string.Empty, string.Empty, Array.Empty<string>());
                 }
 
-                var verifyResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-                if (verifyResult == PasswordVerificationResult.Failed)
+                string rehash = string.Empty;
+                if (result == PasswordVerificationResult.SuccessRehashNeeded)
                 {
-                    return null;
+                    rehash = _passwordHasher.HashPassword(user, request.Password);
                 }
 
-                if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
-                {
-                    // Prepariamo i dati per il rehash fuori dalla sessione readonly.
-                    // La sessione viene chiusa all'uscita della lambda.
-                    var newHash = _passwordHasher.HashPassword(user, request.Password);
-                    pendingRehash = (user.Oid, newHash);
-                }
+                var snapshot = user.Roles
+                    .Where(r => !string.IsNullOrWhiteSpace(r.Name))
+                    .Select(r => r.Name!)
+                    .ToArray();
 
-                var claims = BuildClaims(user);
-                var token = _jwtTokenService.CreateToken(claims);
-                var expiresAt = _jwtTokenService.GetExpiry();
-
-                var displayName = BuildDisplayName(user);
-
-                return new AuthDto.LoginResponseDto(token, expiresAt, user.UserName, displayName);
+                return (result, rehash, user.Oid, user.UserName ?? string.Empty,
+                        user.FirstName ?? string.Empty, user.LastName ?? string.Empty, snapshot);
             });
 
-            if (pendingRehash.HasValue)
+            if (verifyResult == PasswordVerificationResult.Failed)
             {
-                var (userOid, newHash) = pendingRehash.Value;
-                await _dbContextService.ReadWriteAsync(async uow =>
+                return null;
+            }
+
+            if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded
+                && !string.IsNullOrEmpty(newHash))
+            {
+                await _dbContextService.ReadWrite(async uow =>
                 {
                     var reload = await uow.GetObjectByKeyAsync<Employee>(userOid, cancellationToken);
                     if (reload is not null)
                     {
                         reload.PasswordHash = newHash;
                     }
-                }, cancellationToken);
+                });
             }
 
-            return response;
+            var claims = BuildClaims(userOid, userName, firstName, lastName, roles);
+            var token = _jwtTokenService.CreateToken(claims);
+            var expiresAt = _jwtTokenService.GetExpiry();
+
+            var displayName = BuildDisplayName(firstName, lastName, userName);
+
+            return new AuthDto.LoginResponseDto(token, expiresAt, userName, displayName);
         }
 
         public async Task<AuthDto.RegisterResponseDto?> RegisterAsync(AuthDto.RegisterRequestDto request, CancellationToken cancellationToken = default)
         {
-            if (request is null 
-                || string.IsNullOrWhiteSpace(request.UserName) 
+            if (request is null
+                || string.IsNullOrWhiteSpace(request.UserName)
                 || string.IsNullOrWhiteSpace(request.Password))
             {
                 return null;
@@ -127,7 +131,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 // Assegnazione del ruolo di default "User" sul database
                 var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
-                
+
                 if (userRole != null)
                 {
                     newEmployee.Roles.Add(userRole);
@@ -141,7 +145,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     newEmployee.Roles.Add(defaultRole);
                 }
 
-                await uow.CommitChangesAsync(cancellationToken);
 
                 responseDto = new AuthDto.RegisterResponseDto(
                     newEmployee.Oid,
@@ -155,30 +158,37 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return responseDto;
         }
 
-        private static string BuildDisplayName(Employee user)
+        private static string BuildDisplayName(string firstName, string lastName, string userName)
         {
-            var first = user.FirstName?.Trim() ?? string.Empty;
-            var last = user.LastName?.Trim() ?? string.Empty;
+            var first = firstName?.Trim() ?? string.Empty;
+            var last = lastName?.Trim() ?? string.Empty;
             var full = $"{first} {last}".Trim();
-            return string.IsNullOrEmpty(full) ? (user.UserName ?? string.Empty) : full;
+            return string.IsNullOrEmpty(full) ? userName : full;
         }
 
-        private static IEnumerable<Claim> BuildClaims(Employee user)
+        private static IEnumerable<Claim> BuildClaims(Guid oid, string userName, string firstName, string lastName, IReadOnlyList<string> roles)
         {
             var claims = new List<Claim>
             {
-                new Claim("sub", user.Oid.ToString()),
+                new Claim("sub", oid.ToString()),
                 new Claim("jti", Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Name, user.UserName ?? string.Empty),
-                new Claim(ClaimTypes.NameIdentifier, user.Oid.ToString())
+                // ClaimTypes.Name contiene lo UserName (vedi commento su NameClaimType in Program.cs).
+                new Claim(ClaimTypes.Name, userName),
+                new Claim(ClaimTypes.NameIdentifier, oid.ToString())
             };
 
-            foreach (var role in user.Roles)
+            if (!string.IsNullOrWhiteSpace(firstName))
             {
-                if (!string.IsNullOrWhiteSpace(role.Name))
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role.Name));
-                }
+                claims.Add(new Claim("given_name", firstName));
+            }
+            if (!string.IsNullOrWhiteSpace(lastName))
+            {
+                claims.Add(new Claim("family_name", lastName));
+            }
+
+            foreach (var role in roles)
+            {
+                claims.Add(new Claim(ClaimTypes.Role, role));
             }
 
             return claims;
