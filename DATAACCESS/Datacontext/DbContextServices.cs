@@ -39,31 +39,17 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         {
             using (var uow = new UnitOfWork(_dataLayer))
             {
-                try
-                {
-                    await operation(uow);
-                    await uow.CommitChangesAsync();
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                await operation(uow);
+                await uow.CommitChangesAsync();
             }
         }
-                public async Task<T> ReadWrite<T>(Func<UnitOfWork, Task<T>> operation)
+        public async Task<T> ReadWrite<T>(Func<UnitOfWork, Task<T>> operation)
         {
             using (var uow = new UnitOfWork(_dataLayer))
             {
-                try
-                {
-                    var result = await operation(uow);
-                    await uow.CommitChangesAsync();
-                    return result;
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
+                var result = await operation(uow);
+                await uow.CommitChangesAsync();
+                return result;
             }
         }
     }

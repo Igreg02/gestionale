@@ -6,7 +6,7 @@ namespace GestionaleRendicontazione.Domain.Entities
     public class Type : XPCustomObject
     {
         public Type(Session session) : base(session) { }
-        
+
         private Guid _id;
         [Key(AutoGenerate = true)]
         [Persistent("id")]
@@ -17,6 +17,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
         private string _name = string.Empty;
         [Size(255)]
+        [Indexed(Unique = true)]
         [Persistent("name")]
         public string Name
         {

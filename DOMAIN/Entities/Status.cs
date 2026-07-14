@@ -17,6 +17,7 @@ namespace GestionaleRendicontazione.Domain.Entities
         }
         private string _name = string.Empty;
         [Size(255)]
+        [Indexed(Unique = true)]
         [Persistent("name")]
         public string Name
         {

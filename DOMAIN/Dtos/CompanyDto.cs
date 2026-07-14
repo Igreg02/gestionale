@@ -18,18 +18,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         }
 
-        public class Delete
-        {
-            public Guid Id { get; set; }
-            public string Name { get; set; } = string.Empty;
-
-        }
-
-
-
-
-
-
         /// <summary>
         /// Client -> Server
         /// </summary>

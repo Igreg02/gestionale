@@ -33,7 +33,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             CancellationToken ct = default)
         {
             return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {   
+            {
                 var query = session.Query<WorkLog>().Where(w => !w.IsWorkLogDeleted);
 
                 if (employeeId.HasValue)
@@ -139,8 +139,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (entity == null || entity.IsWorkLogDeleted) return false;
 
                 entity.IsWorkLogDeleted = true;
-                entity.UpdateAt = DateTime.UtcNow;
-                entity.UpdateAt = DateTime.UtcNow;
                 await uow.CommitChangesAsync(ct);
                 return true;
             });

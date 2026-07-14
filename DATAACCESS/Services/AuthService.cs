@@ -126,7 +126,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     var defaultRole = new PermissionPolicyRole(uow)
                     {
                         Name = "User",
-                        IsAdministrative = false
                     };
                     newEmployee.Roles.Add(defaultRole);
                 }

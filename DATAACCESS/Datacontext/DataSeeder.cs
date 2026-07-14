@@ -63,7 +63,6 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     adminRole = new PermissionPolicyRole(uow)
                     {
                         Name = "Admin",
-                        IsAdministrative = true // Questa flag rende il ruolo un vero amministratore XAF totale
                     };
                 }
 
@@ -73,7 +72,6 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     userRole = new PermissionPolicyRole(uow)
                     {
                         Name = "User",
-                        IsAdministrative = false
                     };
                 }
 

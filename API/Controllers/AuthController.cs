@@ -63,9 +63,10 @@ namespace GestionaleRendicontazione.Api.Controllers
                            ?? User.FindFirst("unique_name")?.Value
                            ?? User.Identity?.Name
                            ?? "(sconosciuto)";
-
+        
             _logger.LogInformation("Logout richiesto per {UserName}", userName);
             return NoContent();
+        }
 
             [HttpPost("register")]
             [Authorize]

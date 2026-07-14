@@ -17,18 +17,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         }
 
-        public class Delete
-        {
-            public int Oid { get; set; }
-
-            public string Name { get; set; } = string.Empty;
-
-        }
-
-
-
-
-
         /// <summary>
 
         /// Client -> Server
@@ -36,7 +24,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
         /// </summary>
 
         public class Create
-        {               
+        {
             [Required(ErrorMessage = "Lo stato deve avere un nome")]
             public string Name { get; set; } = string.Empty;
 

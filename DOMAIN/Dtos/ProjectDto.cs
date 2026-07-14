@@ -17,13 +17,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public string CompanyName { get; set; } = string.Empty;
         }
 
-        public class Delete
-        {
-            public Guid Id { get; set; }
-            public string Name { get; set; } = string.Empty;
-            public Guid IdCompany { get; set; }
-            public string CompanyName { get; set; } = string.Empty;
-        }
 
         /// <summary>
         /// Client -> Server

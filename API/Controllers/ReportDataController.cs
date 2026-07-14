@@ -4,6 +4,12 @@ using GestionaleRendicontazione.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+
+//TODO: E' una BOZZA ancora da testare
+
+//TODO: ReportDataController valida from > to ma non un range massimo (rischio query enormi su periodi anni).
+
+
 namespace GestionaleRendicontazione.Api.Controllers
 {
     [ApiController]

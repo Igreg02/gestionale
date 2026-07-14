@@ -42,15 +42,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public string StatusName { get; set; } = string.Empty;
             }
 
-            public class Delete
-            {
-                public Guid Id { get; set; }
-                public Guid IdEmployee { get; set; }
-                public string EmployeeName { get; set; } = string.Empty;
-                public Guid IdProject { get; set; }
-                public string ProjectName { get; set; } = string.Empty;
-            }
-
             /// <summary>
             /// Client -> Server
             /// </summary>
@@ -127,12 +118,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public string StatusName { get; set; } = string.Empty;
             }
 
-            public class Delete
-            {
-                public Guid Id { get; set; }
-                public Guid IdProject { get; set; }
-                public string ProjectName { get; set; } = string.Empty;
-            }
 
             /// <summary>
             /// Client -> Server
@@ -143,6 +128,8 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public string Description { get; set; } = string.Empty;
 
                 [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
+                [Range(1, 24, ErrorMessage = "Le ore devono essere comprese tra 1 e 24.")]
+                
                 public float HoursCounter { get; set; }
 
                 [Required(ErrorMessage = "Devi indicare il giorno in cui è stato svolto il lavoro")]
@@ -164,6 +151,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public string Description { get; set; } = string.Empty;
 
                 [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
+                [Range(1, 24, ErrorMessage = "Le ore devono essere comprese tra 1 e 24.")]
                 public float HoursCounter { get; set; }
 
                 [Required(ErrorMessage = "Devi indicare il giorno in cui è stato svolto il lavoro")]
