@@ -16,7 +16,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         private static EmployeeDto.Response ToResponse(Employee e) => new()
         {
-            id = e.Oid,
+            Oid = e.Oid,
             Username = e.UserName ?? string.Empty,
             FirstName = e.FirstName,
             LastName = e.LastName

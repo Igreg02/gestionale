@@ -10,7 +10,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
     {
         public class Response
         {
-            public Guid id { get; set; }
+            public Guid Oid { get; set; }
             public string Username { get; set; }
 
             public string FirstName { get; set; }
@@ -20,7 +20,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
         
                 public class Cashier
         {
-            public int Oid { get; set; }
+            public Guid Oid { get; set; }
 
             public string Username { get; set; }
 

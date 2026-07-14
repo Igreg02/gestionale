@@ -16,9 +16,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         private static CompanyDto.Response ToResponse(Company c) => new()
         {
-            id = c.Id,
+            Id = c.Id,
             Name = c.Name,
-            email = c.Email
+            Email = c.Email
         };
 
         public Task<List<CompanyDto.Response>> GetAllAsync(CancellationToken ct = default)

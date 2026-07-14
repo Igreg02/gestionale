@@ -52,7 +52,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
             var created = await _typeService.CreateAsync(dto, ct);
-            return CreatedAtRoute("GetTypeById", new { id = created.id }, created);
+            return CreatedAtRoute("GetTypeById", new { id = created.Id }, created);
         }
 
         [HttpPut("{id:guid}")]

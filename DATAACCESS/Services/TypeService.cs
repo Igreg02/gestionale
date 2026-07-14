@@ -16,7 +16,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         private static TypeDto.Response ToResponse(Domain.Entities.Type t) => new()
         {
-            id = t.Id,
+            Id = t.Id,
             Name = t.Name
         };
 

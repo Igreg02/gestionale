@@ -10,7 +10,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
     {
         public class Response
         {
-            public Guid id { get; set; }
+            public Guid Id { get; set; }
 
             public string Name { get; set; }
 
@@ -19,7 +19,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         public class Delete
         {
-            public int Oid { get; set; }
+            public Guid Id { get; set; }
 
             public string Name { get; set; }
 

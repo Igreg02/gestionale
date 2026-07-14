@@ -36,7 +36,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             public class Delete
             {
-            public Guid Oid { get; set; }
+            public Guid Id { get; set; }
             public Guid IdProject { get; set; }
 
             public string NameProject { get; set; }
