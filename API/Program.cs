@@ -20,8 +20,7 @@ string connectionString = builder.Configuration.GetConnectionString("DefaultConn
 builder.Services.AddXpoInfrastructure(connectionString);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>{ options.CustomSchemaIds(type => type.ToString()); });
-
+builder.Services.AddSwaggerGen(options =>{ options.CustomSchemaIds(type => type.FullName?.Replace("+", ".") );});
 // ---------------------------------------------------------------------
 // AUTENTICAZIONE JWT self-issued (TDD §1: "JWT Bearer Token (ASP.NET Core Identity / OAuth2)")
 // ---------------------------------------------------------------------
