@@ -13,7 +13,7 @@ namespace GestionaleRendicontazione.Domain.Entities
     {
         public Employee(Session session) : base(session) { }
 
-        private string _firstName;
+        private string _firstName = string.Empty;
         [Persistent("firstName")]
         public string FirstName
         {
@@ -21,7 +21,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(FirstName), ref _firstName, value);
         }
 
-        private string _lastName;
+        private string _lastName = string.Empty;
         [Persistent("lastName")]
         public string LastName
         {
@@ -29,7 +29,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(LastName), ref _lastName, value);
         }
 
-        private string _passwordHash;
+        private string _passwordHash = string.Empty;
         [Persistent("passwordHash")]
         [Size(1024)]
         public string PasswordHash

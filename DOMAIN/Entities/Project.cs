@@ -15,7 +15,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             get => _id;
             set => SetPropertyValue(nameof(Id), ref _id, value);
         }
-        private string _name;
+        private string _name = string.Empty;
         [Size(255)]
         [Persistent("name")]
         public string Name
@@ -24,7 +24,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
-        private Company _company;
+        private Company _company = null!;
         [Association("company-Project")]
         [Persistent("idCompany")]
         public Company Company

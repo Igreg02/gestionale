@@ -19,7 +19,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             {
                 public Guid Id { get; set; }
 
-                public string Description { get; set; }
+                public string Description { get; set; } = string.Empty;
 
                 public float HoursCounter { get; set; }
 
@@ -30,25 +30,25 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public DateTime UpdateAt { get; set; }
 
                 public Guid IdProject { get; set; }
-                public string ProjectName { get; set; }
+                public string ProjectName { get; set; } = string.Empty;
 
                 public Guid IdEmploy { get; set; }
-                public string EmployeeName { get; set; }
+                public string EmployeeName { get; set; } = string.Empty;
 
                 public Guid IdType { get; set; }
-                public string TypeName { get; set; }
+                public string TypeName { get; set; } = string.Empty;
 
                 public Guid IdStatus { get; set; }
-                public string StatusName { get; set; }
+                public string StatusName { get; set; } = string.Empty;
             }
 
             public class Delete
             {
                 public Guid Id { get; set; }
                 public Guid IdEmployee { get; set; }
-                public string EmployeeName { get; set; }
+                public string EmployeeName { get; set; } = string.Empty;
                 public Guid IdProject { get; set; }
-                public string ProjectName { get; set; }
+                public string ProjectName { get; set; } = string.Empty;
             }
 
             /// <summary>
@@ -57,7 +57,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public class Create
             {
                 [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
-                public string Description { get; set; }
+                public string Description { get; set; } = string.Empty;
 
                 [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
                 public float HoursCounter { get; set; }
@@ -83,7 +83,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public class Update
             {
                 [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
-                public string Description { get; set; }
+                public string Description { get; set; } = string.Empty;
 
                 [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
                 public float HoursCounter { get; set; }
@@ -111,27 +111,27 @@ namespace GestionaleRendicontazione.Domain.Dtos
             {
                 public Guid Id { get; set; }
 
-                public string Description { get; set; }
+                public string Description { get; set; } = string.Empty;
 
                 public float HoursCounter { get; set; }
 
                 public DateOnly Date { get; set; }
 
                 public Guid IdProject { get; set; }
-                public string ProjectName { get; set; }
+                public string ProjectName { get; set; } = string.Empty;
 
                 public Guid IdType { get; set; }
-                public string TypeName { get; set; }
+                public string TypeName { get; set; } = string.Empty;
 
                 public Guid IdStatus { get; set; }
-                public string StatusName { get; set; }
+                public string StatusName { get; set; } = string.Empty;
             }
 
             public class Delete
             {
                 public Guid Id { get; set; }
                 public Guid IdProject { get; set; }
-                public string ProjectName { get; set; }
+                public string ProjectName { get; set; } = string.Empty;
             }
 
             /// <summary>
@@ -140,7 +140,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public class Create
             {
                 [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
-                public string Description { get; set; }
+                public string Description { get; set; } = string.Empty;
 
                 [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
                 public float HoursCounter { get; set; }
@@ -161,7 +161,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public class Update
             {
                 [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
-                public string Description { get; set; }
+                public string Description { get; set; } = string.Empty;
 
                 [Required(ErrorMessage = "Devi indicare il numero di ore del lavoro svolto")]
                 public float HoursCounter { get; set; }

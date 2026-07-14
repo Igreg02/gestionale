@@ -16,7 +16,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Id), ref _id, value);
         }
         
-        private string _name;
+        private string _name = string.Empty;
         [Size(255)]
         [Persistent("name")]
         public string Name
@@ -25,7 +25,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
-        private string _email;
+        private string _email = string.Empty;
         [Size(255)]
         [Persistent("email")]
         public string Email
