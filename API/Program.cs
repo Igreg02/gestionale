@@ -44,6 +44,8 @@ builder.Services.AddSwaggerGen(options =>
 // AUTENTICAZIONE JWT self-issued (TDD §1: "JWT Bearer Token (ASP.NET Core Identity / OAuth2)")
 // ---------------------------------------------------------------------
 var jwtSection = builder.Configuration.GetSection("Jwt");
+builder.Services.Configure<JwtOptions>(jwtSection);
+
 var jwtSecretKey = jwtSection["SecretKey"] ?? string.Empty;
 var jwtIssuer = jwtSection["Issuer"] ?? string.Empty;
 var jwtAudience = jwtSection["Audience"] ?? string.Empty;

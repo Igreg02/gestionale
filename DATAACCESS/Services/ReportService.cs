@@ -28,7 +28,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             DateOnly to,
             CancellationToken ct = default)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
             {
                 var project = session.GetObjectByKey<Project>(projectId);
                 if (project is null) return (ProjectReportDto.Response?)null;
@@ -108,7 +108,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     ByEmployee = byEmployee,
                     WorkLogs = responses
                 };
-            }));
+            }), ct);
         }
 
         public Task<EmployeeReportDto.Response?> GetEmployeeReportAsync(
@@ -117,7 +117,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             DateOnly to,
             CancellationToken ct = default)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
             {
                 var employee = session.GetObjectByKey<Employee>(employeeId);
                 if (employee is null) return (EmployeeReportDto.Response?)null;
@@ -194,7 +194,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     ByProject = byProject,
                     WorkLogs = responses
                 };
-            }));
+            }), ct);
         }
 
         private static string BuildFullName(Employee e)

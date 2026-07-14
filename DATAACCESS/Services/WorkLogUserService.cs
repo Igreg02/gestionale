@@ -28,7 +28,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             DateOnly? dateTo = null,
             CancellationToken ct = default)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
             {
                 var query = session.Query<WorkLog>()
                     .Active()
@@ -53,18 +53,18 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .ToList();
 
                 return _mapper.Map<List<WorkLogDto.User.Response>>(list);
-            }));
+            }), ct);
         }
 
         public Task<WorkLogDto.User.Response?> GetByIdAsync(Guid id, Guid currentEmployeeId, CancellationToken ct = default)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
             {
                 var w = session.GetObjectByKey<WorkLog>(id);
                 if (w is null || w.IsWorkLogDeleted) return null;
                 if (w.Employee == null || w.Employee.Id != currentEmployeeId) return null;
                 return _mapper.Map<WorkLogDto.User.Response>(w);
-            }));
+            }), ct);
         }
 
         public async Task<WorkLogDto.User.Response> CreateAsync(

@@ -18,17 +18,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _mapper = mapper;
         }
 
-        public async Task<WorkLogDto.Admin.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public Task<WorkLogDto.Admin.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
             {
                 var obj = session.GetObjectByKey<WorkLog>(id);
                 if (obj is null || obj.IsWorkLogDeleted) return null;
                 return _mapper.Map<WorkLogDto.Admin.Response>(obj);
-            }));
+            }), ct);
         }
 
-        public async Task<List<WorkLogDto.Admin.Response>> GetAllAsync(
+        public Task<List<WorkLogDto.Admin.Response>> GetAllAsync(
             Guid? employeeId = null,
             Guid? projectId = null,
             DateOnly? dateFrom = null,
@@ -36,7 +36,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             string? statusName = null,
             CancellationToken ct = default)
         {
-            return await Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
             {
                 var query = session.Query<WorkLog>().Active();
 
@@ -74,7 +74,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .ToList();
 
                 return _mapper.Map<List<WorkLogDto.Admin.Response>>(list);
-            }));
+            }), ct);
         }
 
         public async Task<WorkLogDto.Admin.Response> CreateAsync(WorkLogDto.Admin.Create dto, CancellationToken ct = default)
