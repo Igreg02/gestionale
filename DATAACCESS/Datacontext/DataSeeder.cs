@@ -14,6 +14,38 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
             {
                 if (!uow.Query<Company>().Any() && true) /* true -> scrive in assenza di dati | false -> scrive sempre*/
                 {
+                    var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
+                    if (adminRole == null)
+                    {
+                        adminRole = new PermissionPolicyRole(uow)
+                        {
+                            Name = "Admin",
+                        };
+                    }
+
+                    var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
+                    if (userRole == null)
+                    {
+                        userRole = new PermissionPolicyRole(uow)
+                        {
+                            Name = "User",
+                        };
+                    }
+
+                    //if (uow.Query<Employee>().Any(e => e.UserName == "admin") == false)
+                    //{
+                    var admin = new Employee(uow)
+                    {
+                        UserName = "admin",
+                        FirstName = "Admin",
+                        LastName = "Default",
+                        IsActive = true,
+                        PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
+                    };
+                    admin.Roles.Add(adminRole);
+                    await uow.CommitChangesAsync();
+                    //}
+
                     var company = new Company(uow)
                     {
                         Name = "Azienda Demo",
@@ -50,46 +82,10 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                         Project = project,
                         Type = type,
                         Status = status2,
+                        Employee = admin,
                         IsWorkLogDeleted = false
                     };
                 }
-
-
-                
-                // Cerchiamo il ruolo "Admin" nel DB, se non esiste lo creiamo
-                var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
-                if (adminRole == null)
-                {
-                    adminRole = new PermissionPolicyRole(uow)
-                    {
-                        Name = "Admin",
-                    };
-                }
-
-                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
-                if (userRole == null)
-                {
-                    userRole = new PermissionPolicyRole(uow)
-                    {
-                        Name = "User",
-                    };
-                }
-
-                // Seed utente admin di default (salta se esiste già un Employee con questo UserName).
-                if (uow.Query<Employee>().Any(e => e.UserName == "admin") == false)
-                {
-                    var admin = new Employee(uow)
-                    {
-                        UserName = "admin",
-                        FirstName = "Admin",
-                        LastName = "Default",
-                        IsActive = true,
-                        PasswordHash = passwordHasher.HashPassword(null!, "Admin123!")
-                    };
-                    admin.Roles.Add(adminRole);
-                    await uow.CommitChangesAsync();
-                }
-
                 await Task.CompletedTask;
             });
         }
