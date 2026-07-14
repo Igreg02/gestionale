@@ -54,10 +54,10 @@ namespace GestionaleRendicontazione.Api.Controllers
 
             // Un utente normale non può filtrare per employeeId/projectId/statusName altrui:
             // vede solo i propri worklog, indipendentemente da cosa passa in query.
-            var employeeOid = GetCurrentEmployeeOid();
-            if (employeeOid is null) return Unauthorized();
+            var currentEmployeeId = GetCurrentEmployeeId();
+            if (currentEmployeeId is null) return Unauthorized();
 
-            var ownList = await _userService.GetAllAsync(employeeOid.Value, dateFrom, dateTo, ct);
+            var ownList = await _userService.GetAllAsync(currentEmployeeId.Value, dateFrom, dateTo, ct);
             return Ok(ownList);
         }
 
@@ -74,10 +74,10 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return Ok(item);
             }
 
-            var employeeOid = GetCurrentEmployeeOid();
-            if (employeeOid is null) return Unauthorized();
+            var currentEmployeeId = GetCurrentEmployeeId();
+            if (currentEmployeeId is null) return Unauthorized();
 
-            var ownItem = await _userService.GetByIdAsync(id, employeeOid.Value, ct);
+            var ownItem = await _userService.GetByIdAsync(id, currentEmployeeId.Value, ct);
             if (ownItem is null) return NotFound();
             return Ok(ownItem);
         }
@@ -101,8 +101,8 @@ namespace GestionaleRendicontazione.Api.Controllers
                     return CreatedAtRoute("GetWorkLogById", new { id = created.Id }, created);
                 }
 
-                var employeeOid = GetCurrentEmployeeOid();
-                if (employeeOid is null) return Unauthorized();
+                var currentEmployeeId = GetCurrentEmployeeId();
+                if (currentEmployeeId is null) return Unauthorized();
 
                 // IdEmployee dal body viene ignorato: si usa sempre quello del token.
                 var userDto = new WorkLogDto.User.Create
@@ -115,7 +115,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                     IdStatus = dto.IdStatus
                 };
 
-                var ownCreated = await _userService.CreateAsync(userDto, employeeOid.Value, ct);
+                var ownCreated = await _userService.CreateAsync(userDto, currentEmployeeId.Value, ct);
                 return CreatedAtRoute("GetWorkLogById", new { id = ownCreated.Id }, ownCreated);
             }
             catch (InvalidOperationException ex)
@@ -150,8 +150,8 @@ namespace GestionaleRendicontazione.Api.Controllers
                     return Ok(updated);
                 }
 
-                var employeeOid = GetCurrentEmployeeOid();
-                if (employeeOid is null) return Unauthorized();
+                var currentEmployeeId = GetCurrentEmployeeId();
+                if (currentEmployeeId is null) return Unauthorized();
 
                 var userDto = new WorkLogDto.User.Update
                 {
@@ -163,7 +163,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                     IdStatus = dto.IdStatus
                 };
 
-                var ownUpdated = await _userService.UpdateAsync(id, userDto, employeeOid.Value, ct);
+                var ownUpdated = await _userService.UpdateAsync(id, userDto, currentEmployeeId.Value, ct);
                 if (ownUpdated is null) return NotFound();
                 return Ok(ownUpdated);
             }
@@ -190,19 +190,19 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return NoContent();
             }
 
-            var employeeOid = GetCurrentEmployeeOid();
-            if (employeeOid is null) return Unauthorized();
+            var currentEmployeeId = GetCurrentEmployeeId();
+            if (currentEmployeeId is null) return Unauthorized();
 
-            var ownOk = await _userService.DeleteAsync(id, employeeOid.Value, ct);
+            var ownOk = await _userService.DeleteAsync(id, currentEmployeeId.Value, ct);
             if (!ownOk) return NotFound();
             return NoContent();
         }
 
         /// <summary>
-        /// Estrae l'Oid del dipendente autenticato dal claim "NameIdentifier" (popolato da JwtTokenService).
+        /// Estrae l'Id del dipendente autenticato dal claim "NameIdentifier" (popolato da JwtTokenService).
         /// Ritorna null se il claim manca o non è un Guid valido.
         /// </summary>
-        private Guid? GetCurrentEmployeeOid()
+        private Guid? GetCurrentEmployeeId()
         {
             var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(raw, out var parsed) ? parsed : (Guid?)null;

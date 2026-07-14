@@ -42,7 +42,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 if (employeeId.HasValue)
                 {
-                    query = query.Where(w => w.Employee != null && w.Employee.Oid == employeeId.Value);
+                    query = query.Where(w => w.Employee != null && w.Employee.Id == employeeId.Value);
                 }
 
                 if (projectId.HasValue)

@@ -79,7 +79,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 var byEmployee = worklogs
                     .Where(w => w.Employee != null)
-                    .GroupBy(w => w.Employee!.Oid)
+                    .GroupBy(w => w.Employee!.Id)
                     .Select(g => new ProjectReportDto.EmployeeBucket
                     {
                         EmployeeId = g.Key,
@@ -125,7 +125,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var worklogs = session.Query<WorkLog>()
                     .Active()
                     .Where(w => w.Employee != null
-                                && w.Employee.Oid == employeeId
+                                && w.Employee.Id == employeeId
                                 && w.Date >= from
                                 && w.Date <= to)
                     .OrderBy(w => w.Date)
@@ -181,7 +181,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 return new EmployeeReportDto.Response
                 {
-                    EmployeeId = employee.Oid,
+                    EmployeeId = employee.Id,
                     UserName = employee.UserName ?? string.Empty,
                     FullName = BuildFullName(employee),
                     From = from,

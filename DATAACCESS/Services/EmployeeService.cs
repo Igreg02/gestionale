@@ -46,7 +46,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (!string.Equals(entity.UserName, dto.Username, StringComparison.Ordinal))
                 {
                     var usernameTaken = uow.Query<Employee>()
-                        .Any(e => e.UserName == dto.Username && e.Oid != id);
+                        .Any(e => e.UserName == dto.Username && e.Id != id);
                     if (usernameTaken)
                     {
                         throw new InvalidOperationException(

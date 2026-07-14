@@ -61,7 +61,7 @@ namespace GestionaleRendicontazione.Api.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
             var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
                            ?? User.FindFirst("unique_name")?.Value
@@ -77,7 +77,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                 {
                     expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
                 }
-                _blacklistService.BlacklistToken(jti, expiresAt);
+                await _blacklistService.BlacklistTokenAsync(jti, expiresAt);
                 _logger.LogInformation("Token JTI={Jti} inserito in blacklist per {UserName}", jti, userName);
             }
 

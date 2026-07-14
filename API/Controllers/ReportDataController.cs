@@ -46,6 +46,13 @@ namespace GestionaleRendicontazione.Api.Controllers
                     detail: "'from' deve essere minore o uguale a 'to'.",
                     statusCode: StatusCodes.Status400BadRequest);
             }
+            if (from.AddYears(1) < to)
+            {
+                return Problem(
+                    title: "Intervallo date troppo ampio",
+                    detail: "L'intervallo di date massimo consentito è di 1 anno.",
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
 
             var report = await _reportService.GetProjectReportAsync(projectId, from, to, ct);
             if (report is null) return NotFound();
@@ -72,6 +79,13 @@ namespace GestionaleRendicontazione.Api.Controllers
                     detail: "'from' deve essere minore o uguale a 'to'.",
                     statusCode: StatusCodes.Status400BadRequest);
             }
+            if (from.AddYears(1) < to)
+            {
+                return Problem(
+                    title: "Intervallo date troppo ampio",
+                    detail: "L'intervallo di date massimo consentito è di 1 anno.",
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
 
             var report = await _reportService.GetEmployeeReportAsync(employeeId, from, to, ct);
             if (report is null) return NotFound();
@@ -95,20 +109,27 @@ namespace GestionaleRendicontazione.Api.Controllers
                     detail: "'from' deve essere minore o uguale a 'to'.",
                     statusCode: StatusCodes.Status400BadRequest);
             }
+            if (from.AddYears(1) < to)
+            {
+                return Problem(
+                    title: "Intervallo date troppo ampio",
+                    detail: "L'intervallo di date massimo consentito è di 1 anno.",
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
 
-            var employeeOid = GetCurrentEmployeeOid();
-            if (employeeOid is null) return Unauthorized();
+            var employeeId = GetCurrentEmployeeId();
+            if (employeeId is null) return Unauthorized();
 
-            var report = await _reportService.GetEmployeeReportAsync(employeeOid.Value, from, to, ct);
+            var report = await _reportService.GetEmployeeReportAsync(employeeId.Value, from, to, ct);
             if (report is null) return NotFound();
             return Ok(report);
         }
 
         /// <summary>
-        /// Estrae l'Oid del dipendente autenticato dal claim "NameIdentifier" (popolato da JwtTokenService).
+        /// Estrae l'Id del dipendente autenticato dal claim "NameIdentifier" (popolato da JwtTokenService).
         /// Ritorna null se il claim manca o non è un Guid valido.
         /// </summary>
-        private Guid? GetCurrentEmployeeOid()
+        private Guid? GetCurrentEmployeeId()
         {
             var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return Guid.TryParse(raw, out var parsed) ? parsed : (Guid?)null;

@@ -1,5 +1,5 @@
 using System.Text;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using DevExpress.Xpo;
 using DevExpress.Xpo.DB;
 using DevExpress.Xpo.Metadata;
@@ -26,27 +26,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
     {
-        Description = "Autenticazione JWT Bearer usando l'header Authorization. Esempio: 'Bearer [token]'",
+        Description = "Inserisci unicamente il token JWT (il prefisso 'Bearer ' verrà aggiunto in automatico).",
         Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        In = Microsoft.OpenApi.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
     });
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    options.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
     {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+        [new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
 // ---------------------------------------------------------------------
@@ -78,15 +69,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.Events = new JwtBearerEvents
         {
-            OnTokenValidated = context =>
+            OnTokenValidated = async context =>
             {
                 var blacklist = context.HttpContext.RequestServices.GetRequiredService<ITokenBlacklistService>();
                 var jti = context.Principal?.FindFirst("jti")?.Value;
-                if (jti != null && blacklist.IsBlacklisted(jti))
+                if (jti != null && await blacklist.IsBlacklistedAsync(jti))
                 {
                     context.Fail("Token revocato.");
                 }
-                return Task.CompletedTask;
             }
         };
     });
@@ -101,7 +91,7 @@ builder.Services.AddSingleton<PasswordHasher<Employee>>();
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
 // Servizi applicativi.
-builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
+builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IWorkLogAdminService, WorkLogAdminService>();

@@ -23,7 +23,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         }
 
         public Task<List<WorkLogDto.User.Response>> GetAllAsync(
-            Guid currentEmployeeOid,
+            Guid currentEmployeeId,
             DateOnly? dateFrom = null,
             DateOnly? dateTo = null,
             CancellationToken ct = default)
@@ -33,7 +33,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var query = session.Query<WorkLog>()
                     .Active()
                     .Where(w => w.Employee != null
-                                && w.Employee.Oid == currentEmployeeOid);
+                                && w.Employee.Id == currentEmployeeId);
 
                 if (dateFrom.HasValue)
                 {
@@ -56,26 +56,26 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }));
         }
 
-        public Task<WorkLogDto.User.Response?> GetByIdAsync(Guid id, Guid currentEmployeeOid, CancellationToken ct = default)
+        public Task<WorkLogDto.User.Response?> GetByIdAsync(Guid id, Guid currentEmployeeId, CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var w = session.GetObjectByKey<WorkLog>(id);
                 if (w is null || w.IsWorkLogDeleted) return null;
-                if (w.Employee == null || w.Employee.Oid != currentEmployeeOid) return null;
+                if (w.Employee == null || w.Employee.Id != currentEmployeeId) return null;
                 return _mapper.Map<WorkLogDto.User.Response>(w);
             }));
         }
 
         public async Task<WorkLogDto.User.Response> CreateAsync(
             WorkLogDto.User.Create dto,
-            Guid currentEmployeeOid,
+            Guid currentEmployeeId,
             CancellationToken ct = default)
         {
             return await _dbContextService.ReadWrite<WorkLogDto.User.Response>(async uow =>
             {
                 // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
-                var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeOid, ct)
+                var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeId, ct)
                     ?? throw new InvalidOperationException("Dipendente autenticato non trovato");
 
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
@@ -107,14 +107,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         public async Task<WorkLogDto.User.Response?> UpdateAsync(
             Guid id,
             WorkLogDto.User.Update dto,
-            Guid currentEmployeeOid,
+            Guid currentEmployeeId,
             CancellationToken ct = default)
         {
             return await _dbContextService.ReadWrite<WorkLogDto.User.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
-                if (entity.Employee == null || entity.Employee.Oid != currentEmployeeOid) return null;
+                if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return null;
 
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
@@ -135,13 +135,13 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             });
         }
 
-        public async Task<bool> DeleteAsync(Guid id, Guid currentEmployeeOid, CancellationToken ct = default)
+        public async Task<bool> DeleteAsync(Guid id, Guid currentEmployeeId, CancellationToken ct = default)
         {
             return await _dbContextService.ReadWrite<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return false;
-                if (entity.Employee == null || entity.Employee.Oid != currentEmployeeOid) return false;
+                if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return false;
 
                 entity.IsWorkLogDeleted = true;
                 entity.UpdateAt = DateTime.UtcNow;

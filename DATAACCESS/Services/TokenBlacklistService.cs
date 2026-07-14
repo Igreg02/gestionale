@@ -1,45 +1,82 @@
-using System.Collections.Concurrent;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using DevExpress.Xpo;
+using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
     public class TokenBlacklistService : ITokenBlacklistService
     {
-        private readonly ConcurrentDictionary<string, DateTime> _blacklist = new();
+        private readonly IDbContextService _dbContextService;
 
-        public void BlacklistToken(string jti, DateTime expiresAt)
+        public TokenBlacklistService(IDbContextService dbContextService)
+        {
+            _dbContextService = dbContextService;
+        }
+
+        public async Task BlacklistTokenAsync(string jti, DateTime expiresAt)
         {
             if (string.IsNullOrWhiteSpace(jti)) return;
 
-            PruneExpiredTokens();
+            // Inseriamo il token in blacklist nel DB
+            await _dbContextService.ReadWrite(async uow =>
+            {
+                var existing = await uow.GetObjectByKeyAsync<BlacklistedToken>(jti);
+                if (existing is null)
+                {
+                    _ = new BlacklistedToken(uow)
+                    {
+                        Jti = jti,
+                        ExpiresAt = expiresAt
+                    };
+                }
+            });
 
-            _blacklist.TryAdd(jti, expiresAt);
+            // Avviamo anche una potatura asincrona dei token scaduti per pulire la tabella
+            _ = PruneExpiredTokensAsync();
         }
 
-        public bool IsBlacklisted(string jti)
+        public Task<bool> IsBlacklistedAsync(string jti)
         {
-            if (string.IsNullOrWhiteSpace(jti)) return false;
+            if (string.IsNullOrWhiteSpace(jti)) return Task.FromResult(false);
 
-            if (_blacklist.TryGetValue(jti, out var expiry))
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                if (DateTime.UtcNow < expiry)
+                var token = session.GetObjectByKey<BlacklistedToken>(jti);
+                if (token is not null)
                 {
-                    return true;
+                    if (DateTime.UtcNow < token.ExpiresAt)
+                    {
+                        return true;
+                    }
                 }
-                _blacklist.TryRemove(jti, out _);
+                return false;
+            }));
+        }
+
+        private async Task PruneExpiredTokensAsync()
+        {
+            try
+            {
+                await _dbContextService.ReadWrite(async uow =>
+                {
+                    var now = DateTime.UtcNow;
+                    var expiredTokens = uow.Query<BlacklistedToken>()
+                        .Where(t => t.ExpiresAt <= now)
+                        .ToList();
+
+                    if (expiredTokens.Any())
+                    {
+                        uow.Delete(expiredTokens);
+                    }
+                    await Task.CompletedTask;
+                });
             }
-            return false;
-        }
-
-        private void PruneExpiredTokens()
-        {
-            var now = DateTime.UtcNow;
-            foreach (var kvp in _blacklist)
+            catch
             {
-                if (kvp.Value <= now)
-                {
-                    _blacklist.TryRemove(kvp.Key, out _);
-                }
+                // Ignoriamo silenti errori di manutenzione in background per non bloccare la chiamata principale
             }
         }
     }

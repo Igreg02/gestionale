@@ -35,7 +35,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }
 
 
-            var (verifyResult, newHash, userOid, userName, firstName, lastName, roles) =
+            var (verifyResult, newHash, userId, userName, firstName, lastName, roles) =
                 _dbContextService.ExecuteReadOnly(session =>
             {
                 var user = session.FindObject<Employee>(
@@ -65,7 +65,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .Select(r => r.Name!)
                     .ToArray();
 
-                return (result, rehash, user.Oid, user.UserName ?? string.Empty,
+                return (result, rehash, user.Id, user.UserName ?? string.Empty,
                         user.FirstName ?? string.Empty, user.LastName ?? string.Empty, snapshot);
             });
 
@@ -79,7 +79,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 await _dbContextService.ReadWrite(async uow =>
                 {
-                    var reload = await uow.GetObjectByKeyAsync<Employee>(userOid, cancellationToken);
+                    var reload = await uow.GetObjectByKeyAsync<Employee>(userId, cancellationToken);
                     if (reload is not null)
                     {
                         reload.PasswordHash = newHash;
@@ -87,7 +87,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 });
             }
 
-            var claims = BuildClaims(userOid, userName, firstName, lastName, roles);
+            var claims = BuildClaims(userId, userName, firstName, lastName, roles);
             var token = _jwtTokenService.CreateToken(claims);
             var expiresAt = _jwtTokenService.GetExpiry();
 
@@ -147,7 +147,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
 
                 responseDto = new AuthDto.RegisterResponseDto(
-                    newEmployee.Oid,
+                    newEmployee.Id,
                     newEmployee.UserName,
                     newEmployee.FirstName,
                     newEmployee.LastName,
