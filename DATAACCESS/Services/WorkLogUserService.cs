@@ -143,7 +143,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 entity.IsWorkLogDeleted = true;
                 entity.UpdateAt = DateTime.UtcNow;
-                entity.UpdateAt = DateTime.UtcNow;
                 await uow.CommitChangesAsync(ct);
                 return true;
             });

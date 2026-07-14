@@ -52,5 +52,24 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
                 return result;
             }
         }
+
+        public async Task ReadWriteAsync(Func<UnitOfWork, Task> operation, CancellationToken cancellationToken = default)
+        {
+            using (var uow = new UnitOfWork(_dataLayer))
+            {
+                await operation(uow);
+                await uow.CommitChangesAsync(cancellationToken);
+            }
+        }
+
+        public async Task<T> ReadWriteAsync<T>(Func<UnitOfWork, Task<T>> operation, CancellationToken cancellationToken = default)
+        {
+            using (var uow = new UnitOfWork(_dataLayer))
+            {
+                var result = await operation(uow);
+                await uow.CommitChangesAsync(cancellationToken);
+                return result;
+            }
+        }
     }
 }

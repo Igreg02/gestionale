@@ -25,14 +25,18 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _passwordHasher = passwordHasher;
         }
 
-        public Task<AuthDto.LoginResponseDto?> LoginAsync(AuthDto.LoginRequestDto request, CancellationToken cancellationToken = default)
+        public async Task<AuthDto.LoginResponseDto?> LoginAsync(AuthDto.LoginRequestDto request, CancellationToken cancellationToken = default)
         {
             if (request is null
                 || string.IsNullOrWhiteSpace(request.UserName)
                 || string.IsNullOrWhiteSpace(request.Password))
             {
-                return Task.FromResult<AuthDto.LoginResponseDto?>(null);
+                return null;
             }
+
+            // Catturiamo la necessità di rehash dal blocco readonly (sincrono) e la
+            // applichiamo in una UnitOfWork separata, in modo nativo asincrono.
+            (Guid Oid, string NewHash)? pendingRehash = null;
 
             var response = _dbContextService.ExecuteReadOnly(session =>
             {
@@ -57,16 +61,10 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
                 {
+                    // Prepariamo i dati per il rehash fuori dalla sessione readonly.
+                    // La sessione viene chiusa all'uscita della lambda.
                     var newHash = _passwordHasher.HashPassword(user, request.Password);
-                    _dbContextService.ReadWrite(async uow =>
-                    {
-                        var reload = await uow.GetObjectByKeyAsync<Employee>(user.Oid);
-                        if (reload is not null)
-                        {
-                            reload.PasswordHash = newHash;
-                            await uow.CommitChangesAsync();
-                        }
-                    }).GetAwaiter().GetResult();
+                    pendingRehash = (user.Oid, newHash);
                 }
 
                 var claims = BuildClaims(user);
@@ -78,7 +76,20 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return new AuthDto.LoginResponseDto(token, expiresAt, user.UserName, displayName);
             });
 
-            return Task.FromResult(response);
+            if (pendingRehash.HasValue)
+            {
+                var (userOid, newHash) = pendingRehash.Value;
+                await _dbContextService.ReadWriteAsync(async uow =>
+                {
+                    var reload = await uow.GetObjectByKeyAsync<Employee>(userOid, cancellationToken);
+                    if (reload is not null)
+                    {
+                        reload.PasswordHash = newHash;
+                    }
+                }, cancellationToken);
+            }
+
+            return response;
         }
 
         public async Task<AuthDto.RegisterResponseDto?> RegisterAsync(AuthDto.RegisterRequestDto request, CancellationToken cancellationToken = default)
