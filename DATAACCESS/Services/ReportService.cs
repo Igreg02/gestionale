@@ -1,3 +1,4 @@
+using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -12,10 +13,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
     public class ReportService : IReportService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly IMapper _mapper;
 
-        public ReportService(IDbContextService dbContextService)
+        public ReportService(IDbContextService dbContextService, IMapper mapper)
         {
             _dbContextService = dbContextService;
+            _mapper = mapper;
         }
 
         public Task<ProjectReportDto.Response?> GetProjectReportAsync(
@@ -38,7 +41,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderBy(w => w.Date)
                     .ToList();
 
-                var responses = worklogs.Select(WorkLogMapper.ToAdminResponse).ToList();
+                var responses = _mapper.Map<List<WorkLogDto.Admin.Response>>(worklogs);
 
                 var byType = worklogs
                     .GroupBy(w => w.Type?.Name ?? string.Empty)
@@ -127,7 +130,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderBy(w => w.Date)
                     .ToList();
 
-                var responses = worklogs.Select(WorkLogMapper.ToAdminResponse).ToList();
+                var responses = _mapper.Map<List<WorkLogDto.Admin.Response>>(worklogs);
 
                 var byType = worklogs
                     .GroupBy(w => w.Type?.Name ?? string.Empty)

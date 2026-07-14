@@ -1,3 +1,4 @@
+using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -8,27 +9,23 @@ namespace GestionaleRendicontazione.Dataaccess.Services
     public class ProjectService : IProjectService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly IMapper _mapper;
 
-        public ProjectService(IDbContextService dbContextService)
+        public ProjectService(IDbContextService dbContextService, IMapper mapper)
         {
             _dbContextService = dbContextService;
+            _mapper = mapper;
         }
-
-        private static ProjectDto.Response ToResponse(Project p) => new()
-        {
-            Id = p.Id,
-            Name = p.Name,
-            IdCompany = p.Company?.Id ?? Guid.Empty,
-            CompanyName = p.Company?.Name ?? string.Empty
-        };
 
         public Task<List<ProjectDto.Response>> GetAllAsync(CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-                session.Query<Project>()
+            {
+                var list = session.Query<Project>()
                     .OrderBy(p => p.Name)
-                    .Select(ToResponse)
-                    .ToList()));
+                    .ToList();
+                return _mapper.Map<List<ProjectDto.Response>>(list);
+            }));
         }
 
         public Task<ProjectDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -36,7 +33,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var p = session.GetObjectByKey<Project>(id);
-                return p is null ? null : ToResponse(p);
+                return p is null ? null : _mapper.Map<ProjectDto.Response>(p);
             }));
         }
 
@@ -52,7 +49,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Name = dto.Name,
                     Company = company
                 };
-                return ToResponse(entity);
+                return _mapper.Map<ProjectDto.Response>(entity);
             });
         }
 
@@ -68,7 +65,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 entity.Name = dto.Name;
                 entity.Company = company;
-                return ToResponse(entity);
+                return _mapper.Map<ProjectDto.Response>(entity);
             });
         }
 

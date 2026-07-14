@@ -1,3 +1,4 @@
+using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -8,27 +9,23 @@ namespace GestionaleRendicontazione.Dataaccess.Services
     public class EmployeeService : IEmployeeService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly IMapper _mapper;
 
-        public EmployeeService(IDbContextService dbContextService)
+        public EmployeeService(IDbContextService dbContextService, IMapper mapper)
         {
             _dbContextService = dbContextService;
+            _mapper = mapper;
         }
-
-        private static EmployeeDto.Response ToResponse(Employee e) => new()
-        {
-            Oid = e.Oid,
-            Username = e.UserName ?? string.Empty,
-            FirstName = e.FirstName,
-            LastName = e.LastName
-        };
 
         public Task<List<EmployeeDto.Response>> GetAllAsync(CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-                session.Query<Employee>()
+            {
+                var list = session.Query<Employee>()
                     .OrderBy(e => e.UserName)
-                    .Select(ToResponse)
-                    .ToList()));
+                    .ToList();
+                return _mapper.Map<List<EmployeeDto.Response>>(list);
+            }));
         }
 
         public Task<EmployeeDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -36,7 +33,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var e = session.GetObjectByKey<Employee>(id);
-                return e is null ? null : ToResponse(e);
+                return e is null ? null : _mapper.Map<EmployeeDto.Response>(e);
             }));
         }
 
@@ -57,10 +54,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     }
                 }
 
-                entity.UserName = dto.Username;
-                entity.FirstName = dto.FirstName;
-                entity.LastName = dto.LastName;
-                return ToResponse(entity);
+                _mapper.Map(dto, entity);
+                return _mapper.Map<EmployeeDto.Response>(entity);
             });
         }
 

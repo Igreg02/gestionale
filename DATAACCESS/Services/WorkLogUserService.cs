@@ -1,3 +1,4 @@
+using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -7,16 +8,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 {
     /// <summary>
     /// Implementazione di <see cref="IWorkLogUserService"/>: tutte le operazioni
-    /// sono filtrate sull'Oid del dipendente autenticato. Il mapper condiviso
-    /// <see cref="WorkLogMapper"/> evita la duplicazione della proiezione.
+    /// sono filtrate sull'Oid del dipendente autenticato.
     /// </summary>
     public class WorkLogUserService : IWorkLogUserService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly IMapper _mapper;
 
-        public WorkLogUserService(IDbContextService dbContextService)
+        public WorkLogUserService(IDbContextService dbContextService, IMapper mapper)
         {
             _dbContextService = dbContextService;
+            _mapper = mapper;
         }
 
         public Task<List<WorkLogDto.User.Response>> GetAllAsync(
@@ -44,11 +46,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     query = query.Where(w => w.Date <= to);
                 }
 
-                return query
+                var list = query
                     .OrderByDescending(w => w.Date)
                     .ThenByDescending(w => w.UpdateAt)
-                    .Select(WorkLogMapper.ToUserResponse)
                     .ToList();
+
+                return _mapper.Map<List<WorkLogDto.User.Response>>(list);
             }));
         }
 
@@ -59,7 +62,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var w = session.GetObjectByKey<WorkLog>(id);
                 if (w is null || w.IsWorkLogDeleted) return null;
                 if (w.Employee == null || w.Employee.Oid != currentEmployeeOid) return null;
-                return WorkLogMapper.ToUserResponse(w);
+                return _mapper.Map<WorkLogDto.User.Response>(w);
             }));
         }
 
@@ -96,7 +99,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Employee = employee
                 };
 
-                return WorkLogMapper.ToUserResponse(entity);
+                return _mapper.Map<WorkLogDto.User.Response>(entity);
             });
         }
 
@@ -127,7 +130,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 entity.Status = status;
                 entity.UpdateAt = DateTime.UtcNow;
 
-                return WorkLogMapper.ToUserResponse(entity);
+                return _mapper.Map<WorkLogDto.User.Response>(entity);
             });
         }
 

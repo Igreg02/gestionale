@@ -11,6 +11,8 @@ using GestionaleRendicontazione.Dataaccess.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using AutoMapper;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +57,9 @@ builder.Services.AddAuthorization();
 // PasswordHasher di Microsoft.Extensions.Identity: usato da AuthService per
 // hashare e verificare la password degli Employee.
 builder.Services.AddSingleton<PasswordHasher<Employee>>();
+
+// Registrazione AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // Servizi applicativi.
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();

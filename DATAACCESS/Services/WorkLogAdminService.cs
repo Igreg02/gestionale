@@ -1,3 +1,4 @@
+using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -8,10 +9,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
     public class WorkLogAdminService : IWorkLogAdminService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly IMapper _mapper;
 
-        public WorkLogAdminService(IDbContextService dbContextService)
+        public WorkLogAdminService(IDbContextService dbContextService, IMapper mapper)
         {
             _dbContextService = dbContextService;
+            _mapper = mapper;
         }
 
         public async Task<WorkLogDto.Admin.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -20,7 +23,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var obj = session.GetObjectByKey<WorkLog>(id);
                 if (obj is null || obj.IsWorkLogDeleted) return null;
-                return WorkLogMapper.ToAdminResponse(obj);
+                return _mapper.Map<WorkLogDto.Admin.Response>(obj);
             }));
         }
 
@@ -64,11 +67,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     query = query.Where(w => w.Status != null && w.Status.Name == trimmed);
                 }
 
-                return query
+                var list = query
                     .OrderByDescending(w => w.Date)
                     .ThenByDescending(w => w.UpdateAt)
-                    .Select(WorkLogMapper.ToAdminResponse)
                     .ToList();
+
+                return _mapper.Map<List<WorkLogDto.Admin.Response>>(list);
             }));
         }
 
@@ -99,7 +103,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     Employee = employee
                 };
 
-                return WorkLogMapper.ToAdminResponse(entity);
+                return _mapper.Map<WorkLogDto.Admin.Response>(entity);
             });
         }
 
@@ -127,7 +131,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 entity.Employee = employee;
                 entity.UpdateAt = DateTime.UtcNow;
 
-                return WorkLogMapper.ToAdminResponse(entity);
+                return _mapper.Map<WorkLogDto.Admin.Response>(entity);
             });
         }
 

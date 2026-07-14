@@ -1,3 +1,4 @@
+using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
@@ -8,25 +9,23 @@ namespace GestionaleRendicontazione.Dataaccess.Services
     public class TypeService : ITypeService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly IMapper _mapper;
 
-        public TypeService(IDbContextService dbContextService)
+        public TypeService(IDbContextService dbContextService, IMapper mapper)
         {
             _dbContextService = dbContextService;
+            _mapper = mapper;
         }
-
-        private static TypeDto.Response ToResponse(Domain.Entities.Type t) => new()
-        {
-            Id = t.Id,
-            Name = t.Name
-        };
 
         public Task<List<TypeDto.Response>> GetAllAsync(CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-                session.Query<Domain.Entities.Type>()
+            {
+                var list = session.Query<Domain.Entities.Type>()
                     .OrderBy(t => t.Name)
-                    .Select(ToResponse)
-                    .ToList()));
+                    .ToList();
+                return _mapper.Map<List<TypeDto.Response>>(list);
+            }));
         }
 
         public Task<TypeDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
@@ -34,7 +33,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var t = session.GetObjectByKey<Domain.Entities.Type>(id);
-                return t is null ? null : ToResponse(t);
+                return t is null ? null : _mapper.Map<TypeDto.Response>(t);
             }));
         }
 
@@ -46,7 +45,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 {
                     Name = dto.Name
                 };
-                return ToResponse(entity);
+                return _mapper.Map<TypeDto.Response>(entity);
             });
         }
 
@@ -57,7 +56,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
                 if (entity is null) return null;
                 entity.Name = dto.Name;
-                return ToResponse(entity);
+                return _mapper.Map<TypeDto.Response>(entity);
             });
         }
 
