@@ -11,7 +11,7 @@ namespace GestionaleRendicontazione.Api.Services.Jwt
         private readonly SigningCredentials _signingCredentials;
         private readonly string _issuer;
         private readonly string _audience;
-        private readonly DateTime _expiry;
+        private readonly int _expiryMinutes; 
 
         public JwtTokenService(IConfiguration configuration)
         {
@@ -32,22 +32,30 @@ namespace GestionaleRendicontazione.Api.Services.Jwt
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             _signingCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            _expiry = DateTime.UtcNow.AddMinutes(expiryMinutes <= 0 ? 60 : expiryMinutes);
+            
+            // Salva solo i minuti nel costruttore
+            _expiryMinutes = expiryMinutes <= 0 ? 60 : expiryMinutes;
         }
 
         public string CreateToken(IEnumerable<Claim> claims)
         {
+            var now = DateTime.UtcNow;
+            
+            // Calcolo dinamico ad ogni login
+            var expiresAt = now.AddMinutes(_expiryMinutes); 
+
             var jwt = new JwtSecurityToken(
                 issuer: _issuer,
                 audience: _audience,
                 claims: claims,
-                notBefore: DateTime.UtcNow,
-                expires: _expiry,
+                notBefore: now,
+                expires: expiresAt,
                 signingCredentials: _signingCredentials);
 
             return new JwtSecurityTokenHandler().WriteToken(jwt);
         }
 
-        public DateTime GetExpiry() => _expiry;
+        // Calcola la scadenza relativa al momento esatto della richiesta
+        public DateTime GetExpiry() => DateTime.UtcNow.AddMinutes(_expiryMinutes);
     }
 }

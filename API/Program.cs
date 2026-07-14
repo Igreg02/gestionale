@@ -18,16 +18,9 @@ string connectionString = builder.Configuration.GetConnectionString("DefaultConn
     ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;";
 
 builder.Services.AddXpoInfrastructure(connectionString);
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    // Disambigua i DTO annidati: CompanyDto.Response, EmployeeDto.Response, ...
-    // Senza questa regola Swashbuckle genera schemaId "$Response" per entrambi
-    // e termina con SwaggerGeneratorException quando trova il duplicato.
-    options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
-});
+builder.Services.AddSwaggerGen(options =>{ options.CustomSchemaIds(type => type.ToString()); });
 
 // ---------------------------------------------------------------------
 // AUTENTICAZIONE JWT self-issued (TDD §1: "JWT Bearer Token (ASP.NET Core Identity / OAuth2)")
@@ -85,7 +78,7 @@ if (app.Environment.IsDevelopment()) // TODO: RIMUOVERE SWAGGHER
     app.UseSwagger(); 
     app.UseSwaggerUI(); 
 }
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Disabilitato in Development per permettere HTTP
 
 // Prima di auth per catturare eventuali errori globali di sicurezza
 app.UseExceptionHandler(opt => { });
@@ -93,6 +86,7 @@ app.UseExceptionHandler(opt => { });
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseStatusCodePages(); 
 
 
 // ---------------------------------------------------------------------
