@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -28,7 +29,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 
         /// <summary>Admin: report aggregato per progetto/periodo.</summary>
         [HttpGet("project/{projectId:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(ProjectReportDto.Response), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -61,7 +62,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 
         /// <summary>Admin: report aggregato per dipendente/periodo (id esplicito).</summary>
         [HttpGet("employee/{employeeId:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(EmployeeReportDto.Response), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]

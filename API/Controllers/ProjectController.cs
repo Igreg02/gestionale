@@ -1,6 +1,7 @@
 
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,7 +44,7 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(ProjectDto.Response), StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -71,7 +72,7 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(ProjectDto.Response), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -102,16 +103,28 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-            var ok = await _projectService.DeleteAsync(id, ct);
-            if (!ok) return NotFound();
-            return NoContent();
+            try
+            {
+                var ok = await _projectService.DeleteAsync(id, ct);
+                if (!ok) return NotFound();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Eliminazione progetto {Id} fallita", id);
+                return Problem(
+                    title: "Eliminazione progetto fallita",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
+            }
         }
     }
 }

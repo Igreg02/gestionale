@@ -1,5 +1,6 @@
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,7 +8,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
 
     [Produces("application/json")]
     public class CompanyController : ControllerBase
@@ -79,11 +80,23 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-            var ok = await _companyService.DeleteAsync(id, ct);
-            if (!ok) return NotFound();
-            return NoContent();
+            try
+            {
+                var ok = await _companyService.DeleteAsync(id, ct);
+                if (!ok) return NotFound();
+                return NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "Eliminazione azienda {Id} fallita", id);
+                return Problem(
+                    title: "Eliminazione azienda fallita",
+                    detail: ex.Message,
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
+            }
         }
     }
 }

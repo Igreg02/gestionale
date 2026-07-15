@@ -3,6 +3,7 @@ using GestionaleRendicontazione.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using DevExpress.Persistent.BaseImpl.PermissionPolicy;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 
 namespace GestionaleRendicontazione.Dataaccess.Datacontext
 {
@@ -18,21 +19,21 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     return;
                 }
 
-                var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "Admin");
+                var adminRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == RoleNames.Admin);
                 if (adminRole == null)
                 {
                     adminRole = new PermissionPolicyRole(uow)
                     {
-                        Name = "Admin",
+                        Name = RoleNames.Admin,
                     };
                 }
 
-                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
+                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == RoleNames.User);
                 if (userRole == null)
                 {
                     userRole = new PermissionPolicyRole(uow)
                     {
-                        Name = "User",
+                        Name = RoleNames.User,
                     };
                 }
 

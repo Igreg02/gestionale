@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,7 +34,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             _logger = logger;
         }
 
-        private bool IsAdmin => User.IsInRole("Admin");
+        private bool IsAdmin => User.IsInRole(RoleNames.Admin);
 
         [HttpGet]
         [ProducesResponseType(typeof(List<WorkLogDto.Admin.Response>), StatusCodes.Status200OK)]
