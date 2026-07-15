@@ -228,3 +228,23 @@ curl.exe -X PUT http://localhost:5182/api/worklog/{id} -H "Authorization: Bearer
 ```bash
 curl.exe -X DELETE http://localhost:5182/api/worklog/{id} -H "Authorization: Bearer $TOKEN" -H "accept: application/json" -H "Content-Type: application/json"
 ```
+
+## Report Data
+
+### GET Report Progetto (Admin)
+
+```bash
+curl.exe -X GET "http://localhost:5182/api/report-data/project/{projectId}?from=2026-01-01&to=2026-01-31" -H "Authorization: Bearer $TOKEN" -i
+```
+
+### GET Report Dipendente (Admin, id esplicito)
+
+```bash
+curl.exe -X GET "http://localhost:5182/api/report-data/employee/{employeeId}?from=2026-01-01&to=2026-01-31" -H "Authorization: Bearer $TOKEN" -i
+```
+
+### GET Report Dipendente (User, proprio report)
+
+```bash
+curl.exe -X GET "http://localhost:5182/api/report-data/employee?from=2026-01-01&to=2026-01-31" -H "Authorization: Bearer $TOKEN" -i
+```
