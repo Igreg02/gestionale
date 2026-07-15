@@ -22,36 +22,36 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _mapper = mapper;
         }
 
-        public Task<ProjectReportDto.Response?> GetProjectReportAsync(
+        public Task<ReportDto.Project.Response?> GetProjectReportAsync(
             Guid projectId,
-            DateOnly from,
-            DateOnly to,
+            DateOnly? from,
+            DateOnly? to,
             CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var project = session.GetObjectByKey<Project>(projectId);
-                if (project is null) return (ProjectReportDto.Response?)null;
+                if (project is null) return (ReportDto.Project.Response?)null;
 
                 var worklogs = GetWorklogsInRange(session, w => w.Project != null && w.Project.Id == projectId, from, to);
                 var responses = _mapper.Map<List<WorkLogDto.Admin.Response>>(worklogs);
 
                 var byType = AggregateByKey(worklogs, w => w.Type?.Name ?? string.Empty)
-                    .Select(x => new ProjectReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byStatus = AggregateByKey(worklogs, w => w.Status?.Name ?? string.Empty)
-                    .Select(x => new ProjectReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byDay = AggregateByDay(worklogs)
-                    .Select(x => new ProjectReportDto.DailyTotal { Date = x.Date, Hours = x.Hours, Count = x.Count })
+                    .Select(x => new ReportDto.DailyTotal { Date = x.Date, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byEmployee = worklogs
                     .Where(w => w.Employee != null)
                     .GroupBy(w => w.Employee!.Id)
-                    .Select(g => new ProjectReportDto.EmployeeBucket
+                    .Select(g => new ReportDto.Project.EmployeeBucket
                     {
                         EmployeeId = g.Key,
                         UserName = g.First().Employee!.UserName ?? string.Empty,
@@ -62,7 +62,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderByDescending(e => e.Hours)
                     .ToList();
 
-                return new ProjectReportDto.Response
+                return new ReportDto.Project.Response
                 {
                     ProjectId = project.Id,
                     ProjectName = project.Name ?? string.Empty,
@@ -82,36 +82,36 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }));
         }
 
-        public Task<EmployeeReportDto.Response?> GetEmployeeReportAsync(
+        public Task<ReportDto.Employee.Response?> GetEmployeeReportAsync(
             Guid employeeId,
-            DateOnly from,
-            DateOnly to,
+            DateOnly? from,
+            DateOnly? to,
             CancellationToken ct = default)
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var employee = session.GetObjectByKey<Employee>(employeeId);
-                if (employee is null) return (EmployeeReportDto.Response?)null;
+                if (employee is null) return (ReportDto.Employee.Response?)null;
 
                 var worklogs = GetWorklogsInRange(session, w => w.Employee != null && w.Employee.Id == employeeId, from, to);
                 var responses = _mapper.Map<List<WorkLogDto.Admin.Response>>(worklogs);
 
                 var byType = AggregateByKey(worklogs, w => w.Type?.Name ?? string.Empty)
-                    .Select(x => new EmployeeReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byStatus = AggregateByKey(worklogs, w => w.Status?.Name ?? string.Empty)
-                    .Select(x => new EmployeeReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byDay = AggregateByDay(worklogs)
-                    .Select(x => new EmployeeReportDto.DailyTotal { Date = x.Date, Hours = x.Hours, Count = x.Count })
+                    .Select(x => new ReportDto.DailyTotal { Date = x.Date, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byProject = worklogs
                     .Where(w => w.Project != null)
                     .GroupBy(w => w.Project!.Id)
-                    .Select(g => new EmployeeReportDto.ProjectBucket
+                    .Select(g => new ReportDto.Employee.ProjectBucket
                     {
                         ProjectId = g.Key,
                         ProjectName = g.First().Project!.Name ?? string.Empty,
@@ -121,7 +121,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderByDescending(p => p.Hours)
                     .ToList();
 
-                return new EmployeeReportDto.Response
+                return new ReportDto.Employee.Response
                 {
                     EmployeeId = employee.Id,
                     UserName = employee.UserName ?? string.Empty,
@@ -146,13 +146,25 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         private static List<WorkLog> GetWorklogsInRange(
             Session session,
             System.Linq.Expressions.Expression<Func<WorkLog, bool>> rootFilter,
-            DateOnly from,
-            DateOnly to)
+            DateOnly? from,
+            DateOnly? to)
         {
-            return session.Query<WorkLog>()
+            var query = session.Query<WorkLog>()
                 .Active()
-                .Where(rootFilter)
-                .Where(w => w.Date >= from && w.Date <= to)
+                .Where(rootFilter);
+
+            if (from.HasValue)
+            {
+                var fromValue = from.Value;
+                query = query.Where(w => w.Date >= fromValue);
+            }
+            if (to.HasValue)
+            {
+                var toValue = to.Value;
+                query = query.Where(w => w.Date <= toValue);
+            }
+
+            return query
                 .OrderBy(w => w.Date)
                 .ToList();
         }
