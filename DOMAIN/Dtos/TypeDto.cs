@@ -10,23 +10,12 @@ namespace GestionaleRendicontazione.Domain.Dtos
     {
         public class Response
         {
-            public int Oid { get; set; }
+            public Guid Id { get; set; }
 
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
 
         }
-
-        public class Delete
-        {
-            public int Oid { get; set; }
-
-            public string Name { get; set; }
-
-        }
-
-
-
 
 
         /// <summary>
@@ -39,14 +28,14 @@ namespace GestionaleRendicontazione.Domain.Dtos
         {
             [Required(ErrorMessage = "La tipologia deve avere un nome")]
 
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
         }
 
         public class Update
         {
             [Required(ErrorMessage = "La tipologia deve avere un nome")]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
         }
     }

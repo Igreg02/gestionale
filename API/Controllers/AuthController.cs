@@ -12,11 +12,16 @@ namespace GestionaleRendicontazione.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly ITokenBlacklistService _blacklistService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            ITokenBlacklistService blacklistService,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _blacklistService = blacklistService;
             _logger = logger;
         }
 
@@ -56,10 +61,27 @@ namespace GestionaleRendicontazione.Api.Controllers
         [Authorize]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public IActionResult Logout()
+        public async Task<IActionResult> Logout()
         {
-            var userName = User?.Identity?.Name ?? "(sconosciuto)";
-            _logger.LogInformation("Logout richiesto per {UserName}", userName);
+            var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                           ?? User.FindFirst("unique_name")?.Value
+                           ?? User.Identity?.Name
+                           ?? "(sconosciuto)";
+
+            var jti = User.FindFirst("jti")?.Value;
+            var expClaim = User.FindFirst("exp")?.Value;
+            if (!string.IsNullOrEmpty(jti))
+            {
+                var expiresAt = DateTime.UtcNow.AddHours(1); // fallback
+                if (long.TryParse(expClaim, out var expUnix))
+                {
+                    expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+                }
+                await _blacklistService.BlacklistTokenAsync(jti, expiresAt);
+                _logger.LogInformation("Token JTI={Jti} inserito in blacklist per {UserName}", jti, userName);
+            }
+
+            _logger.LogInformation("Logout completato per {UserName}", userName);
             return NoContent();
         }
 

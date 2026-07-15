@@ -3,10 +3,19 @@ using DevExpress.Xpo;
 namespace GestionaleRendicontazione.Domain.Entities
 {
         [Persistent("worklog")]
-    public class WorkLog : XPObject
+    public class WorkLog : XPCustomObject
     {
         public WorkLog(Session session) : base(session) { }
-        private string _description;
+
+        private Guid _id;
+        [Key(AutoGenerate = true)]
+        [Persistent("id")]
+        public Guid Id
+        {
+            get => _id;
+            set => SetPropertyValue(nameof(Id), ref _id, value);
+        }
+        private string _description = string.Empty;
         [Persistent("description")]
         public string Description
         {
@@ -50,7 +59,15 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(UpdateAt), ref _updateAt, value);
         }
 
-        private Project _project;
+        private bool _isDeleted;
+        [Persistent("isDeleted")]
+        public bool IsWorkLogDeleted
+        {
+            get => _isDeleted;
+            set => SetPropertyValue(nameof(IsWorkLogDeleted), ref _isDeleted, value);
+        }
+
+        private Project _project = null!;
         [Association("project-WorkLog")]
         [Persistent("idProject")]
 
@@ -60,7 +77,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Project), ref _project, value);
         }
 
-        private Type _type;
+        private Type _type = null!;
         [Association("type-WorkLog")]
         [Persistent("idType")]
 
@@ -70,7 +87,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Type), ref _type, value);
         }
 
-        private Status _status;
+        private Status _status = null!;
         
         [Association("status-WorkLog")]
         [Persistent("idStatus")]
@@ -81,7 +98,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Status), ref _status, value);
         }
 
-        private Employee _employee;
+        private Employee _employee = null!;
         [Association("Employee-WorkLogs")]
         [Persistent("idEmployee")]
         public Employee Employee

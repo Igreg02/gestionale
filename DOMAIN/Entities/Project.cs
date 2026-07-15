@@ -3,11 +3,19 @@ using DevExpress.Xpo;
 namespace GestionaleRendicontazione.Domain.Entities
 {
     [Persistent("project")]
-    public class Project : XPObject
+    public class Project : XPCustomObject
     {
         public Project(Session session) : base(session) { }
 
-        private string _name;
+        private Guid _id;
+        [Key(AutoGenerate = true)]
+        [Persistent("id")]
+        public Guid Id
+        {
+            get => _id;
+            set => SetPropertyValue(nameof(Id), ref _id, value);
+        }
+        private string _name = string.Empty;
         [Size(255)]
         [Persistent("name")]
         public string Name
@@ -16,7 +24,7 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(Name), ref _name, value);
         }
 
-        private Company _company;
+        private Company _company = null!;
         [Association("company-Project")]
         [Persistent("idCompany")]
         public Company Company

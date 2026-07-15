@@ -3,12 +3,21 @@ using DevExpress.Xpo;
 namespace GestionaleRendicontazione.Domain.Entities
 {
     [Persistent("status")]
-    public class Status : XPObject
+    public class Status : XPCustomObject
     {
         public Status(Session session) : base(session) { }
 
-        private string _name;
+        private Guid _id;
+        [Key(AutoGenerate = true)]
+        [Persistent("id")]
+        public Guid Id
+        {
+            get => _id;
+            set => SetPropertyValue(nameof(Id), ref _id, value);
+        }
+        private string _name = string.Empty;
         [Size(255)]
+        [Indexed(Unique = true)]
         [Persistent("name")]
         public string Name
         {

@@ -10,25 +10,13 @@ namespace GestionaleRendicontazione.Domain.Dtos
     {
         public class Response
         {
-            public int Oid { get; set; }
+            public Guid Id { get; set; }
 
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
-            public string email { get; set; }
-
-        }
-
-        public class Delete
-        {
-            public int Oid { get; set; }
-            public string Name { get; set; }
+            public string Email { get; set; } = string.Empty;
 
         }
-
-
-
-
-
 
         /// <summary>
         /// Client -> Server
@@ -39,11 +27,11 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             [Required(ErrorMessage = "Devi inserire il nome dell'azienda")]
             [MaxLength(255)]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
             [Required(ErrorMessage = "Devi inserire il l'email dell'azienda")]
             [EmailAddress]
-            public string email { get; set; }
+            public string email { get; set; } = string.Empty;
 
         }
 
@@ -54,11 +42,11 @@ namespace GestionaleRendicontazione.Domain.Dtos
             [Required(ErrorMessage = "Devi inserire il nome dell'azienda")]
 
             [MaxLength(255)]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
             [Required(ErrorMessage = "Devi inserire il l'email dell'azienda")]
             [EmailAddress]
-            public string email { get; set; }
+            public string email { get; set; } = string.Empty;
         }
     }
 }

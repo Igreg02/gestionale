@@ -10,24 +10,12 @@ namespace GestionaleRendicontazione.Domain.Dtos
     {
         public class Response
         {
-            public int Oid { get; set; }
+            public Guid Id { get; set; }
 
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
 
         }
-
-        public class Delete
-        {
-            public int Oid { get; set; }
-
-            public string Name { get; set; }
-
-        }
-
-
-
-
 
         /// <summary>
 
@@ -36,9 +24,9 @@ namespace GestionaleRendicontazione.Domain.Dtos
         /// </summary>
 
         public class Create
-        {               
+        {
             [Required(ErrorMessage = "Lo stato deve avere un nome")]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
         }
 
@@ -47,7 +35,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
         public class Update
         {
             [Required(ErrorMessage = "Lo stato del lavoro deve avere un nome")]
-            public string Name { get; set; }
+            public string Name { get; set; } = string.Empty;
 
         }
     }
