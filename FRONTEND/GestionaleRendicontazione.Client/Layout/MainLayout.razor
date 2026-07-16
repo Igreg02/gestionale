@@ -1,0 +1,38 @@
+@inherits LayoutComponentBase
+
+<Bar Mode="BarMode.Horizontal"
+     Breakpoint="Breakpoint.Desktop"
+     ThemeContrast="ThemeContrast.Dark"
+     Background="Background.Primary">
+    <BarBrand>
+        <BarItem>
+            <BarLink To="/">Gestionale Rendicontazione</BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarToggler />
+    <BarMenu>
+        <BarEnd>
+            <AuthorizeView Context="authState">
+                <Authorized>
+                    <BarItem>
+                        <span class="text-white me-3">Benvenuto, @authState.User.Identity?.Name</span>
+                    </BarItem>
+                    <BarItem>
+                        <BarLink To="/logout">Logout</BarLink>
+                    </BarItem>
+                </Authorized>
+                <NotAuthorized>
+                    <BarItem>
+                        <BarLink To="/login">Login</BarLink>
+                    </BarItem>
+                </NotAuthorized>
+            </AuthorizeView>
+        </BarEnd>
+    </BarMenu>
+</Bar>
+
+    <Row>
+        <Column >
+            @Body
+        </Column>
+    </Row>

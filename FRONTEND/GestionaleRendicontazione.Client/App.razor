@@ -1,0 +1,31 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    <div class="p-5 text-center">
+                        <Heading Size="HeadingSize.Is4">Accesso non autorizzato</Heading>
+                        <Paragraph>Effettua il login per accedere a questa pagina.</Paragraph>
+                        <Bar>
+                            <BarItem>
+                                <BarLink To="/login">Vai al login</BarLink>
+                            </BarItem>
+                        </Bar>
+                    </div>
+                </NotAuthorized>
+                <Authorizing>
+                    <div class="p-5 text-center">
+                        <Heading Size="HeadingSize.Is4">Verifica autenticazione...</Heading>
+                    </div>
+                </Authorizing>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Pagina non trovata</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">La pagina richiesta non esiste.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

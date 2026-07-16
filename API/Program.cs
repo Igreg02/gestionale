@@ -50,6 +50,27 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog(); // Sostituisce il logger di default con Serilog
 
 builder.Services.AddXpoInfrastructure(dataLayer);
+
+// ---------------------------------------------------------------------
+// CORS — necessario a partire dalla Fase F1 del frontend Blazor WebAssembly,
+// che gira su un'origine diversa (es. https://localhost:7210) da quella
+// dell'API. Le origini consentite sono in appsettings.json ("Cors:AllowedOrigins"),
+// così da poter differenziare sviluppo/produzione senza toccare il codice.
+// ---------------------------------------------------------------------
+const string BlazorClientCorsPolicy = "BlazorClient";
+var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+    ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(BlazorClientCorsPolicy, policy =>
+    {
+        policy.WithOrigins(corsAllowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -127,6 +148,13 @@ builder.Services.AddScoped<ITypeService, TypeService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
+
+// CORS deve essere il primo middleware della pipeline: deve intercettare
+// la richiesta (ed eseguire eventuale preflight OPTIONS) prima di qualunque
+// altro middleware che possa generare direttamente la risposta — Swagger
+// compreso — altrimenti l'header Access-Control-Allow-Origin non viene mai
+// aggiunto e il browser blocca la risposta lato client.
+app.UseCors(BlazorClientCorsPolicy);
 
 if (app.Environment.IsDevelopment())
 {
