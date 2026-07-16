@@ -55,20 +55,8 @@ namespace GestionaleRendicontazione.Api.Controllers
             CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
-            try
-            {
                 var created = await _projectService.CreateAsync(dto, ct);
                 return CreatedAtRoute("GetProjectById", new { id = created.Id }, created);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Creazione progetto fallita");
-                return Problem(
-                    title: "Creazione progetto fallita",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
-            }
         }
 
         [HttpPut("{id:guid}")]
@@ -85,21 +73,10 @@ namespace GestionaleRendicontazione.Api.Controllers
             CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
-            try
-            {
                 var updated = await _projectService.UpdateAsync(id, dto, ct);
                 if (updated is null) return NotFound();
                 return Ok(updated);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Aggiornamento progetto {Id} fallito", id);
-                return Problem(
-                    title: "Aggiornamento progetto fallito",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
-            }
+
         }
 
         [HttpDelete("{id:guid}")]
@@ -111,20 +88,10 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-            try
-            {
+
                 var ok = await _projectService.DeleteAsync(id, ct);
                 if (!ok) return NotFound();
                 return NoContent();
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Eliminazione progetto {Id} fallita", id);
-                return Problem(
-                    title: "Eliminazione progetto fallita",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
-            }
         }
     }
 }

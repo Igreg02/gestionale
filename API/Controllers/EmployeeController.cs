@@ -69,21 +69,10 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-            try
-            {
                 var ok = await _employeeService.DeleteAsync(id, ct);
                 if (!ok) return NotFound();
                 _logger.LogInformation("Dipendente {Id} licenziato", id);
                 return NoContent();
             }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Eliminazione dipendente {Id} fallita", id);
-                return Problem(
-                    title: "Eliminazione dipendente fallita",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
-            }
         }
     }
-}

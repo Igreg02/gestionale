@@ -13,13 +13,35 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using AutoMapper;
 using GestionaleRendicontazione.Dataaccess.Helpers;
+using GestionaleRendicontazione.Api.Helpers;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;";
 
-builder.Services.AddXpoInfrastructure(connectionString);
+// ---------------------------------------------------------------------
+// COSTRUZIONE DATALAYER XPO (fatto qui, PRIMA di Serilog, perché il sink
+// XpoSerilogSink ha bisogno di un'istanza di IDataLayer già pronta)
+// ---------------------------------------------------------------------
+XPDictionary xpoDictionary = new ReflectionDictionary();
+xpoDictionary.GetDataStoreSchema(typeof(WorkLog).Assembly);
+IDataStore xpoStore = XpoDefault.GetConnectionProvider(connectionString, AutoCreateOption.DatabaseAndSchema);
+IDataLayer dataLayer = new ThreadSafeDataLayer(xpoDictionary, xpoStore);
+
+// ---------------------------------------------------------------------
+// CONFIGURAZIONE SERILOG (Console + DB)
+// ---------------------------------------------------------------------
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.Sink(new XpoSerilogSink(dataLayer))
+    .CreateLogger();
+
+builder.Host.UseSerilog(); // Sostituisce il logger di default con Serilog
+
+builder.Services.AddXpoInfrastructure(dataLayer);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -39,9 +61,8 @@ builder.Services.AddSwaggerGen(options =>
         [new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
-// ---------------------------------------------------------------------
-// AUTENTICAZIONE JWT self-issued (TDD §1: "JWT Bearer Token (ASP.NET Core Identity / OAuth2)")
-// ---------------------------------------------------------------------
+
+// Autenticazione JWT
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtOptions>(jwtSection);
 
@@ -49,8 +70,6 @@ var jwtSecretKey = jwtSection["SecretKey"] ?? string.Empty;
 var jwtIssuer = jwtSection["Issuer"] ?? string.Empty;
 var jwtAudience = jwtSection["Audience"] ?? string.Empty;
 
-// Validazione del token in ingresso. La chiave è la stessa usata in JwtTokenService
-// per la firma (HMAC-SHA256). ClockSkew = 0 per non allungare artificialmente la vita del token.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -83,15 +102,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-
-// PasswordHasher di Microsoft.Extensions.Identity: usato da AuthService per
-// hashare e verificare la password degli Employee.
 builder.Services.AddSingleton<PasswordHasher<Employee>>();
-
-// Registrazione AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
-// Servizi applicativi.
+// Servizi applicativi
 builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -106,32 +120,58 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
-
-if (app.Environment.IsDevelopment()) // TODO: RIMUOVERE SWAGGHER
+if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(); 
-    app.UseSwaggerUI(); 
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-// app.UseHttpsRedirection(); // Disabilitato in Development per permettere HTTP
 
-// FIX #4: UseExceptionHandler reale.
-// Cattura qualsiasi eccezione non gestita nei controller e produce una risposta
-// ProblemDetails coerente. Mappa le InvalidOperationException (solitamente lanciate
-// dai service per "FK mancanti", "vincolo dipendenze", "username duplicato", …)
-// a 409 Conflict, lasciando il resto a 500. Viene loggato tutto.
-app.UseExceptionHandler(builder =>
+// ---------------------------------------------------------------------
+// USE EXCEPTION HANDLER (Logga sia su Console che su DB XPO)
+// ---------------------------------------------------------------------
+app.UseExceptionHandler(handlerApp =>
 {
-    builder.Run(async context =>
+    handlerApp.Run(async context =>
     {
         var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
         var exception = exceptionFeature?.Error;
-        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
-            .CreateLogger("GlobalExceptionHandler");
 
+        // 1. Log tramite ILogger (Console, via Serilog)
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         if (exception is not null)
         {
             logger.LogError(exception, "Unhandled exception during {Method} {Path}",
                 context.Request.Method, context.Request.Path);
+
+            // 2. SALVATAGGIO SU DB (XPO)
+            try
+            {
+                // Recuperiamo l'User ID dai Claim del token JWT
+                var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                ?? context.User?.FindFirst("sub")?.Value
+                 ?? "Anonymus"; // Se l'utente non è loggato (es. endpoint pubblici)
+
+                var dataLayer = context.RequestServices.GetRequiredService<IDataLayer>();
+                using (var uow = new UnitOfWork(dataLayer))
+                {
+                    var logDb = new LogApplicativo(uow)
+                    {
+                        Data = DateTime.Now,
+                        Livello = "Error",
+                        Messaggio = exception.Message,
+                        Metodo = context.Request.Method,
+                        Path = context.Request.Path,
+                        StackTrace = exception.StackTrace ?? string.Empty,
+                        UserId = userId
+                    };
+                    await uow.CommitChangesAsync();
+                }
+            }
+            catch (Exception xpoEx)
+            {
+                // Se il DB è offline, questo backup di log su console ti salva la vita!
+                logger.LogError(xpoEx, "Impossibile salvare il log dell'eccezione sul Database.");
+            }
         }
 
         var (status, title) = exception switch
@@ -154,9 +194,7 @@ app.UseExceptionHandler(builder =>
             Instance = context.Request.Path
         };
 
-        if (app.Services
-            .GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>()
-            .IsDevelopment())
+        if (app.Environment.IsDevelopment())
         {
             problem.Extensions["traceId"] = context.TraceIdentifier;
             problem.Extensions["stackTrace"] = exception?.StackTrace;
@@ -168,13 +206,28 @@ app.UseExceptionHandler(builder =>
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// ---------------------------------------------------------------------
+// ARRICCHIMENTO LOG: rendiamo disponibili UserId, Path e Metodo a
+// qualunque log emesso durante la richiesta (letti poi da XpoSerilogSink)
+// ---------------------------------------------------------------------
+app.Use(async (context, next) =>
+{
+    var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+        ?? context.User?.FindFirst("sub")?.Value
+        ?? "Anonymus";
+
+    using (Serilog.Context.LogContext.PushProperty("UserId", userId))
+    using (Serilog.Context.LogContext.PushProperty("RequestPath", context.Request.Path.ToString()))
+    using (Serilog.Context.LogContext.PushProperty("RequestMethod", context.Request.Method))
+    {
+        await next();
+    }
+});
+
 app.MapControllers();
 app.UseStatusCodePages();
 
-
-// ---------------------------------------------------------------------
-// 4. SEED INIZIALE DEI DATI — delegato al DataSeeder dedicato
-// ---------------------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
     var dbContextService = scope.ServiceProvider.GetRequiredService<IDbContextService>();
@@ -184,27 +237,19 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-
-
-
-    public static class XpoProgramExtensions
+// ---------------------------------------------------------------------
+// EXTENSION METHODS XPO
+// ---------------------------------------------------------------------
+public static class XpoProgramExtensions
+{
+    public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, IDataLayer dataLayer)
     {
-        public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, string connectionString)
-        {
-            XPDictionary dictionary = new ReflectionDictionary();
+        // Registriamo l'istanza già costruita in Program.cs (serve la stessa
+        // istanza usata dallo XpoSerilogSink, non una nuova per ogni richiesta)
+        services.AddSingleton(dataLayer);
 
-            // mappaggio xpo automatico delle Entitys
-            dictionary.GetDataStoreSchema(typeof(WorkLog).Assembly);
+        services.AddScoped<IDbContextService, DbContextService>();
 
-            services.AddSingleton<IDataLayer>(sp =>
-            {
-                IDataStore store = XpoDefault.GetConnectionProvider(connectionString, AutoCreateOption.DatabaseAndSchema);
-                return new ThreadSafeDataLayer(dictionary, store);
-            });
-
-            // Registriamo il servizio Scoped per la lettura / scrittura tramite lambda
-            services.AddScoped<IDbContextService, DbContextService>();
-
-            return services;
-        }
+        return services;
     }
+}
