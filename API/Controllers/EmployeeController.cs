@@ -1,5 +1,6 @@
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ namespace GestionaleRendicontazione.Api.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleNames.Admin)]
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
@@ -65,12 +66,13 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-            var ok = await _employeeService.DeleteAsync(id, ct);
-            if (!ok) return NotFound();
-            _logger.LogInformation("Dipendente {Id} licenziato", id);
-            return NoContent();
+                var ok = await _employeeService.DeleteAsync(id, ct);
+                if (!ok) return NotFound();
+                _logger.LogInformation("Dipendente {Id} licenziato", id);
+                return NoContent();
+            }
         }
     }
-}

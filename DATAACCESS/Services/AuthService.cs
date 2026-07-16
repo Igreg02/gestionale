@@ -5,6 +5,7 @@ using DevExpress.Persistent.BaseImpl.PermissionPolicy;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Identity;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
@@ -129,8 +130,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 newEmployee.PasswordHash = _passwordHasher.HashPassword(newEmployee, request.Password);
 
-                // Assegnazione del ruolo di default "User" sul database
-                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == "User");
+                // Assegnazione del ruolo di default sul database
+                var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == RoleNames.User);
 
                 if (userRole != null)
                 {
@@ -140,7 +141,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 {
                     var defaultRole = new PermissionPolicyRole(uow)
                     {
-                        Name = "User",
+                        Name = RoleNames.User,
                     };
                     newEmployee.Roles.Add(defaultRole);
                 }

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,7 +34,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             _logger = logger;
         }
 
-        private bool IsAdmin => User.IsInRole("Admin");
+        private bool IsAdmin => User.IsInRole(RoleNames.Admin);
 
         [HttpGet]
         [ProducesResponseType(typeof(List<WorkLogDto.Admin.Response>), StatusCodes.Status200OK)]
@@ -93,8 +94,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            try
-            {
                 if (IsAdmin)
                 {
                     var created = await _adminService.CreateAsync(dto, ct);
@@ -117,15 +116,6 @@ namespace GestionaleRendicontazione.Api.Controllers
 
                 var ownCreated = await _userService.CreateAsync(userDto, currentEmployeeId.Value, ct);
                 return CreatedAtRoute("GetWorkLogById", new { id = ownCreated.Id }, ownCreated);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Creazione worklog fallita");
-                return Problem(
-                    title: "Creazione worklog fallita",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
-            }
         }
 
         [HttpPut("{id:guid}")]
@@ -141,8 +131,7 @@ namespace GestionaleRendicontazione.Api.Controllers
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-            try
-            {
+
                 if (IsAdmin)
                 {
                     var updated = await _adminService.UpdateAsync(id, dto, ct);
@@ -166,15 +155,6 @@ namespace GestionaleRendicontazione.Api.Controllers
                 var ownUpdated = await _userService.UpdateAsync(id, userDto, currentEmployeeId.Value, ct);
                 if (ownUpdated is null) return NotFound();
                 return Ok(ownUpdated);
-            }
-            catch (InvalidOperationException ex)
-            {
-                _logger.LogWarning(ex, "Aggiornamento worklog {Id} fallito", id);
-                return Problem(
-                    title: "Aggiornamento worklog fallito",
-                    detail: ex.Message,
-                    statusCode: StatusCodes.Status422UnprocessableEntity);
-            }
         }
 
         [HttpDelete("{id:guid}")]

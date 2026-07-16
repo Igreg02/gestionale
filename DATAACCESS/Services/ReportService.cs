@@ -22,65 +22,36 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             _mapper = mapper;
         }
 
-        public Task<ProjectReportDto.Response?> GetProjectReportAsync(
+        public Task<ReportDto.Project.Response?> GetProjectReportAsync(
             Guid projectId,
-            DateOnly from,
-            DateOnly to,
+            DateOnly? from,
+            DateOnly? to,
             CancellationToken ct = default)
         {
-            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var project = session.GetObjectByKey<Project>(projectId);
-                if (project is null) return (ProjectReportDto.Response?)null;
+                if (project is null) return (ReportDto.Project.Response?)null;
 
-                var worklogs = session.Query<WorkLog>()
-                    .Active()
-                    .Where(w => w.Project != null
-                                && w.Project.Id == projectId
-                                && w.Date >= from
-                                && w.Date <= to)
-                    .OrderBy(w => w.Date)
-                    .ToList();
-
+                var worklogs = GetWorklogsInRange(session, w => w.Project != null && w.Project.Id == projectId, from, to);
                 var responses = _mapper.Map<List<WorkLogDto.Admin.Response>>(worklogs);
 
-                var byType = worklogs
-                    .GroupBy(w => w.Type?.Name ?? string.Empty)
-                    .Select(g => new ProjectReportDto.Bucket
-                    {
-                        Name = g.Key,
-                        Hours = g.Sum(w => (decimal)w.HoursCounter),
-                        Count = g.Count()
-                    })
-                    .OrderByDescending(b => b.Hours)
+                var byType = AggregateByKey(worklogs, w => w.Type?.Name ?? string.Empty)
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
-                var byStatus = worklogs
-                    .GroupBy(w => w.Status?.Name ?? string.Empty)
-                    .Select(g => new ProjectReportDto.Bucket
-                    {
-                        Name = g.Key,
-                        Hours = g.Sum(w => (decimal)w.HoursCounter),
-                        Count = g.Count()
-                    })
-                    .OrderByDescending(b => b.Hours)
+                var byStatus = AggregateByKey(worklogs, w => w.Status?.Name ?? string.Empty)
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
-                var byDay = worklogs
-                    .GroupBy(w => w.Date)
-                    .Select(g => new ProjectReportDto.DailyTotal
-                    {
-                        Date = g.Key,
-                        Hours = g.Sum(w => (decimal)w.HoursCounter),
-                        Count = g.Count()
-                    })
-                    .OrderBy(d => d.Date)
+                var byDay = AggregateByDay(worklogs)
+                    .Select(x => new ReportDto.DailyTotal { Date = x.Date, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byEmployee = worklogs
                     .Where(w => w.Employee != null)
                     .GroupBy(w => w.Employee!.Id)
-                    .Select(g => new ProjectReportDto.EmployeeBucket
+                    .Select(g => new ReportDto.Project.EmployeeBucket
                     {
                         EmployeeId = g.Key,
                         UserName = g.First().Employee!.UserName ?? string.Empty,
@@ -91,7 +62,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderByDescending(e => e.Hours)
                     .ToList();
 
-                return new ProjectReportDto.Response
+                return new ReportDto.Project.Response
                 {
                     ProjectId = project.Id,
                     ProjectName = project.Name ?? string.Empty,
@@ -108,68 +79,39 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     ByEmployee = byEmployee,
                     WorkLogs = responses
                 };
-            }), ct);
+            }));
         }
 
-        public Task<EmployeeReportDto.Response?> GetEmployeeReportAsync(
+        public Task<ReportDto.Employee.Response?> GetEmployeeReportAsync(
             Guid employeeId,
-            DateOnly from,
-            DateOnly to,
+            DateOnly? from,
+            DateOnly? to,
             CancellationToken ct = default)
         {
-            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var employee = session.GetObjectByKey<Employee>(employeeId);
-                if (employee is null) return (EmployeeReportDto.Response?)null;
+                if (employee is null) return (ReportDto.Employee.Response?)null;
 
-                var worklogs = session.Query<WorkLog>()
-                    .Active()
-                    .Where(w => w.Employee != null
-                                && w.Employee.Id == employeeId
-                                && w.Date >= from
-                                && w.Date <= to)
-                    .OrderBy(w => w.Date)
-                    .ToList();
-
+                var worklogs = GetWorklogsInRange(session, w => w.Employee != null && w.Employee.Id == employeeId, from, to);
                 var responses = _mapper.Map<List<WorkLogDto.Admin.Response>>(worklogs);
 
-                var byType = worklogs
-                    .GroupBy(w => w.Type?.Name ?? string.Empty)
-                    .Select(g => new EmployeeReportDto.Bucket
-                    {
-                        Name = g.Key,
-                        Hours = g.Sum(w => (decimal)w.HoursCounter),
-                        Count = g.Count()
-                    })
-                    .OrderByDescending(b => b.Hours)
+                var byType = AggregateByKey(worklogs, w => w.Type?.Name ?? string.Empty)
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
-                var byStatus = worklogs
-                    .GroupBy(w => w.Status?.Name ?? string.Empty)
-                    .Select(g => new EmployeeReportDto.Bucket
-                    {
-                        Name = g.Key,
-                        Hours = g.Sum(w => (decimal)w.HoursCounter),
-                        Count = g.Count()
-                    })
-                    .OrderByDescending(b => b.Hours)
+                var byStatus = AggregateByKey(worklogs, w => w.Status?.Name ?? string.Empty)
+                    .Select(x => new ReportDto.Bucket { Name = x.Key, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
-                var byDay = worklogs
-                    .GroupBy(w => w.Date)
-                    .Select(g => new EmployeeReportDto.DailyTotal
-                    {
-                        Date = g.Key,
-                        Hours = g.Sum(w => (decimal)w.HoursCounter),
-                        Count = g.Count()
-                    })
-                    .OrderBy(d => d.Date)
+                var byDay = AggregateByDay(worklogs)
+                    .Select(x => new ReportDto.DailyTotal { Date = x.Date, Hours = x.Hours, Count = x.Count })
                     .ToList();
 
                 var byProject = worklogs
                     .Where(w => w.Project != null)
                     .GroupBy(w => w.Project!.Id)
-                    .Select(g => new EmployeeReportDto.ProjectBucket
+                    .Select(g => new ReportDto.Employee.ProjectBucket
                     {
                         ProjectId = g.Key,
                         ProjectName = g.First().Project!.Name ?? string.Empty,
@@ -179,7 +121,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .OrderByDescending(p => p.Hours)
                     .ToList();
 
-                return new EmployeeReportDto.Response
+                return new ReportDto.Employee.Response
                 {
                     EmployeeId = employee.Id,
                     UserName = employee.UserName ?? string.Empty,
@@ -194,7 +136,62 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     ByProject = byProject,
                     WorkLogs = responses
                 };
-            }), ct);
+            }));
+        }
+
+        /// <summary>
+        /// Recupera i WorkLog attivi che soddisfano il filtro radice (progetto/dipendente) nell'intervallo di date dato.
+        /// Centralizza la logica comune a entrambi i report, prima duplicata.
+        /// </summary>
+        private static List<WorkLog> GetWorklogsInRange(
+            Session session,
+            System.Linq.Expressions.Expression<Func<WorkLog, bool>> rootFilter,
+            DateOnly? from,
+            DateOnly? to)
+        {
+            var query = session.Query<WorkLog>()
+                .Active()
+                .Where(rootFilter);
+
+            if (from.HasValue)
+            {
+                var fromValue = from.Value;
+                query = query.Where(w => w.Date >= fromValue);
+            }
+            if (to.HasValue)
+            {
+                var toValue = to.Value;
+                query = query.Where(w => w.Date <= toValue);
+            }
+
+            return query
+                .OrderBy(w => w.Date)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Raggruppa i worklog per una chiave testuale (Type.Name, Status.Name, ...) sommando ore e conteggio.
+        /// Estratto per evitare la duplicazione della stessa logica di aggregazione nei due report.
+        /// </summary>
+        private static List<(string Key, decimal Hours, int Count)> AggregateByKey(
+            List<WorkLog> worklogs,
+            Func<WorkLog, string> keySelector)
+        {
+            return worklogs
+                .GroupBy(keySelector)
+                .Select(g => (Key: g.Key, Hours: g.Sum(w => (decimal)w.HoursCounter), Count: g.Count()))
+                .OrderByDescending(x => x.Hours)
+                .ToList();
+        }
+
+        /// <summary>Raggruppa i worklog per giorno sommando ore e conteggio.</summary>
+        private static List<(DateOnly Date, decimal Hours, int Count)> AggregateByDay(List<WorkLog> worklogs)
+        {
+            return worklogs
+                .GroupBy(w => w.Date)
+                .Select(g => (Date: g.Key, Hours: g.Sum(w => (decimal)w.HoursCounter), Count: g.Count()))
+                .OrderBy(x => x.Date)
+                .ToList();
         }
 
         private static string BuildFullName(Employee e)

@@ -19,22 +19,22 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public Task<List<CompanyDto.Response>> GetAllAsync(CancellationToken ct = default)
         {
-            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var list = session.Query<Company>()
                     .OrderBy(c => c.Name)
                     .ToList();
                 return _mapper.Map<List<CompanyDto.Response>>(list);
-            }), ct);
+            }));
         }
 
         public Task<CompanyDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
         {
-            return Task.Run(() => _dbContextService.ExecuteReadOnly(session =>
+            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
                 var c = session.GetObjectByKey<Company>(id);
                 return c is null ? null : _mapper.Map<CompanyDto.Response>(c);
-            }), ct);
+            }));
         }
 
         public async Task<CompanyDto.Response> CreateAsync(CompanyDto.Create dto, CancellationToken ct = default)

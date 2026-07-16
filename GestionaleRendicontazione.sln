@@ -1,10 +1,7 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "API", "API\API.csproj", "{CA4E3716-EDEC-40A8-AD45-C5D23F6BDAB2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DATAACCESS", "DATAACCESS\DATAACCESS.csproj", "{B62ACE39-BE3C-4FAE-B350-ED4E7879EF42}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DOMAIN", "DOMAIN\DOMAIN.csproj", "{47CB503A-FE45-4A57-8DCE-293F38F7B98B}"
@@ -15,10 +12,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{CA4E3716-EDEC-40A8-AD45-C5D23F6BDAB2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CA4E3716-EDEC-40A8-AD45-C5D23F6BDAB2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CA4E3716-EDEC-40A8-AD45-C5D23F6BDAB2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CA4E3716-EDEC-40A8-AD45-C5D23F6BDAB2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{B62ACE39-BE3C-4FAE-B350-ED4E7879EF42}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{B62ACE39-BE3C-4FAE-B350-ED4E7879EF42}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B62ACE39-BE3C-4FAE-B350-ED4E7879EF42}.Release|Any CPU.ActiveCfg = Release|Any CPU

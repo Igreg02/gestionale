@@ -8,16 +8,16 @@ namespace GestionaleRendicontazione.Domain.Interfaces
     /// </summary>
     public interface IReportService
     {
-        Task<ProjectReportDto.Response?> GetProjectReportAsync(
+        Task<ReportDto.Project.Response?> GetProjectReportAsync(
             Guid projectId,
-            DateOnly from,
-            DateOnly to,
+            DateOnly? from,
+            DateOnly? to,
             CancellationToken ct = default);
 
-        Task<EmployeeReportDto.Response?> GetEmployeeReportAsync(
+        Task<ReportDto.Employee.Response?> GetEmployeeReportAsync(
             Guid employeeId,
-            DateOnly from,
-            DateOnly to,
+            DateOnly? from,
+            DateOnly? to,
             CancellationToken ct = default);
     }
 }

@@ -1,5 +1,4 @@
 using System.Text;
-using Microsoft.OpenApi;
 using DevExpress.Xpo;
 using DevExpress.Xpo.DB;
 using DevExpress.Xpo.Metadata;
@@ -10,17 +9,47 @@ using GestionaleRendicontazione.Dataaccess.Datacontext;
 using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using GestionaleRendicontazione.Dataaccess.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.IdentityModel.Tokens;
 using AutoMapper;
 using GestionaleRendicontazione.Dataaccess.Helpers;
+using GestionaleRendicontazione.Api.Helpers;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
 
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;";
 
-builder.Services.AddXpoInfrastructure(connectionString);
+// ---------------------------------------------------------------------
+// COSTRUZIONE DATALAYER XPO (fatto qui, PRIMA di Serilog, perché il sink
+// XpoSerilogSink ha bisogno di un'istanza di IDataLayer già pronta)
+// ---------------------------------------------------------------------
+EnableSqliteWalMode(connectionString);
+XPDictionary xpoDictionary = new ReflectionDictionary();
+xpoDictionary.GetDataStoreSchema(typeof(WorkLog).Assembly);
+IDataStore xpoStore = XpoDefault.GetConnectionProvider(connectionString, AutoCreateOption.DatabaseAndSchema);
+IDataLayer dataLayer = new ThreadSafeDataLayer(xpoDictionary, xpoStore);
+
+var httpContextAccessor = new HttpContextAccessor();
+builder.Services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
+
+// ---------------------------------------------------------------------
+// CONFIGURAZIONE SERILOG (Console + DB)
+// ---------------------------------------------------------------------
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()
+    .Enrich.With(new RequestContextEnricher(httpContextAccessor))
+    .WriteTo.Console()
+    .WriteTo.Sink(new XpoSerilogSink(dataLayer))
+    .CreateLogger();
+
+builder.Host.UseSerilog(); // Sostituisce il logger di default con Serilog
+
+builder.Services.AddXpoInfrastructure(dataLayer);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -40,9 +69,8 @@ builder.Services.AddSwaggerGen(options =>
         [new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document)] = new List<string>()
     });
 });
-// ---------------------------------------------------------------------
-// AUTENTICAZIONE JWT self-issued (TDD §1: "JWT Bearer Token (ASP.NET Core Identity / OAuth2)")
-// ---------------------------------------------------------------------
+
+// Autenticazione JWT
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtOptions>(jwtSection);
 
@@ -50,8 +78,6 @@ var jwtSecretKey = jwtSection["SecretKey"] ?? string.Empty;
 var jwtIssuer = jwtSection["Issuer"] ?? string.Empty;
 var jwtAudience = jwtSection["Audience"] ?? string.Empty;
 
-// Validazione del token in ingresso. La chiave è la stessa usata in JwtTokenService
-// per la firma (HMAC-SHA256). ClockSkew = 0 per non allungare artificialmente la vita del token.
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -84,15 +110,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-
-// PasswordHasher di Microsoft.Extensions.Identity: usato da AuthService per
-// hashare e verificare la password degli Employee.
 builder.Services.AddSingleton<PasswordHasher<Employee>>();
-
-// Registrazione AutoMapper
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MappingProfile>());
 
-// Servizi applicativi.
+// Servizi applicativi
 builder.Services.AddScoped<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -107,28 +128,23 @@ builder.Services.AddScoped<IReportService, ReportService>();
 
 var app = builder.Build();
 
-
-if (app.Environment.IsDevelopment()) // TODO: RIMUOVERE SWAGGHER
+if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger(); 
-    app.UseSwaggerUI(); 
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-// app.UseHttpsRedirection(); // Disabilitato in Development per permettere HTTP
 
-// FIX #4: UseExceptionHandler reale.
-// Cattura qualsiasi eccezione non gestita nei controller e produce una risposta
-// ProblemDetails coerente. Mappa le InvalidOperationException (solitamente lanciate
-// dai service per "FK mancanti", "vincolo dipendenze", "username duplicato", …)
-// a 409 Conflict, lasciando il resto a 500. Viene loggato tutto.
-app.UseExceptionHandler(builder =>
+// ---------------------------------------------------------------------
+// USE EXCEPTION HANDLER (Logga sia su Console che su DB XPO)
+// ---------------------------------------------------------------------
+app.UseExceptionHandler(handlerApp =>
 {
-    builder.Run(async context =>
+    handlerApp.Run(async context =>
     {
         var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
         var exception = exceptionFeature?.Error;
-        var logger = context.RequestServices.GetRequiredService<ILoggerFactory>()
-            .CreateLogger("GlobalExceptionHandler");
 
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         if (exception is not null)
         {
             logger.LogError(exception, "Unhandled exception during {Method} {Path}",
@@ -155,9 +171,7 @@ app.UseExceptionHandler(builder =>
             Instance = context.Request.Path
         };
 
-        if (app.Services
-            .GetRequiredService<Microsoft.AspNetCore.Hosting.IWebHostEnvironment>()
-            .IsDevelopment())
+        if (app.Environment.IsDevelopment())
         {
             problem.Extensions["traceId"] = context.TraceIdentifier;
             problem.Extensions["stackTrace"] = exception?.StackTrace;
@@ -172,10 +186,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.UseStatusCodePages();
 
-
-// ---------------------------------------------------------------------
-// 4. SEED INIZIALE DEI DATI — delegato al DataSeeder dedicato
-// ---------------------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
     var dbContextService = scope.ServiceProvider.GetRequiredService<IDbContextService>();
@@ -185,27 +195,40 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-
-
-
-    public static class XpoProgramExtensions
+// ---------------------------------------------------------------------
+// EXTENSION METHODS XPO
+// ---------------------------------------------------------------------
+public static class XpoProgramExtensions
+{
+    public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, IDataLayer dataLayer)
     {
-        public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, string connectionString)
-        {
-            XPDictionary dictionary = new ReflectionDictionary();
-
-            // mappaggio xpo automatico delle Entitys
-            dictionary.GetDataStoreSchema(typeof(WorkLog).Assembly);
-
-            services.AddSingleton<IDataLayer>(sp =>
-            {
-                IDataStore store = XpoDefault.GetConnectionProvider(connectionString, AutoCreateOption.DatabaseAndSchema);
-                return new ThreadSafeDataLayer(dictionary, store);
-            });
-
-            // Registriamo il servizio Scoped per la lettura / scrittura tramite lambda
-            services.AddScoped<IDbContextService, DbContextService>();
-
-            return services;
-        }
+        services.AddSingleton(dataLayer);
+        services.AddScoped<IDbContextService, DbContextService>();
+        return services;
     }
+}
+
+// ---------------------------------------------------------------------
+// SQLITE WAL MODE
+// ---------------------------------------------------------------------
+// SQLite di default usa un rollback journal, che durante una scrittura blocca
+// tutte le letture concorrenti sullo stesso file. Il WAL mode permette letture
+// concorrenti mentre è in corso una scrittura, riducendo il rischio di
+// "database is locked" quando più richieste arrivano insieme.
+partial class Program
+{
+    static void EnableSqliteWalMode(string xpoConnectionString)
+    {
+        var sqliteConnectionString = xpoConnectionString.Replace("XpoProvider=SQLite;", string.Empty);
+        if (!sqliteConnectionString.Contains("Data Source", StringComparison.OrdinalIgnoreCase))
+        {
+            return; // Non è SQLite (es. altro provider XPO): niente da fare
+        }
+
+        using var connection = new SqliteConnection(sqliteConnectionString);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA journal_mode=WAL;";
+        command.ExecuteNonQuery();
+    }
+}
