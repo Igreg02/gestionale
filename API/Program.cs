@@ -9,7 +9,9 @@ using GestionaleRendicontazione.Dataaccess.Datacontext;
 using GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService;
 using GestionaleRendicontazione.Dataaccess.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Data.Sqlite;
 using Microsoft.IdentityModel.Tokens;
 using AutoMapper;
 using GestionaleRendicontazione.Dataaccess.Helpers;
@@ -17,6 +19,7 @@ using GestionaleRendicontazione.Api.Helpers;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
 
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;";
@@ -25,16 +28,21 @@ string connectionString = builder.Configuration.GetConnectionString("DefaultConn
 // COSTRUZIONE DATALAYER XPO (fatto qui, PRIMA di Serilog, perché il sink
 // XpoSerilogSink ha bisogno di un'istanza di IDataLayer già pronta)
 // ---------------------------------------------------------------------
+EnableSqliteWalMode(connectionString);
 XPDictionary xpoDictionary = new ReflectionDictionary();
 xpoDictionary.GetDataStoreSchema(typeof(WorkLog).Assembly);
 IDataStore xpoStore = XpoDefault.GetConnectionProvider(connectionString, AutoCreateOption.DatabaseAndSchema);
 IDataLayer dataLayer = new ThreadSafeDataLayer(xpoDictionary, xpoStore);
+
+var httpContextAccessor = new HttpContextAccessor();
+builder.Services.AddSingleton<IHttpContextAccessor>(httpContextAccessor);
 
 // ---------------------------------------------------------------------
 // CONFIGURAZIONE SERILOG (Console + DB)
 // ---------------------------------------------------------------------
 Log.Logger = new LoggerConfiguration()
     .Enrich.FromLogContext()
+    .Enrich.With(new RequestContextEnricher(httpContextAccessor))
     .WriteTo.Console()
     .WriteTo.Sink(new XpoSerilogSink(dataLayer))
     .CreateLogger();
@@ -136,42 +144,11 @@ app.UseExceptionHandler(handlerApp =>
         var exceptionFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
         var exception = exceptionFeature?.Error;
 
-        // 1. Log tramite ILogger (Console, via Serilog)
         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
         if (exception is not null)
         {
             logger.LogError(exception, "Unhandled exception during {Method} {Path}",
                 context.Request.Method, context.Request.Path);
-
-            // 2. SALVATAGGIO SU DB (XPO)
-            try
-            {
-                // Recuperiamo l'User ID dai Claim del token JWT
-                var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                ?? context.User?.FindFirst("sub")?.Value
-                 ?? "Anonymus"; // Se l'utente non è loggato (es. endpoint pubblici)
-
-                var dataLayer = context.RequestServices.GetRequiredService<IDataLayer>();
-                using (var uow = new UnitOfWork(dataLayer))
-                {
-                    var logDb = new LogApplicativo(uow)
-                    {
-                        Data = DateTime.Now,
-                        Livello = "Error",
-                        Messaggio = exception.Message,
-                        Metodo = context.Request.Method,
-                        Path = context.Request.Path,
-                        StackTrace = exception.StackTrace ?? string.Empty,
-                        UserId = userId
-                    };
-                    await uow.CommitChangesAsync();
-                }
-            }
-            catch (Exception xpoEx)
-            {
-                // Se il DB è offline, questo backup di log su console ti salva la vita!
-                logger.LogError(xpoEx, "Impossibile salvare il log dell'eccezione sul Database.");
-            }
         }
 
         var (status, title) = exception switch
@@ -206,25 +183,6 @@ app.UseExceptionHandler(handlerApp =>
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// ---------------------------------------------------------------------
-// ARRICCHIMENTO LOG: rendiamo disponibili UserId, Path e Metodo a
-// qualunque log emesso durante la richiesta (letti poi da XpoSerilogSink)
-// ---------------------------------------------------------------------
-app.Use(async (context, next) =>
-{
-    var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-        ?? context.User?.FindFirst("sub")?.Value
-        ?? "Anonymus";
-
-    using (Serilog.Context.LogContext.PushProperty("UserId", userId))
-    using (Serilog.Context.LogContext.PushProperty("RequestPath", context.Request.Path.ToString()))
-    using (Serilog.Context.LogContext.PushProperty("RequestMethod", context.Request.Method))
-    {
-        await next();
-    }
-});
-
 app.MapControllers();
 app.UseStatusCodePages();
 
@@ -244,12 +202,33 @@ public static class XpoProgramExtensions
 {
     public static IServiceCollection AddXpoInfrastructure(this IServiceCollection services, IDataLayer dataLayer)
     {
-        // Registriamo l'istanza già costruita in Program.cs (serve la stessa
-        // istanza usata dallo XpoSerilogSink, non una nuova per ogni richiesta)
         services.AddSingleton(dataLayer);
-
         services.AddScoped<IDbContextService, DbContextService>();
-
         return services;
+    }
+}
+
+// ---------------------------------------------------------------------
+// SQLITE WAL MODE
+// ---------------------------------------------------------------------
+// SQLite di default usa un rollback journal, che durante una scrittura blocca
+// tutte le letture concorrenti sullo stesso file. Il WAL mode permette letture
+// concorrenti mentre è in corso una scrittura, riducendo il rischio di
+// "database is locked" quando più richieste arrivano insieme.
+partial class Program
+{
+    static void EnableSqliteWalMode(string xpoConnectionString)
+    {
+        var sqliteConnectionString = xpoConnectionString.Replace("XpoProvider=SQLite;", string.Empty);
+        if (!sqliteConnectionString.Contains("Data Source", StringComparison.OrdinalIgnoreCase))
+        {
+            return; // Non è SQLite (es. altro provider XPO): niente da fare
+        }
+
+        using var connection = new SqliteConnection(sqliteConnectionString);
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA journal_mode=WAL;";
+        command.ExecuteNonQuery();
     }
 }

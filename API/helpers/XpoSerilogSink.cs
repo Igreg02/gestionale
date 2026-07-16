@@ -41,9 +41,13 @@ namespace GestionaleRendicontazione.Api.Helpers
                     uow.CommitChanges();
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Fallback silenzioso per non far crashare l'app se il DB è giù
+                // Non richiamiamo logger.LogError qui: rientreremmo in questo stesso
+                // sink e, se il DB è davvero giù, fallirebbe di nuovo all'infinito.
+                // SelfLog è il canale diagnostico interno di Serilog, pensato apposta
+                // per questi casi: scrive su stderr, fuori dalla pipeline dei sink.
+                Serilog.Debugging.SelfLog.WriteLine("Impossibile scrivere il log su DB (XpoSerilogSink): {0}", ex);
             }
         }
 
