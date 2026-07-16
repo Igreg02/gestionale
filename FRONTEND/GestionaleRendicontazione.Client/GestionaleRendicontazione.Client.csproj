@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GestionaleRendicontazione.Client</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Versioni allineate al resto della solution (net10.0, patch 10.0.9 come API).
+      Al primo `dotnet restore` NuGet potrebbe segnalare una patch più recente:
+      in tal caso allineare qui la versione senza cambiare i nomi dei pacchetti.
+    -->
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9" PrivateAssets="all" />
+
+    <!-- Blazorise Free/Community — provider Bootstrap 5 + icone FontAwesome (vedi TDD §7, Fase F1) -->
+    <PackageReference Include="Blazorise.Bootstrap5" Version="2.1.2" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="2.1.2" />
+  </ItemGroup>
+
+</Project>

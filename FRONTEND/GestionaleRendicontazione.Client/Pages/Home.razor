@@ -1,0 +1,85 @@
+@page "/"
+@inject HttpClient Http
+
+<PageTitle>Gestionale Rendicontazione</PageTitle>
+
+<Row>
+    <Column ColumnSize="ColumnSize.Is8.OnDesktop.Is12.OnMobile">
+        <Heading Size="HeadingSize.Is2">Gestionale Rendicontazione</Heading>
+        <Paragraph>
+            Frontend Blazor WebAssembly — Fase F1 (bootstrap del progetto e verifica di connettività).
+        </Paragraph>
+
+        <Card Class="mt-4">
+            <CardBody>
+                <CardTitle Size="HeadingSize.Is5">Verifica connessione al backend</CardTitle>
+                <CardText>
+                    Chiamata anonima verso <code>@_swaggerUrl</code>
+                </CardText>
+
+                @if (!_checked)
+                {
+                    <Paragraph>Verifica in corso...</Paragraph>
+                }
+                else if (_success)
+                {
+                    <Alert Color="Color.Success" Visible="true">
+                        Backend raggiungibile — risposta HTTP @_statusCode.
+                    </Alert>
+                }
+                else
+                {
+                    <Alert Color="Color.Danger" Visible="true">
+                        Backend non raggiungibile: @_errorMessage
+                    </Alert>
+                }
+
+                <Button Color="Color.Primary" Clicked="CheckConnectivityAsync">
+                    Riprova
+                </Button>
+            </CardBody>
+        </Card>
+    </Column>
+</Row>
+
+@code {
+    private bool _checked;
+    private bool _success;
+    private int? _statusCode;
+    private string? _errorMessage;
+    private string _swaggerUrl = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _swaggerUrl = new Uri(Http.BaseAddress!, "swagger/v1/swagger.json").ToString();
+        await CheckConnectivityAsync();
+    }
+
+    private async Task CheckConnectivityAsync()
+    {
+        _checked = false;
+        _success = false;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            // Endpoint pubblico (Swagger, attivo solo in ambiente di sviluppo): nessun token richiesto.
+            using var response = await Http.GetAsync("swagger/v1/swagger.json");
+            _statusCode = (int)response.StatusCode;
+            _success = response.IsSuccessStatusCode;
+            if (!_success)
+            {
+                _errorMessage = $"il backend ha risposto con codice {_statusCode}.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _checked = true;
+        }
+    }
+}

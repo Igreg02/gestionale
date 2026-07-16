@@ -1,0 +1,24 @@
+@inherits LayoutComponentBase
+
+<Bar Mode="BarMode.Horizontal"
+     Breakpoint="Breakpoint.Desktop"
+     ThemeContrast="ThemeContrast.Dark"
+     Background="Background.Primary">
+    <BarBrand>
+        <BarItem>
+            <BarLink To="/">Gestionale Rendicontazione</BarLink>
+        </BarItem>
+    </BarBrand>
+    <BarToggler />
+    <BarMenu>
+        <BarStart>
+            <BarItem>
+                <BarLink To="/">Home</BarLink>
+            </BarItem>
+        </BarStart>
+    </BarMenu>
+</Bar>
+
+<Container Fluid Class="py-4">
+    @Body
+</Container>
