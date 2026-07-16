@@ -12,12 +12,6 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// ---------------------------------------------------------------------
-// HttpClient verso il backend — la base URL viene letta da
-// wwwroot/appsettings.json / appsettings.Development.json (chiave "ApiBaseUrl").
-// In Fase F1 non viene ancora allegato alcun token: l'autenticazione
-// (DelegatingHandler + refresh) arriva in Fase F2.
-// ---------------------------------------------------------------------
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException(
         "Configurazione mancante: valorizzare 'ApiBaseUrl' in wwwroot/appsettings.json.");

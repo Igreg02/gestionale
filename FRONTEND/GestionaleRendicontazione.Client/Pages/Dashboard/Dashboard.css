@@ -1,31 +1,3 @@
-.loading-splash {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    font-family: sans-serif;
-    color: #6c757d;
-}
-
-#blazor-error-ui {
-    background: lightyellow;
-    bottom: 0;
-    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
-    display: none;
-    left: 0;
-    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
-    position: fixed;
-    width: 100%;
-    z-index: 1000;
-}
-
-#blazor-error-ui .dismiss {
-    cursor: pointer;
-    position: absolute;
-    right: 0.75rem;
-    top: 0.5rem;
-}
-
 /* Palette Colori & Stili Generali */
 :root {
     --primary-blue: #2563eb;
@@ -67,22 +39,27 @@ body {
     background-color: var(--primary-blue-hover);
 }
 
-/* Griglia Worklog orizzontale fluida */
+/* Griglia Worklog orizzontale reattiva */
 .worklog-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 1.5rem; /* Spazio uniforme tra le card */
-    width: 100%;
+    gap: 1.25rem;
 }
 
-/* Card Singola - Si allarga per coprire tutta la riga disponibile */
+/* Card Singola */
 .worklog-card {
     background: #ffffff;
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    flex: 1 1 260px; /* Minimo 260px, poi si espande proporzionalmente fino alla fine dello schermo */
-    min-height: 180px;
+    flex: 1 1 240px; /* Si allarga e si stringe, minimo 240px prima di andare a capo */
+    max-width: 280px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (max-width: 576px) {
+    .worklog-card {
+        max-width: 100%; /* Su cellulare occupa tutta la riga */
+    }
 }
 
 .worklog-card-body {
@@ -122,7 +99,7 @@ body {
 }
 
 .worklog-hours {
-    font-size: 1.1rem;
+    font-size: 1rem;
     margin-top: 0.5rem;
 }
 
@@ -137,6 +114,9 @@ body {
     border: 2px dashed #cbd5e1;
     background: #fdfdfd;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .card-placeholder-new:hover {
@@ -166,7 +146,7 @@ body {
     color: var(--text-dark);
 }
 
-/* Input personalizzati */
+/* Input personalizzati (Grigio chiaro, angoli tondi) */
 .custom-input {
     background-color: #f8fafc;
     border: 1px solid var(--border-color);
@@ -198,7 +178,7 @@ body {
     font-weight: 600;
     font-size: 0.95rem;
     transition: background 0.2s;
-    height: 46px; 
+    height: 46px; /* Allineato all'altezza degli input */
 }
 
 .btn-genera:hover {
