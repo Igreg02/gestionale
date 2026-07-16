@@ -15,10 +15,69 @@
             <BarItem>
                 <BarLink To="/">Home</BarLink>
             </BarItem>
+            <AuthorizeView>
+                <Authorized>
+                    <BarItem>
+                        <BarLink To="/dashboard">Dashboard</BarLink>
+                    </BarItem>
+                </Authorized>
+            </AuthorizeView>
         </BarStart>
+        <BarEnd>
+            <AuthorizeView Context="authState">
+                <Authorized>
+                    <BarItem>
+                        <span class="text-white me-3">Benvenuto, @authState.User.Identity?.Name</span>
+                    </BarItem>
+                    <BarItem>
+                        <BarLink To="/logout">Logout</BarLink>
+                    </BarItem>
+                </Authorized>
+                <NotAuthorized>
+                    <BarItem>
+                        <BarLink To="/login">Login</BarLink>
+                    </BarItem>
+                </NotAuthorized>
+            </AuthorizeView>
+        </BarEnd>
     </BarMenu>
 </Bar>
 
 <Container Fluid Class="py-4">
-    @Body
+    <Row>
+        <Column ColumnSize="ColumnSize.Is3.OnDesktop.Is12.OnTablet.Is12.OnMobile">
+            <AuthorizeView>
+                <Authorized>
+                    <Card Class="mb-4">
+                        <CardBody>
+                            <Heading Size="HeadingSize.Is5">Navigazione</Heading>
+                            <div class="bg-light p-2 rounded">
+                                <div class="mb-2"><a class="nav-link p-0" href="/dashboard">Dashboard</a></div>
+                                <div class="mb-2"><a class="nav-link p-0" href="/worklogs">I miei Worklog</a></div>
+                                <div class="mb-2"><a class="nav-link p-0" href="/report">Report</a></div>
+                                <div class="mb-2"><a class="nav-link p-0" href="/profile">Profilo</a></div>
+                            </div>
+                        </CardBody>
+                    </Card>
+                </Authorized>
+                <NotAuthorized>
+                    <Card Class="mb-4">
+                        <CardBody>
+                            <Heading Size="HeadingSize.Is5">Hai bisogno di accedere</Heading>
+                            <Paragraph>Effettua il login per accedere alla dashboard e visualizzare i worklog.</Paragraph>
+                            <Bar>
+                                <BarItem>
+                                    <BarLink To="/login">Login</BarLink>
+                                </BarItem>
+                            </Bar>
+                        </CardBody>
+                    </Card>
+                </NotAuthorized>
+            </AuthorizeView>
+        </Column>
+
+        <Column ColumnSize="ColumnSize.Is9.OnDesktop.Is12.OnMobile">
+            @Body
+        </Column>
+    </Row>
 </Container>

@@ -1,0 +1,15 @@
+@page "/logout"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Logout</PageTitle>
+
+<Heading Size="HeadingSize.Is4">Disconnessione in corso...</Heading>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await AuthService.LogoutAsync();
+        NavigationManager.NavigateTo("/");
+    }
+}

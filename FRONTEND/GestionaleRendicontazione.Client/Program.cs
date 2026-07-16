@@ -2,6 +2,8 @@ using Blazorise;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
 using GestionaleRendicontazione.Client;
+using GestionaleRendicontazione.Client.Services;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -20,9 +22,21 @@ var apiBaseUrl = builder.Configuration["ApiBaseUrl"]
     ?? throw new InvalidOperationException(
         "Configurazione mancante: valorizzare 'ApiBaseUrl' in wwwroot/appsettings.json.");
 
-builder.Services.AddScoped(_ => new HttpClient
+builder.Services.AddScoped<TokenStorageService>();
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddTransient<AuthenticatedHttpMessageHandler>();
+
+builder.Services.AddScoped(sp =>
 {
-    BaseAddress = new Uri(apiBaseUrl)
+    var handler = sp.GetRequiredService<AuthenticatedHttpMessageHandler>();
+    handler.InnerHandler = new HttpClientHandler();
+    return new HttpClient(handler)
+    {
+        BaseAddress = new Uri(apiBaseUrl)
+    };
 });
 
 // ---------------------------------------------------------------------

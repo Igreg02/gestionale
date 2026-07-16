@@ -1,5 +1,7 @@
 @page "/"
+@using Microsoft.AspNetCore.Components.Authorization
 @inject HttpClient Http
+@inject NavigationManager NavigationManager
 
 <PageTitle>Gestionale Rendicontazione</PageTitle>
 
@@ -7,8 +9,22 @@
     <Column ColumnSize="ColumnSize.Is8.OnDesktop.Is12.OnMobile">
         <Heading Size="HeadingSize.Is2">Gestionale Rendicontazione</Heading>
         <Paragraph>
-            Frontend Blazor WebAssembly — Fase F1 (bootstrap del progetto e verifica di connettività).
+            Benvenuto nel frontend Blazor WebAssembly. Questa pagina serve per verificare la connettività e avviare il percorso di autenticazione.
         </Paragraph>
+
+        <AuthorizeView>
+            <Authorized>
+                <Alert Color="Color.Success" Visible="true">
+                    Sei autenticato. Vai al tuo <BarLink To="/dashboard">Dashboard</BarLink>.
+                </Alert>
+            </Authorized>
+            <NotAuthorized>
+                <Alert Color="Color.Info" Visible="true">
+                    Non sei autenticato. Accedi per visualizzare il dashboard e gestire i worklog.
+                </Alert>
+                <Button Color="Color.Primary" Clicked="NavigateToLogin">Accedi</Button>
+            </NotAuthorized>
+        </AuthorizeView>
 
         <Card Class="mt-4">
             <CardBody>
@@ -81,5 +97,10 @@
         {
             _checked = true;
         }
+    }
+
+    private void NavigateToLogin()
+    {
+        NavigationManager.NavigateTo("/login");
     }
 }

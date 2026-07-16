@@ -1,0 +1,57 @@
+@page "/login"
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Login</PageTitle>
+
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <Card Class="shadow-sm" Style="max-width: 480px; width: 100%;">
+        <CardBody>
+            <div class="text-center mb-4">
+                <Heading Size="HeadingSize.Is2">Worklog Manager</Heading>
+                <Paragraph>Accedi per continuare</Paragraph>
+            </div>
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <Alert Color="Color.Danger" Visible="true">
+                    @_errorMessage
+                </Alert>
+            }
+
+            <EditForm Model="_loginModel" OnValidSubmit="HandleLoginAsync">
+                <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
+
+                <div class="mb-3">
+                    <label class="form-label">Username</label>
+                    <InputText @bind-Value="_loginModel.UserName" class="form-control" placeholder="Inserisci username" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <InputText @bind-Value="_loginModel.Password" type="password" class="form-control" placeholder="Inserisci password" />
+                </div>
+
+                <Button Color="Color.Primary" Type="ButtonType.Submit" Class="mt-3" Block>Accedi</Button>
+            </EditForm>
+        </CardBody>
+    </Card>
+</div>
+
+@code {
+    private LoginRequestDto _loginModel = new();
+    private string? _errorMessage;
+
+    private async Task HandleLoginAsync()
+    {
+        _errorMessage = null;
+        var success = await AuthService.LoginAsync(_loginModel.UserName, _loginModel.Password);
+        if (!success)
+        {
+            _errorMessage = "Credenziali errate o servizio non disponibile.";
+            return;
+        }
+
+        NavigationManager.NavigateTo("/");
+    }
+}
