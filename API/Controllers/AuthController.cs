@@ -87,7 +87,6 @@ namespace GestionaleRendicontazione.Api.Controllers
         }
 
         [HttpPost("register")]
-        [Authorize]
         [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(AuthDto.RegisterResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
