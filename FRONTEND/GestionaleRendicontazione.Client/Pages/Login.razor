@@ -4,38 +4,47 @@
 
 <PageTitle>Login</PageTitle>
 
-<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    <Card Class="shadow-sm" Style="max-width: 480px; width: 100%;">
-        <CardBody>
-            <div class="text-center mb-4">
-                <Heading Size="HeadingSize.Is2">Worklog Manager</Heading>
-                <Paragraph>Accedi per continuare</Paragraph>
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-brand">
+            <div class="auth-brand-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="auth-brand-title">WORKLOG<small>MANAGER</small></div>
+        </div>
+
+        <div class="auth-welcome">
+            <h2>Benvenuto nel Worklog Manager</h2>
+            <p>Accedi per continuare</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <Alert Color="Color.Danger" Visible="true">
+                @_errorMessage
+            </Alert>
+        }
+
+        <EditForm Model="_loginModel" OnValidSubmit="HandleLoginAsync">
+            <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
+
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <div class="auth-input-group">
+                    <i class="bi bi-person"></i>
+                    <InputText @bind-Value="_loginModel.UserName" placeholder="Inserisci username" />
+                </div>
             </div>
 
-            @if (!string.IsNullOrEmpty(_errorMessage))
-            {
-                <Alert Color="Color.Danger" Visible="true">
-                    @_errorMessage
-                </Alert>
-            }
-
-            <EditForm Model="_loginModel" OnValidSubmit="HandleLoginAsync">
-                <Microsoft.AspNetCore.Components.Forms.ValidationSummary />
-
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <InputText @bind-Value="_loginModel.UserName" class="form-control" placeholder="Inserisci username" />
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <div class="auth-input-group">
+                    <i class="bi bi-lock"></i>
+                    <InputText @bind-Value="_loginModel.Password" type="password" placeholder="Inserisci password" />
                 </div>
+            </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <InputText @bind-Value="_loginModel.Password" type="password" class="form-control" placeholder="Inserisci password" />
-                </div>
-
-                <Button Color="Color.Primary" Type="ButtonType.Submit" Class="mt-3" Block>Accedi</Button>
-            </EditForm>
-        </CardBody>
-    </Card>
+            <Button Color="Color.Primary" Type="ButtonType.Submit" Class="mt-2 w-100 btn-genera">Accedi</Button>
+        </EditForm>
+    </div>
 </div>
 
 @code {
@@ -52,6 +61,36 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/");
+        NavigationManager.NavigateTo(GetSafeReturnUrl());
+    }
+
+    /// <summary>
+    /// Se si arriva al login da un redirect automatico (vedi RedirectToLogin), riporta l'utente sulla
+    /// pagina che stava cercando di raggiungere invece di atterrare sempre sulla Dashboard.
+    /// Solo percorsi relativi interni sono accettati, per evitare open-redirect verso domini esterni.
+    /// </summary>
+    private string GetSafeReturnUrl()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = uri.Query.TrimStart('?');
+        if (string.IsNullOrEmpty(query))
+        {
+            return "/";
+        }
+
+        foreach (var pair in query.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var kv = pair.Split('=', 2);
+            if (kv.Length == 2 && kv[0] == "returnUrl")
+            {
+                var candidate = Uri.UnescapeDataString(kv[1]);
+                if (candidate.StartsWith('/') && !candidate.StartsWith("//"))
+                {
+                    return candidate;
+                }
+            }
+        }
+
+        return "/";
     }
 }

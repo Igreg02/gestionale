@@ -204,3 +204,491 @@ body {
 .btn-genera:hover {
     background-color: var(--primary-blue-hover);
 }
+/* =========================================================================
+   F3 — App shell: sidebar + topbar (vedi TDD §7, Fase F3)
+   ========================================================================= */
+
+:root {
+    --sidebar-width: 248px;
+    --topbar-height: 64px;
+    --sidebar-bg: var(--text-dark);            /* riusa il token esistente: coerenza col resto della palette */
+    --sidebar-text-muted: rgba(255, 255, 255, 0.65);
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---- Sidebar ---- */
+.app-sidebar {
+    width: var(--sidebar-width);
+    flex: 0 0 var(--sidebar-width);
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    transition: transform 0.25s ease;
+}
+
+.sidebar-brand {
+    padding: 1.35rem 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-brand-link {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    color: #fff;
+}
+
+.sidebar-brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.18);
+    color: #60a5fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex: none;
+}
+
+.sidebar-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.sidebar-brand-text strong {
+    font-size: 0.95rem;
+    letter-spacing: 0.03em;
+}
+
+.sidebar-brand-text small {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--sidebar-text-muted);
+}
+
+.sidebar-nav {
+    flex: 1 1 auto;
+    padding: 1rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    overflow-y: auto;
+}
+
+.sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    color: var(--sidebar-text-muted);
+    text-decoration: none;
+    font-size: 0.92rem;
+    font-weight: 500;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link i {
+    font-size: 1.05rem;
+    width: 1.25rem;
+    text-align: center;
+}
+
+.sidebar-link:hover {
+    background: var(--sidebar-hover-bg);
+    color: #fff;
+}
+
+.sidebar-link.active {
+    background: var(--primary-blue);
+    color: #fff;
+}
+
+.sidebar-footer {
+    padding: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-help {
+    color: var(--sidebar-text-muted);
+}
+
+.app-sidebar-backdrop {
+    display: none;
+}
+
+/* ---- Main column ---- */
+.app-main {
+    flex: 1 1 auto;
+    margin-left: var(--sidebar-width);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ---- Topbar ---- */
+.app-topbar {
+    height: var(--topbar-height);
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0 1.5rem;
+    background: #fff;
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+.topbar-burger {
+    display: none;
+    border: none;
+    background: transparent;
+    font-size: 1.35rem;
+    color: var(--text-dark);
+    padding: 0.25rem;
+}
+
+.topbar-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 0.45rem 0.9rem;
+    width: 100%;
+    max-width: 320px;
+    color: var(--text-muted);
+}
+
+.topbar-search input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.9rem;
+    width: 100%;
+    color: var(--text-dark);
+}
+
+.topbar-spacer {
+    flex: 1 1 auto;
+}
+
+.topbar-icon-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.15rem;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    transition: background-color 0.15s ease;
+}
+
+.topbar-icon-btn:hover {
+    background: var(--bg-light);
+}
+
+/* ---- User menu ---- */
+.user-menu {
+    position: relative;
+}
+
+.user-menu-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    border: none;
+    background: transparent;
+    padding: 0.3rem 0.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.user-menu-toggle:hover {
+    background: var(--bg-light);
+}
+
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary-blue);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+}
+
+.user-menu-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.user-menu-toggle .bi-chevron-down {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.user-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1029;
+    background: transparent;
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 190px;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    padding: 0.4rem;
+    z-index: 1030;
+}
+
+.user-menu-item {
+    display: flex;
+    align-items: center;
+    padding: 0.55rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: var(--text-dark);
+    text-decoration: none;
+}
+
+.user-menu-item:hover {
+    background: var(--bg-light);
+}
+
+.user-menu-divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 0.3rem 0.2rem;
+}
+
+/* ---- Content area ---- */
+.app-content {
+    flex: 1 1 auto;
+    padding: 1.75rem 0;
+}
+
+.placeholder-panel {
+    background: #ffffff;
+    border: 1px dashed var(--border-color);
+    border-radius: 16px;
+    padding: 3rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* ---- Error pages (403 / 404) ---- */
+.error-page {
+    min-height: calc(100vh - var(--topbar-height));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.error-page-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+}
+
+.error-page-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.error-page-text {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    max-width: 420px;
+}
+
+/* ---- Responsive: sidebar diventa off-canvas sotto i 992px ---- */
+@media (max-width: 992px) {
+    .app-sidebar {
+        transform: translateX(-100%);
+    }
+
+    .sidebar-open .app-sidebar {
+        transform: translateX(0);
+    }
+
+    .sidebar-open .app-sidebar-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.45);
+        z-index: 1030;
+    }
+
+    .app-main {
+        margin-left: 0;
+    }
+
+    .topbar-burger {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .topbar-search {
+        max-width: 200px;
+    }
+
+    .user-menu-name {
+        display: none;
+    }
+}
+
+/* =========================================================================
+   F3 — Login (branding coerente con la sidebar)
+   ========================================================================= */
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-light);
+    padding: 1.5rem;
+}
+
+.auth-card {
+    max-width: 420px;
+    width: 100%;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+    padding: 2.25rem 2rem;
+}
+
+.auth-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.auth-brand-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: var(--primary-blue);
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.85rem;
+}
+
+.auth-brand-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--text-dark);
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+}
+
+.auth-brand-title small {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    color: var(--text-muted);
+}
+
+.auth-welcome {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.auth-welcome h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.2rem;
+}
+
+.auth-welcome p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.auth-input-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0 0.85rem;
+}
+
+.auth-input-group i {
+    color: var(--text-muted);
+}
+
+.auth-input-group input {
+    border: none;
+    background: transparent;
+    outline: none;
+    padding: 0.65rem 0.6rem;
+    width: 100%;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+}
+
+.auth-input-group:focus-within {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: #fff;
+}
