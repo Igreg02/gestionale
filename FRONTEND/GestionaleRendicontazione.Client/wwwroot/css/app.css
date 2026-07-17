@@ -215,6 +215,93 @@ body {
     color: var(--text-muted);
 }
 
+/* Barra di ricerca worklog (accanto al bottone filtro) */
+.worklog-search {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    background-color: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0 14px;
+    height: 46px;
+    color: var(--text-muted);
+    min-width: 220px;
+}
+
+.worklog-search:focus-within {
+    background-color: #fff;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.worklog-search input {
+    flex: 1 1 auto;
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    height: 100%;
+}
+
+.worklog-search-clear {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    line-height: 1;
+}
+
+.worklog-search-clear:hover {
+    color: var(--text-dark);
+}
+
+/* Bottone Filtro + popover */
+.filter-menu {
+    position: relative;
+    flex: none;
+}
+
+.filter-toggle-btn {
+    position: relative;
+    background-color: #fff;
+    color: var(--text-dark);
+    white-space: nowrap;
+}
+
+.filter-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary-blue);
+    display: inline-block;
+    margin-left: 2px;
+}
+
+.filter-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1029;
+    background: transparent;
+}
+
+.filter-menu-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 320px;
+    max-width: 90vw;
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    padding: 1rem;
+    z-index: 1030;
+}
+
 /* Bottone Genera Report */
 .btn-genera {
     background-color: var(--primary-blue);

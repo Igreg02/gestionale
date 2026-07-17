@@ -22,59 +22,90 @@
     <Row class="mb-4">
         <Column ColumnSize="ColumnSize.Is12">
             <div class="report-panel">
-                <div class="row align-items-end g-3">
-                    <div class="col-6 col-md-2">
-                        <label class="form-label text-muted fw-bold small">Dal</label>
-                        <input type="date" class="form-control custom-input"
-                               value="@_filterFromString" @oninput="OnFilterFromInput" />
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <div class="worklog-search flex-fill">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Cerca nei worklog (progetto, descrizione, dipendente, tipo, stato, data, ore)..."
+                               value="@_searchQuery" @oninput="OnSearchInput" />
+                        @if (!string.IsNullOrEmpty(_searchQuery))
+                        {
+                            <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearSearch">
+                                <i class="bi bi-x-circle-fill"></i>
+                            </button>
+                        }
                     </div>
-                    <div class="col-6 col-md-2">
-                        <label class="form-label text-muted fw-bold small">Al</label>
-                        <input type="date" class="form-control custom-input"
-                               value="@_filterToString" @oninput="OnFilterToInput" />
-                    </div>
-                    @if (_isAdmin)
-                    {
-                        <div class="col-12 col-md-2">
-                            <label class="form-label text-muted fw-bold small">Dipendente</label>
-                            <select class="form-select custom-input" @bind="_filterEmployeeId">
-                                <option value="@Guid.Empty">Tutti</option>
-                                @foreach (var emp in _employees)
-                                {
-                                    <option value="@emp.Id">@emp.Username</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-2">
-                            <label class="form-label text-muted fw-bold small">Progetto</label>
-                            <select class="form-select custom-input" @bind="_filterProjectId">
-                                <option value="@Guid.Empty">Tutti</option>
-                                @foreach (var proj in _projects)
-                                {
-                                    <option value="@proj.Id">@proj.Name</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-12 col-md-2">
-                            <label class="form-label text-muted fw-bold small">Stato</label>
-                            <select class="form-select custom-input" @bind="_filterStatusName">
-                                <option value="">Tutti</option>
-                                @foreach (var s in _statuses)
-                                {
-                                    <option value="@s.Name">@s.Name</option>
-                                }
-                            </select>
-                        </div>
-                    }
-                    <div class="col-12 col-md-2 d-flex gap-2">
-                        <button class="btn btn-primary btn-genera flex-fill d-flex align-items-center justify-content-center gap-1"
-                                @onclick="ApplyFiltersAsync" disabled="@_loading">
-                            <i class="bi bi-funnel"></i> Filtra
+
+                    <div class="filter-menu">
+                        <button type="button" class="btn btn-outline-secondary btn-genera filter-toggle-btn d-inline-flex align-items-center gap-1"
+                                @onclick="ToggleFilterPanel" disabled="@_loading">
+                            <i class="bi bi-funnel@(_hasActiveFilters ? "-fill" : "")"></i> Filtro
+                            @if (_hasActiveFilters)
+                            {
+                                <span class="filter-badge"></span>
+                            }
                         </button>
-                        <button class="btn btn-outline-secondary btn-genera" title="Reimposta filtri"
-                                @onclick="ResetFiltersAsync" disabled="@_loading">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </button>
+
+                        @if (_filterPanelOpen)
+                        {
+                            <div class="filter-menu-backdrop" @onclick="CloseFilterPanel"></div>
+                            <div class="filter-menu-dropdown" @onclick:stopPropagation="true">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted fw-bold small">Dal</label>
+                                        <input type="date" class="form-control custom-input"
+                                               value="@_filterFromString" @oninput="OnFilterFromInput" />
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label text-muted fw-bold small">Al</label>
+                                        <input type="date" class="form-control custom-input"
+                                               value="@_filterToString" @oninput="OnFilterToInput" />
+                                    </div>
+                                    @if (_isAdmin)
+                                    {
+                                        <div class="col-12">
+                                            <label class="form-label text-muted fw-bold small">Dipendente</label>
+                                            <select class="form-select custom-input" @bind="_filterEmployeeId">
+                                                <option value="@Guid.Empty">Tutti</option>
+                                                @foreach (var emp in _employees)
+                                                {
+                                                    <option value="@emp.Id">@emp.Username</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-muted fw-bold small">Progetto</label>
+                                            <select class="form-select custom-input" @bind="_filterProjectId">
+                                                <option value="@Guid.Empty">Tutti</option>
+                                                @foreach (var proj in _projects)
+                                                {
+                                                    <option value="@proj.Id">@proj.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label text-muted fw-bold small">Stato</label>
+                                            <select class="form-select custom-input" @bind="_filterStatusName">
+                                                <option value="">Tutti</option>
+                                                @foreach (var s in _statuses)
+                                                {
+                                                    <option value="@s.Name">@s.Name</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-primary btn-genera flex-fill d-flex align-items-center justify-content-center gap-1"
+                                            @onclick="ApplyFiltersAsync" disabled="@_loading">
+                                        <i class="bi bi-funnel"></i> Filtra
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-genera" title="Reimposta filtri"
+                                            @onclick="ResetFiltersAsync" disabled="@_loading">
+                                          <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -96,16 +127,24 @@
             else
             {
                 <div class="worklog-grid">
-                    @if (_worklogs.Count == 0)
+                    @{ var visibleWorklogs = FilteredWorklogs.ToList(); }
+                    @if (visibleWorklogs.Count == 0)
                     {
                         <div class="worklog-empty">
                             <i class="bi bi-inbox"></i>
-                            <p class="mb-0">Nessun worklog registrato nel periodo @_periodLabel.</p>
+                            @if (!string.IsNullOrWhiteSpace(_searchQuery))
+                            {
+                                <p class="mb-0">Nessun worklog corrisponde alla ricerca "@_searchQuery".</p>
+                            }
+                            else
+                            {
+                                <p class="mb-0">Nessun worklog registrato nel periodo @_periodLabel.</p>
+                            }
                         </div>
                     }
                     else
                     {
-                        @foreach (var item in _worklogs.Select((w, i) => (Worklog: w, Index: i)))
+                        @foreach (var item in visibleWorklogs.Select((w, i) => (Worklog: w, Index: i)))
                         {
                             var palette = _iconPalette[item.Index % _iconPalette.Length];
                             <div class="worklog-card">
@@ -528,6 +567,34 @@
     private Guid _filterEmployeeId = Guid.Empty;
     private Guid _filterProjectId = Guid.Empty;
     private string _filterStatusName = string.Empty;
+    private bool _filterPanelOpen;
+    private bool _hasActiveFilters =>
+        _filterEmployeeId != Guid.Empty || _filterProjectId != Guid.Empty || !string.IsNullOrWhiteSpace(_filterStatusName);
+
+    // --- Ricerca testuale (client-side, su tutti i campi dei worklog caricati) ---
+    private string _searchQuery = string.Empty;
+
+    private IEnumerable<WorkLogResponseDto> FilteredWorklogs
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_searchQuery)) return _worklogs;
+
+            var query = _searchQuery.Trim();
+            return _worklogs.Where(w =>
+                Matches(w.ProjectName, query) ||
+                Matches(w.Description, query) ||
+                Matches(w.EmployeeName, query) ||
+                Matches(w.TypeName, query) ||
+                Matches(w.StatusName, query) ||
+                Matches(w.Date.ToString("dd/MM/yyyy"), query) ||
+                Matches(FormatHours(w.HoursCounter), query) ||
+                Matches(w.HoursCounter.ToString("0.##", CultureInfo.InvariantCulture), query));
+        }
+    }
+
+    private static bool Matches(string? source, string query) =>
+        !string.IsNullOrEmpty(source) && source.Contains(query, StringComparison.OrdinalIgnoreCase);
 
     // --- Lookup lists per i dropdown ---
     private List<ProjectResponseDto> _projects = new();
@@ -636,6 +703,7 @@
             return;
         }
 
+        _filterPanelOpen = false;
         await LoadWorklogsAsync();
     }
 
@@ -649,8 +717,27 @@
         _filterEmployeeId = Guid.Empty;
         _filterProjectId = Guid.Empty;
         _filterStatusName = string.Empty;
+        _filterPanelOpen = false;
 
         await LoadWorklogsAsync();
+    }
+
+    private void ToggleFilterPanel() => _filterPanelOpen = !_filterPanelOpen;
+
+    private void CloseFilterPanel() => _filterPanelOpen = false;
+
+    // ==============================
+    // Ricerca testuale
+    // ==============================
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        _searchQuery = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void ClearSearch()
+    {
+        _searchQuery = string.Empty;
     }
 
     private async Task LoadLookupsAsync()
