@@ -21,6 +21,7 @@ builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<WorkLogApiClient>();
 builder.Services.AddTransient<AuthenticatedHttpMessageHandler>();
 
 builder.Services.AddScoped(sp =>

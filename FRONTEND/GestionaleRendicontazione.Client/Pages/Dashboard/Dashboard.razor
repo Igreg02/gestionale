@@ -1,5 +1,7 @@
 @page "/"
 @attribute [Authorize]
+@using System.Globalization
+@inject WorkLogApiClient WorkLogApiClient
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -7,93 +9,85 @@
     <Row Class="mb-4">
         <Column ColumnSize="ColumnSize.Is12">
             <h2 class="dashboard-title">Dashboard</h2>
-            <p class="dashboard-subtitle">Benvenuto Mario Rossi</p>
-            <button class="btn btn-primary btn-new-worklog mt-3 d-inline-flex align-items-center gap-2">
+            <p class="dashboard-subtitle">Benvenuto @_displayName</p>
+            <NavLink href="/worklogs" class="btn btn-primary btn-new-worklog mt-3 d-inline-flex align-items-center gap-2">
                 <i class="bi bi-plus-lg"></i> Nuovo Worklog
-            </button>
+            </NavLink>
         </Column>
     </Row>
 
     <Row class="mb-4">
         <Column ColumnSize="ColumnSize.Is12">
-            <div class="worklog-grid">
-                
-                <div class="worklog-card">
-                    <div class="worklog-card-body d-flex flex-column justify-content-between h-100">
-                        <div>
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-circle bg-light-blue">
-                                    <i class="bi bi-clipboard-data text-blue"></i>
-                                </div>
-                                <div class="ms-3">
-                                    <h5 class="worklog-id">Worklog #1001</h5>
-                                    <span class="worklog-date">16/07/2026</span>
+            @if (_loading)
+            {
+                <div class="worklog-status-panel">
+                    <i class="bi bi-arrow-repeat spin"></i> Caricamento worklog...
+                </div>
+            }
+            else if (_errorMessage is not null)
+            {
+                <Alert Color="Color.Danger" Visible="true">@_errorMessage</Alert>
+            }
+            else
+            {
+                <div class="worklog-grid">
+                    @if (_worklogs.Count == 0)
+                    {
+                        <div class="worklog-empty">
+                            <i class="bi bi-inbox"></i>
+                            <p class="mb-0">Nessun worklog registrato nel periodo @_periodLabel.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in _worklogs.Select((w, i) => (Worklog: w, Index: i)))
+                        {
+                            var palette = _iconPalette[item.Index % _iconPalette.Length];
+                            <div class="worklog-card">
+                                <div class="worklog-card-body d-flex flex-column justify-content-between h-100">
+                                    <div>
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="icon-circle @palette.Background">
+                                                <i class="@palette.Icon @palette.Text"></i>
+                                            </div>
+                                            <div class="ms-3">
+                                                <h5 class="worklog-id" title="@item.Worklog.ProjectName">@item.Worklog.ProjectName</h5>
+                                                <span class="worklog-date">@item.Worklog.Date.ToString("dd/MM/yyyy")</span>
+                                            </div>
+                                        </div>
+                                        <p class="worklog-description text-muted mb-2" title="@item.Worklog.Description">@item.Worklog.Description</p>
+                                        <div class="worklog-hours text-blue fw-bold">@FormatHours(item.Worklog.HoursCounter)</div>
+                                        <span class="worklog-status-badge">@item.Worklog.StatusName</span>
+                                    </div>
+                                    <div class="text-end mt-3">
+                                        <a href="/worklogs" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
+                                            Visualizza <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="worklog-hours text-blue fw-bold">8 ore</div>
-                        </div>
-                        <div class="text-end mt-3">
-                            <a href="#" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
-                                Visualizza <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                        }
+                    }
 
-                <div class="worklog-card">
-                    <div class="worklog-card-body d-flex flex-column justify-content-between h-100">
-                        <div>
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-circle bg-light-green">
-                                    <i class="bi bi-code-slash text-green"></i>
-                                </div>
-                                <div class="ms-3">
-                                    <h5 class="worklog-id">Worklog #1002</h5>
-                                    <span class="worklog-date">15/07/2026</span>
-                                </div>
+                    <NavLink href="/worklogs" class="worklog-card card-placeholder-new">
+                        <div class="worklog-card-body d-flex flex-column align-items-center justify-content-center h-100 py-4">
+                            <div class="icon-circle bg-light-blue mb-2">
+                                <i class="bi bi-plus-lg text-blue" style="font-size: 1.5rem;"></i>
                             </div>
-                            <div class="worklog-hours text-blue fw-bold">6 ore</div>
+                            <span class="fw-bold text-blue">Nuovo Worklog</span>
                         </div>
-                        <div class="text-end mt-3">
-                            <a href="#" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
-                                Visualizza <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
-                    </div>
+                    </NavLink>
                 </div>
 
-                <div class="worklog-card">
-                    <div class="worklog-card-body d-flex flex-column justify-content-between h-100">
-                        <div>
-                            <div class="d-flex align-items-center mb-3">
-                                <div class="icon-circle bg-light-orange">
-                                    <i class="bi bi-gear text-orange"></i>
-                                </div>
-                                <div class="ms-3">
-                                    <h5 class="worklog-id">Worklog #1003</h5>
-                                    <span class="worklog-date">14/07/2026</span>
-                                </div>
-                            </div>
-                            <div class="worklog-hours text-blue fw-bold">4 ore</div>
-                        </div>
-                        <div class="text-end mt-3">
-                            <a href="#" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
-                                Visualizza <i class="bi bi-arrow-right"></i>
-                            </a>
-                        </div>
+                @if (_totalCount > _worklogs.Count)
+                {
+                    <div class="mt-3">
+                        <NavLink href="/worklogs" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
+                            Vedi tutti i worklog del periodo (@_totalCount) <i class="bi bi-arrow-right"></i>
+                        </NavLink>
                     </div>
-                </div>
-
-                <div class="worklog-card card-placeholder-new">
-                    <div class="worklog-card-body d-flex flex-column align-items-center justify-content-center h-100 py-4">
-                        <div class="icon-circle bg-light-blue mb-2">
-                            <i class="bi bi-plus-lg text-blue" style="font-size: 1.5rem;"></i>
-                        </div>
-                        <span class="fw-bold text-blue">Nuovo Worklog</span>
-                    </div>
-                </div>
-
-            </div>
+                }
+            }
         </Column>
     </Row>
 
@@ -106,35 +100,110 @@
                     </div>
                     <h4 class="report-title m-0">Report</h4>
                 </div>
-                
+
                 <div class="row align-items-end g-3">
                     <div class="col-12 col-md-3">
                         <label class="form-label text-muted fw-bold small">Periodo da</label>
                         <div class="input-group">
-                            <input type="text" class="form-control custom-input" value="01/07/2026" />
+                            <input type="text" class="form-control custom-input" value="@_periodFrom.ToString("dd/MM/yyyy")" readonly />
                             <span class="input-group-text custom-input-icon bg-light"><i class="bi bi-calendar3"></i></span>
                         </div>
                     </div>
                     <div class="col-12 col-md-3">
                         <label class="form-label text-muted fw-bold small">Periodo a</label>
                         <div class="input-group">
-                            <input type="text" class="form-control custom-input" value="31/07/2026" />
+                            <input type="text" class="form-control custom-input" value="@_periodTo.ToString("dd/MM/yyyy")" readonly />
                             <span class="input-group-text custom-input-icon bg-light"><i class="bi bi-calendar3"></i></span>
                         </div>
                     </div>
                     <div class="col-12 col-md-3">
                         <label class="form-label text-muted fw-bold small">Dipendente</label>
                         <select class="form-select custom-input">
-                            <option>Me (Mario Rossi)</option>
+                            <option>Me (@_displayName)</option>
                         </select>
                     </div>
                     <div class="col-12 col-md-3">
-                        <button class="btn btn-primary w-100 btn-genera d-flex align-items-center justify-content-center gap-2">
+                        <NavLink href="/report" class="btn btn-primary w-100 btn-genera d-flex align-items-center justify-content-center gap-2">
                             <i class="bi bi-bar-chart-line-fill"></i> Genera Report
-                        </button>
+                        </NavLink>
                     </div>
                 </div>
             </div>
         </Column>
     </Row>
 </div>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
+    private static readonly (string Icon, string Background, string Text)[] _iconPalette =
+    {
+        ("bi bi-clipboard-data", "bg-light-blue", "text-blue"),
+        ("bi bi-code-slash", "bg-light-green", "text-green"),
+        ("bi bi-gear", "bg-light-orange", "text-orange")
+    };
+
+    private string _displayName = string.Empty;
+    private bool _loading = true;
+    private string? _errorMessage;
+    private List<WorkLogResponseDto> _worklogs = new();
+    private int _totalCount;
+    private DateOnly _periodFrom;
+    private DateOnly _periodTo;
+
+    private string _periodLabel => $"{_periodFrom:dd/MM/yyyy} – {_periodTo:dd/MM/yyyy}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            _displayName = authState.User.FindFirst("display_name")?.Value ?? authState.User.Identity?.Name ?? string.Empty;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        _periodFrom = new DateOnly(today.Year, today.Month, 1);
+        _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
+
+        await LoadWorklogsAsync();
+    }
+
+    /// <summary>
+    /// Recupera i worklog del mese corrente da GET /api/worklog (vedi Curl.md): con token User il
+    /// backend filtra già in automatico sul dipendente autenticato, con token Admin restituisce quelli
+    /// di tutti i dipendenti nel periodo. La dashboard mostra solo i 3 più recenti come anteprima;
+    /// l'elenco completo sarà /worklogs (Fase F5).
+    /// </summary>
+    private async Task LoadWorklogsAsync()
+    {
+        _loading = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo);
+            _totalCount = result.Count;
+            _worklogs = result
+                .OrderByDescending(w => w.Date)
+                .ThenByDescending(w => w.CreateAt)
+                .Take(3)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nel recupero dei worklog: {ex}");
+            _errorMessage = "Impossibile recuperare i worklog dal server. Riprova più tardi.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private static string FormatHours(float hours)
+    {
+        var formatted = hours.ToString("0.##", CultureInfo.InvariantCulture).Replace('.', ',');
+        return $"{formatted} ore";
+    }
+}
