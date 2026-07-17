@@ -2,7 +2,10 @@
 @attribute [Authorize]
 @using System.Globalization
 @using System.Security.Claims
+@using GestionaleRendicontazione.Client.Services
+@implements IDisposable
 @inject WorkLogApiClient WorkLogApiClient
+@inject FilterStateService FilterState
 
 <PageTitle>Dashboard</PageTitle>
 
@@ -21,100 +24,7 @@
 
     <Row class="mb-4">
         <Column ColumnSize="ColumnSize.Is12">
-            <div class="report-panel">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <div class="worklog-search flex-fill">
-                        <i class="bi bi-search"></i>
-                        <input type="text" placeholder="Cerca nei worklog (progetto, descrizione, dipendente, tipo, stato, data, ore)..."
-                               value="@_searchQuery" @oninput="OnSearchInput" />
-                        @if (!string.IsNullOrEmpty(_searchQuery))
-                        {
-                            <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearSearch">
-                                <i class="bi bi-x-circle-fill"></i>
-                            </button>
-                        }
-                    </div>
-
-                    <div class="filter-menu">
-                        <button type="button" class="btn btn-outline-secondary btn-genera filter-toggle-btn d-inline-flex align-items-center gap-1"
-                                @onclick="ToggleFilterPanel" disabled="@_loading">
-                            <i class="bi bi-funnel@(_hasActiveFilters ? "-fill" : "")"></i> Filtro
-                            @if (_hasActiveFilters)
-                            {
-                                <span class="filter-badge"></span>
-                            }
-                        </button>
-
-                        @if (_filterPanelOpen)
-                        {
-                            <div class="filter-menu-backdrop" @onclick="CloseFilterPanel"></div>
-                            <div class="filter-menu-dropdown" @onclick:stopPropagation="true">
-                                <div class="row g-3">
-                                    <div class="col-6">
-                                        <label class="form-label text-muted fw-bold small">Dal</label>
-                                        <input type="date" class="form-control custom-input"
-                                               value="@_filterFromString" @oninput="OnFilterFromInput" />
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label text-muted fw-bold small">Al</label>
-                                        <input type="date" class="form-control custom-input"
-                                               value="@_filterToString" @oninput="OnFilterToInput" />
-                                    </div>
-                                    @if (_isAdmin)
-                                    {
-                                        <div class="col-12">
-                                            <label class="form-label text-muted fw-bold small">Dipendente</label>
-                                            <select class="form-select custom-input" @bind="_filterEmployeeId">
-                                                <option value="@Guid.Empty">Tutti</option>
-                                                @foreach (var emp in _employees)
-                                                {
-                                                    <option value="@emp.Id">@emp.Username</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label text-muted fw-bold small">Progetto</label>
-                                            <select class="form-select custom-input" @bind="_filterProjectId">
-                                                <option value="@Guid.Empty">Tutti</option>
-                                                @foreach (var proj in _projects)
-                                                {
-                                                    <option value="@proj.Id">@proj.Name</option>
-                                                }
-                                            </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label text-muted fw-bold small">Stato</label>
-                                            <select class="form-select custom-input" @bind="_filterStatusName">
-                                                <option value="">Tutti</option>
-                                                @foreach (var s in _statuses)
-                                                {
-                                                    <option value="@s.Name">@s.Name</option>
-                                                }
-                                            </select>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="d-flex gap-2 mt-3">
-                                    <button class="btn btn-primary btn-genera flex-fill d-flex align-items-center justify-content-center gap-1"
-                                            @onclick="ApplyFiltersAsync" disabled="@_loading">
-                                        <i class="bi bi-funnel"></i> Filtra
-                                    </button>
-                                    <button class="btn btn-outline-secondary btn-genera" title="Reimposta filtri"
-                                            @onclick="ResetFiltersAsync" disabled="@_loading">
-                                          <i class="bi bi-arrow-counterclockwise"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-        </Column>
-    </Row>
-
-    <Row class="mb-4">
-        <Column ColumnSize="ColumnSize.Is12">
-            @if (_loading)
+            @if (FilterState.Loading)
             {
                 <div class="worklog-status-panel">
                     <i class="bi bi-arrow-repeat spin"></i> Caricamento worklog...
@@ -132,9 +42,9 @@
                     {
                         <div class="worklog-empty">
                             <i class="bi bi-inbox"></i>
-                            @if (!string.IsNullOrWhiteSpace(_searchQuery))
+                            @if (!string.IsNullOrWhiteSpace(FilterState.SearchQuery))
                             {
-                                <p class="mb-0">Nessun worklog corrisponde alla ricerca "@_searchQuery".</p>
+                                <p class="mb-0">Nessun worklog corrisponde alla ricerca "@FilterState.SearchQuery".</p>
                             }
                             else
                             {
@@ -159,7 +69,7 @@
                                                 <span class="worklog-date">@item.Worklog.Date.ToString("dd/MM/yyyy")</span>
                                             </div>
                                         </div>
-                                        @if (_isAdmin && item.Worklog.EmployeeName is not null)
+                                        @if (FilterState.IsAdmin && item.Worklog.EmployeeName is not null)
                                         {
                                             <div class="d-flex align-items-center gap-1 mb-2">
                                                 <i class="bi bi-person-fill text-muted" style="font-size:0.8rem;"></i>
@@ -186,9 +96,7 @@
                         }
                     }
 
-                    @* Card "+ Nuovo Worklog" *@
-                    <button class="worklog-card card-placeholder-new"
-                            @onclick="OpenCreateModal">
+                    <button class="worklog-card card-placeholder-new" @onclick="OpenCreateModal">
                         <div class="worklog-card-body d-flex flex-column align-items-center justify-content-center h-100 py-4">
                             <div class="icon-circle bg-light-blue mb-2">
                                 <i class="bi bi-plus-lg text-blue" style="font-size: 1.5rem;"></i>
@@ -215,6 +123,7 @@
                     <div class="col-12 col-md-3">
                         <label class="form-label text-muted fw-bold small">Periodo da</label>
                         <div class="input-group">
+                            @* Adesso attingono e mostrano sempre il mese corrente inizializzato dal service *@
                             <input type="text" class="form-control custom-input" value="@_periodFrom.ToString("dd/MM/yyyy")" readonly />
                             <span class="input-group-text custom-input-icon bg-light"><i class="bi bi-calendar3"></i></span>
                         </div>
@@ -248,13 +157,10 @@
 {
     <div class="custom-modal-backdrop" @onclick="CloseCreateModal">
         <div class="wl-modal-card" @onclick:stopPropagation="true">
-
             <div class="wl-modal-header">
                 <span class="wl-modal-label">NUOVO WORKLOG</span>
                 <div class="d-flex align-items-center gap-3">
-                    <button class="wl-back-btn" @onclick="CloseCreateModal" aria-label="Chiudi">
-                        <i class="bi bi-arrow-left"></i>
-                    </button>
+                    <button class="wl-back-btn" @onclick="CloseCreateModal" aria-label="Chiudi"><i class="bi bi-arrow-left"></i></button>
                     <span class="wl-modal-title">Nuovo Worklog</span>
                 </div>
             </div>
@@ -268,14 +174,13 @@
 
             <div class="wl-modal-body">
                 <div class="wl-modal-left">
-
-                    @if (_isAdmin)
+                    @if (FilterState.IsAdmin)
                     {
                         <div class="wl-field-row">
                             <label class="wl-field-label">Dipendente</label>
                             <select class="wl-field-input" @bind="_createModel.IdEmployee">
                                 <option value="@Guid.Empty">-- Seleziona --</option>
-                                @foreach (var emp in _employees)
+                                @foreach (var emp in FilterState.Employees)
                                 {
                                     <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
                                 }
@@ -285,23 +190,19 @@
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Data</label>
-                        <input type="date" class="wl-field-input"
-                               value="@_createDateString"
-                               @oninput="OnCreateDateInput" />
+                        <input type="date" class="wl-field-input" value="@_createDateString" @oninput="OnCreateDateInput" />
                     </div>
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Ore</label>
-                        <input type="number" class="wl-field-input"
-                               min="1" max="24" step="0.5"
-                               @bind="_createModel.HoursCounter" />
+                        <input type="number" class="wl-field-input" min="1" max="24" step="0.5" @bind="_createModel.HoursCounter" />
                     </div>
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Progetto</label>
                         <select class="wl-field-input" @bind="_createModel.IdProject">
                             <option value="@Guid.Empty">-- Seleziona --</option>
-                            @foreach (var proj in _projects)
+                            @foreach (var proj in FilterState.Projects)
                             {
                                 <option value="@proj.Id">@proj.Name</option>
                             }
@@ -323,42 +224,30 @@
                         <label class="wl-field-label">Stato</label>
                         <select class="wl-field-input" @bind="_createModel.IdStatus">
                             <option value="@Guid.Empty">-- Seleziona --</option>
-                            @foreach (var s in _statuses)
+                            @foreach (var s in FilterState.Statuses)
                             {
                                 <option value="@s.Id">@s.Name</option>
                             }
                         </select>
                     </div>
-
                 </div>
 
                 <div class="wl-modal-right">
                     <label class="wl-field-label mb-2">Descrizione</label>
-                    <textarea class="wl-desc-area" rows="8"
-                              @bind="_createModel.Description"
-                              placeholder="Descrivi l'attività svolta..."></textarea>
+                    <textarea class="wl-desc-area" rows="8" @bind="_createModel.Description" placeholder="Descrivi l'attività svolta..."></textarea>
                 </div>
             </div>
 
             <div class="wl-modal-footer">
                 <div></div>
                 <div class="d-flex gap-2">
-                    <button class="wl-btn-cancel" @onclick="CloseCreateModal" disabled="@_isSaving">
-                        Annulla
-                    </button>
+                    <button class="wl-btn-cancel" @onclick="CloseCreateModal" disabled="@_isSaving">Annulla</button>
                     <button class="wl-btn-save" @onclick="SaveCreateAsync" disabled="@_isSaving">
-                        @if (_isSaving)
-                        {
-                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-check2"></i> <span>Salva</span>
-                        }
+                        @if (_isSaving) { <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span> }
+                        else { <i class="bi bi-check2"></i> <span>Salva</span> }
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 }
@@ -368,13 +257,10 @@
 {
     <div class="custom-modal-backdrop" @onclick="CloseEditModal">
         <div class="wl-modal-card" @onclick:stopPropagation="true">
-
             <div class="wl-modal-header">
                 <span class="wl-modal-label">MODIFICA WORKLOG</span>
                 <div class="d-flex align-items-center gap-3">
-                    <button class="wl-back-btn" @onclick="CloseEditModal" aria-label="Chiudi">
-                        <i class="bi bi-arrow-left"></i>
-                    </button>
+                    <button class="wl-back-btn" @onclick="CloseEditModal" aria-label="Chiudi"><i class="bi bi-arrow-left"></i></button>
                     <span class="wl-modal-title">Worklog — @_editSource.ProjectName</span>
                 </div>
             </div>
@@ -388,14 +274,13 @@
 
             <div class="wl-modal-body">
                 <div class="wl-modal-left">
-
-                    @if (_isAdmin)
+                    @if (FilterState.IsAdmin)
                     {
                         <div class="wl-field-row">
                             <label class="wl-field-label">Dipendente</label>
                             <select class="wl-field-input" @bind="_editModel.IdEmployee">
                                 <option value="@Guid.Empty">-- Seleziona --</option>
-                                @foreach (var emp in _employees)
+                                @foreach (var emp in FilterState.Employees)
                                 {
                                     <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
                                 }
@@ -405,23 +290,19 @@
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Data</label>
-                        <input type="date" class="wl-field-input"
-                               value="@_editDateString"
-                               @oninput="OnDateInput" />
+                        <input type="date" class="wl-field-input" value="@_editDateString" @oninput="OnDateInput" />
                     </div>
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Ore</label>
-                        <input type="number" class="wl-field-input"
-                               min="1" max="24" step="0.5"
-                               @bind="_editModel.HoursCounter" />
+                        <input type="number" class="wl-field-input" min="1" max="24" step="0.5" @bind="_editModel.HoursCounter" />
                     </div>
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Progetto</label>
                         <select class="wl-field-input" @bind="_editModel.IdProject">
                             <option value="@Guid.Empty">-- Seleziona --</option>
-                            @foreach (var proj in _projects)
+                            @foreach (var proj in FilterState.Projects)
                             {
                                 <option value="@proj.Id">@proj.Name</option>
                             }
@@ -443,20 +324,17 @@
                         <label class="wl-field-label">Stato</label>
                         <select class="wl-field-input" @bind="_editModel.IdStatus">
                             <option value="@Guid.Empty">-- Seleziona --</option>
-                            @foreach (var s in _statuses)
+                            @foreach (var s in FilterState.Statuses)
                             {
                                 <option value="@s.Id">@s.Name</option>
                             }
                         </select>
                     </div>
-
                 </div>
 
                 <div class="wl-modal-right">
                     <label class="wl-field-label mb-2">Descrizione</label>
-                    <textarea class="wl-desc-area" rows="8"
-                              @bind="_editModel.Description"
-                              placeholder="Descrivi l'attività svolta..."></textarea>
+                    <textarea class="wl-desc-area" rows="8" @bind="_editModel.Description" placeholder="Descrivi l'attività svolta..."></textarea>
                 </div>
             </div>
 
@@ -465,22 +343,13 @@
                     <i class="bi bi-trash3 me-1"></i> Elimina
                 </button>
                 <div class="d-flex gap-2">
-                    <button class="wl-btn-cancel" @onclick="CloseEditModal" disabled="@_isSaving">
-                        Annulla
-                    </button>
+                    <button class="wl-btn-cancel" @onclick="CloseEditModal" disabled="@_isSaving">Annulla</button>
                     <button class="wl-btn-save" @onclick="SaveEditAsync" disabled="@_isSaving">
-                        @if (_isSaving)
-                        {
-                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-check2"></i> <span>Salva</span>
-                        }
+                        @if (_isSaving) { <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span> }
+                        else { <i class="bi bi-check2"></i> <span>Salva</span> }
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 }
@@ -490,13 +359,10 @@
 {
     <div class="custom-modal-backdrop" @onclick="CloseDeleteModal">
         <div class="wl-modal-card" style="max-width:440px;" @onclick:stopPropagation="true">
-
             <div class="wl-modal-header">
                 <span class="wl-modal-label" style="color:#dc2626;">ELIMINA WORKLOG</span>
                 <div class="d-flex align-items-center gap-3">
-                    <button class="wl-back-btn" @onclick="CloseDeleteModal" aria-label="Chiudi">
-                        <i class="bi bi-arrow-left"></i>
-                    </button>
+                    <button class="wl-back-btn" @onclick="CloseDeleteModal" aria-label="Chiudi"><i class="bi bi-arrow-left"></i></button>
                     <span class="wl-modal-title">Conferma eliminazione</span>
                 </div>
             </div>
@@ -520,22 +386,13 @@
             <div class="wl-modal-footer">
                 <div></div>
                 <div class="d-flex gap-2">
-                    <button class="wl-btn-cancel" @onclick="CloseDeleteModal" disabled="@_isSaving">
-                        Annulla
-                    </button>
+                    <button class="wl-btn-cancel" @onclick="CloseDeleteModal" disabled="@_isSaving">Annulla</button>
                     <button class="wl-btn-delete wl-btn-delete--solid" @onclick="ExecuteDeleteAsync" disabled="@_isSaving">
-                        @if (_isSaving)
-                        {
-                            <i class="bi bi-arrow-repeat spin"></i> <span>Eliminazione...</span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-trash3 me-1"></i> <span>Conferma elimina</span>
-                        }
+                        @if (_isSaving) { <i class="bi bi-arrow-repeat spin"></i> <span>Eliminazione...</span> }
+                        else { <i class="bi bi-trash3 me-1"></i> <span>Conferma elimina</span> }
                     </button>
                 </div>
             </div>
-
         </div>
     </div>
 }
@@ -553,34 +410,22 @@
     };
 
     private string _displayName = string.Empty;
-    private bool _loading = true;
     private string? _errorMessage;
     private List<WorkLogResponseDto> _worklogs = new();
-    private bool _isAdmin;
+    
     private DateOnly _periodFrom;
     private DateOnly _periodTo;
     private string _periodLabel => $"{_periodFrom:dd/MM/yyyy} – {_periodTo:dd/MM/yyyy}";
 
-    // --- Filtri (periodo + admin: dipendente/progetto/stato) ---
-    private string _filterFromString = string.Empty;
-    private string _filterToString = string.Empty;
-    private Guid _filterEmployeeId = Guid.Empty;
-    private Guid _filterProjectId = Guid.Empty;
-    private string _filterStatusName = string.Empty;
-    private bool _filterPanelOpen;
-    private bool _hasActiveFilters =>
-        _filterEmployeeId != Guid.Empty || _filterProjectId != Guid.Empty || !string.IsNullOrWhiteSpace(_filterStatusName);
-
-    // --- Ricerca testuale (client-side, su tutti i campi dei worklog caricati) ---
-    private string _searchQuery = string.Empty;
+    private List<TypeResponseDto> _types = new();
 
     private IEnumerable<WorkLogResponseDto> FilteredWorklogs
     {
         get
         {
-            if (string.IsNullOrWhiteSpace(_searchQuery)) return _worklogs;
+            if (string.IsNullOrWhiteSpace(FilterState.SearchQuery)) return _worklogs;
 
-            var query = _searchQuery.Trim();
+            var query = FilterState.SearchQuery.Trim();
             return _worklogs.Where(w =>
                 Matches(w.ProjectName, query) ||
                 Matches(w.Description, query) ||
@@ -596,28 +441,18 @@
     private static bool Matches(string? source, string query) =>
         !string.IsNullOrEmpty(source) && source.Contains(query, StringComparison.OrdinalIgnoreCase);
 
-    // --- Lookup lists per i dropdown ---
-    private List<ProjectResponseDto> _projects = new();
-    private List<StatusResponseDto> _statuses = new();
-    private List<TypeResponseDto> _types = new();
-    private List<EmployeeResponseDto> _employees = new();
-
-    // --- Create modal ---
     private bool _createModalOpen;
     private WorkLogUpdateRequestDto? _createModel;
     private string _createDateString = string.Empty;
 
-    // --- Edit modal ---
     private bool _editModalOpen;
     private WorkLogResponseDto? _editSource;
     private WorkLogUpdateRequestDto? _editModel;
     private string _editDateString = string.Empty;
 
-    // --- Delete modal ---
     private bool _deleteModalOpen;
     private WorkLogResponseDto? _deleteTarget;
 
-    // --- Shared ---
     private bool _isSaving;
     private string? _modalError;
 
@@ -627,36 +462,44 @@
         {
             var authState = await AuthStateTask;
             _displayName = authState.User.FindFirst("display_name")?.Value ?? authState.User.Identity?.Name ?? string.Empty;
-            _isAdmin = authState.User.IsInRole(RoleNames.Admin);
         }
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        _periodFrom = new DateOnly(today.Year, today.Month, 1);
-        _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
-        _filterFromString = _periodFrom.ToString("yyyy-MM-dd");
-        _filterToString = _periodTo.ToString("yyyy-MM-dd");
+        FilterState.OnFiltersChanged += HandleFiltersChanged;
 
-        await Task.WhenAll(LoadWorklogsAsync(), LoadLookupsAsync());
+        // Recupera le date iniziali del mese corrente fin da subito dal service
+        ParseDatesFromService();
+        await Task.WhenAll(LoadWorklogsAsync(), LoadDashboardSpecificLookupsAsync());
     }
 
-    /// <summary>
-    /// Recupera i worklog del mese corrente da GET /api/worklog: con token User il backend filtra
-    /// sul dipendente autenticato, con token Admin restituisce quelli di tutti.
-    /// </summary>
+    private void ParseDatesFromService()
+    {
+        if (DateOnly.TryParseExact(FilterState.FilterFromString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsedFrom))
+            _periodFrom = parsedFrom;
+        if (DateOnly.TryParseExact(FilterState.FilterToString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsedTo))
+            _periodTo = parsedTo;
+    }
+
+    private async void HandleFiltersChanged()
+    {
+        ParseDatesFromService();
+        await LoadWorklogsAsync();
+        StateHasChanged();
+    }
+
     private async Task LoadWorklogsAsync()
     {
-        _loading = true;
+        FilterState.Loading = true;
         _errorMessage = null;
-        StateHasChanged();
 
         try
         {
             var result = await WorkLogApiClient.GetAsync(
                 _periodFrom,
                 _periodTo,
-                _isAdmin && _filterEmployeeId != Guid.Empty ? _filterEmployeeId : null,
-                _isAdmin && _filterProjectId != Guid.Empty ? _filterProjectId : null,
-                _isAdmin && !string.IsNullOrWhiteSpace(_filterStatusName) ? _filterStatusName : null);
+                FilterState.IsAdmin && FilterState.FilterEmployeeId != Guid.Empty ? FilterState.FilterEmployeeId : null,
+                FilterState.IsAdmin && FilterState.FilterProjectId != Guid.Empty ? FilterState.FilterProjectId : null,
+                FilterState.IsAdmin && !string.IsNullOrWhiteSpace(FilterState.FilterStatusName) ? FilterState.FilterStatusName : null);
+                
             _worklogs = result
                 .OrderByDescending(w => w.Date)
                 .ThenByDescending(w => w.CreateAt)
@@ -669,109 +512,21 @@
         }
         finally
         {
-            _loading = false;
+            FilterState.Loading = false;
         }
     }
 
-    // ==============================
-    // Filtri (periodo, dipendente, progetto, stato)
-    // ==============================
-
-    private void OnFilterFromInput(ChangeEventArgs e)
-    {
-        _filterFromString = e.Value?.ToString() ?? string.Empty;
-        if (DateOnly.TryParseExact(_filterFromString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
-        {
-            _periodFrom = parsed;
-        }
-    }
-
-    private void OnFilterToInput(ChangeEventArgs e)
-    {
-        _filterToString = e.Value?.ToString() ?? string.Empty;
-        if (DateOnly.TryParseExact(_filterToString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
-        {
-            _periodTo = parsed;
-        }
-    }
-
-    private async Task ApplyFiltersAsync()
-    {
-        if (_periodFrom > _periodTo)
-        {
-            _errorMessage = "L'intervallo di date non è valido: 'Dal' deve precedere 'Al'.";
-            return;
-        }
-
-        _filterPanelOpen = false;
-        await LoadWorklogsAsync();
-    }
-
-    private async Task ResetFiltersAsync()
-    {
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        _periodFrom = new DateOnly(today.Year, today.Month, 1);
-        _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
-        _filterFromString = _periodFrom.ToString("yyyy-MM-dd");
-        _filterToString = _periodTo.ToString("yyyy-MM-dd");
-        _filterEmployeeId = Guid.Empty;
-        _filterProjectId = Guid.Empty;
-        _filterStatusName = string.Empty;
-        _filterPanelOpen = false;
-
-        await LoadWorklogsAsync();
-    }
-
-    private void ToggleFilterPanel() => _filterPanelOpen = !_filterPanelOpen;
-
-    private void CloseFilterPanel() => _filterPanelOpen = false;
-
-    // ==============================
-    // Ricerca testuale
-    // ==============================
-
-    private void OnSearchInput(ChangeEventArgs e)
-    {
-        _searchQuery = e.Value?.ToString() ?? string.Empty;
-    }
-
-    private void ClearSearch()
-    {
-        _searchQuery = string.Empty;
-    }
-
-    private async Task LoadLookupsAsync()
+    private async Task LoadDashboardSpecificLookupsAsync()
     {
         try
         {
-            var projTask = WorkLogApiClient.GetProjectsAsync();
-            var statusTask = WorkLogApiClient.GetStatusesAsync();
-            var typeTask = WorkLogApiClient.GetTypesAsync();
-
-            if (_isAdmin)
-            {
-                var empTask = WorkLogApiClient.GetEmployeesAsync();
-                await Task.WhenAll(projTask, statusTask, typeTask, empTask);
-                _employees = await empTask;
-            }
-            else
-            {
-                await Task.WhenAll(projTask, statusTask, typeTask);
-            }
-
-            _projects = await projTask;
-            _statuses = await statusTask;
-            _types = await typeTask;
+            _types = await WorkLogApiClient.GetTypesAsync();
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Errore nel recupero dei dati di supporto: {ex}");
+            Console.Error.WriteLine($"Errore nel recupero delle tipologie: {ex}");
         }
     }
-
-    // ==============================
-    // Create Modal
-    // ==============================
 
     private void OpenCreateModal()
     {
@@ -800,8 +555,7 @@
     private void OnCreateDateInput(ChangeEventArgs e)
     {
         _createDateString = e.Value?.ToString() ?? string.Empty;
-        if (_createModel is not null &&
-            DateOnly.TryParseExact(_createDateString, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var parsed))
+        if (_createModel is not null && DateOnly.TryParseExact(_createDateString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
         {
             _createModel.Date = parsed;
         }
@@ -810,13 +564,12 @@
     private async Task SaveCreateAsync()
     {
         if (_createModel is null) return;
-
         if (string.IsNullOrWhiteSpace(_createModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
         if (_createModel.HoursCounter < 1 || _createModel.HoursCounter > 24) { _modalError = "Le ore devono essere comprese tra 1 e 24."; return; }
         if (_createModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
         if (_createModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
         if (_createModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
-        if (_isAdmin && _createModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
+        if (FilterState.IsAdmin && _createModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
 
         _isSaving = true;
         _modalError = null;
@@ -839,10 +592,6 @@
             _isSaving = false;
         }
     }
-
-    // ==============================
-    // Edit Modal
-    // ==============================
 
     private void OpenEditModal(WorkLogResponseDto worklog)
     {
@@ -873,8 +622,7 @@
     private void OnDateInput(ChangeEventArgs e)
     {
         _editDateString = e.Value?.ToString() ?? string.Empty;
-        if (_editModel is not null &&
-            DateOnly.TryParseExact(_editDateString, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var parsed))
+        if (_editModel is not null && DateOnly.TryParseExact(_editDateString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
         {
             _editModel.Date = parsed;
         }
@@ -883,16 +631,14 @@
     private async Task SaveEditAsync()
     {
         if (_editModel is null || _editSource is null) return;
-
         if (string.IsNullOrWhiteSpace(_editModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
         if (_editModel.HoursCounter < 1 || _editModel.HoursCounter > 24) { _modalError = "Le ore devono essere comprese tra 1 e 24."; return; }
         if (_editModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
         if (_editModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
         if (_editModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
-        if (_isAdmin && _editModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
+        if (FilterState.IsAdmin && _editModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
 
-        // Per utenti normali il backend ignora IdEmployee
-        if (!_isAdmin)
+        if (!FilterState.IsAdmin)
             _editModel.IdEmployee = _editSource.IdEmployee ?? Guid.Empty;
 
         _isSaving = true;
@@ -918,10 +664,6 @@
             _isSaving = false;
         }
     }
-
-    // ==============================
-    // Delete Modal
-    // ==============================
 
     private void ConfirmDelete(WorkLogResponseDto worklog)
     {
@@ -967,5 +709,10 @@
     {
         var formatted = hours.ToString("0.##", CultureInfo.InvariantCulture).Replace('.', ',');
         return $"{formatted} ore";
+    }
+
+    public void Dispose()
+    {
+        FilterState.OnFiltersChanged -= HandleFiltersChanged;
     }
 }

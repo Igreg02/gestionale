@@ -1,5 +1,8 @@
 @inherits LayoutComponentBase
+@using System.Globalization
+@using GestionaleRendicontazione.Client.Services
 @inject NavigationManager NavigationManager
+@inject FilterStateService FilterState
 
 <div class="app-shell @(_sidebarOpen ? "sidebar-open" : "")">
 
@@ -39,49 +42,144 @@
     <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
 
     <div class="app-main">
-        <header class="app-topbar">
-            <AuthorizeView Roles="@RoleNames.Admin">
-                <Authorized>
-                    <button class="topbar-burger" @onclick="ToggleSidebar" aria-label="Apri menu">
-                        <i class="bi bi-list"></i>
-                    </button>
-                </Authorized>
-            </AuthorizeView>
-            <div class="topbar-search">
-                <i class="bi bi-search"></i>
-                <input type="search" placeholder="Cerca..." aria-label="Cerca" />
+        <header class="app-topbar d-flex align-items-center justify-content-between px-3">
+            
+            <div class="d-flex align-items-center gap-2">
+                <AuthorizeView Roles="@RoleNames.Admin">
+                    <Authorized>
+                        <button class="topbar-burger me-2" @onclick="ToggleSidebar" aria-label="Apri menu">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </Authorized>
+                </AuthorizeView>
             </div>
 
-            <div class="topbar-spacer"></div>
+            <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
+                <div class="worklog-search flex-fill m-0" style="position: relative;">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Cerca nei worklog..."
+                           value="@FilterState.SearchQuery" @oninput="OnSearchInput" />
+                    @if (!string.IsNullOrEmpty(FilterState.SearchQuery))
+                    {
+                        <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearSearch">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    }
+                </div>
 
-            <AuthorizeView Context="topbarAuth">
-                <Authorized>
-                    <button class="topbar-icon-btn" aria-label="Notifiche" title="Notifiche">
-                        <i class="bi bi-bell"></i>
+                <div class="filter-menu" style="position: relative;">
+                    @* 
+                        Applicati gli stili inline usando le variabili estratte dal CSS per 
+                        abbinarlo perfettamente ai bottoni principali dell'app.
+                    *@
+                    <button type="button" class="btn d-inline-flex align-items-center gap-1 py-2 px-3"
+                            @onclick="ToggleFilterPanel" 
+                            style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;"
+                            onmouseover="this.style.backgroundColor='var(--primary-blue-hover)'"
+                            onmouseout="this.style.backgroundColor='var(--primary-blue)'">
+                        <i class="bi bi-funnel@(FilterState.HasActiveFilters ? "-fill" : "")"></i> 
+                        <span>Filtro</span>
+                        @if (FilterState.HasActiveFilters)
+                        {
+                            <span class="filter-badge" style="background-color: #fff;"></span>
+                        }
                     </button>
 
-                    <div class="user-menu">
-                        <button class="user-menu-toggle" @onclick="ToggleUserMenu">
-                            <span class="avatar-circle">@GetInitials(topbarAuth.User)</span>
-                            <span class="user-menu-name">@GetDisplayName(topbarAuth.User)</span>
-                            <i class="bi bi-chevron-down"></i>
+                    @if (FilterState.FilterPanelOpen)
+                    {
+                        <div class="filter-menu-dropdown" @onclick:stopPropagation="true" style="position: absolute; right: 0; top: 54px; z-index: 1050; width: 320px; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12); padding: 1rem;">
+                            <div class="row g-3">
+                                <div class="col-6">
+                                    <label class="form-label text-muted fw-bold small">Dal</label>
+                                    <input type="date" class="form-control custom-input"
+                                           value="@FilterState.FilterFromString" @oninput="OnFilterFromInput" />
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label text-muted fw-bold small">Al</label>
+                                    <input type="date" class="form-control custom-input"
+                                           value="@FilterState.FilterToString" @oninput="OnFilterToInput" />
+                                </div>
+                                @if (FilterState.IsAdmin)
+                                {
+                                    <div class="col-12">
+                                        <label class="form-label text-muted fw-bold small">Dipendente</label>
+                                        <select class="form-select custom-input" @bind="FilterState.FilterEmployeeId">
+                                            <option value="@Guid.Empty">Tutti</option>
+                                            @foreach (var emp in FilterState.Employees)
+                                            {
+                                                <option value="@emp.Id">@emp.Username</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-muted fw-bold small">Progetto</label>
+                                        <select class="form-select custom-input" @bind="FilterState.FilterProjectId">
+                                            <option value="@Guid.Empty">Tutti</option>
+                                            @foreach (var proj in FilterState.Projects)
+                                            {
+                                                <option value="@proj.Id">@proj.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-muted fw-bold small">Stato</label>
+                                        <select class="form-select custom-input" @bind="FilterState.FilterStatusName">
+                                            <option value="">Tutti</option>
+                                            @foreach (var s in FilterState.Statuses)
+                                            {
+                                                <option value="@s.Name">@s.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                }
+                            </div>
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
+                                        @onclick="ApplyFiltersAsync"
+                                        style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
+                                    <i class="bi bi-funnel"></i> Filtra
+                                </button>
+                                <button class="btn btn-outline-secondary" title="Reimposta filtri"
+                                        @onclick="ResetFiltersAsync"
+                                        style="height: 40px; border-radius: 8px;">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-3">
+                <AuthorizeView Context="topbarAuth">
+                    <Authorized>
+                        <button class="topbar-icon-btn" aria-label="Notifiche" title="Notifiche">
+                            <i class="bi bi-bell"></i>
                         </button>
 
-                        @if (_userMenuOpen)
-                        {
-                            <div class="user-menu-backdrop" @onclick="CloseUserMenu"></div>
-                            <div class="user-menu-dropdown">                                
-                                <NavLink class="user-menu-item" href="/logout" @onclick="CloseUserMenu">
-                                    <i class="bi bi-box-arrow-right me-2"></i>Logout
-                                </NavLink>
-                            </div>
-                        }
-                    </div>
-                </Authorized>
-                <NotAuthorized>
-                    <NavLink class="btn btn-primary btn-genera px-4" href="/login">Login</NavLink>
-                </NotAuthorized>
-            </AuthorizeView>
+                        <div class="user-menu">
+                            <button class="user-menu-toggle" @onclick="ToggleUserMenu">
+                                <span class="avatar-circle">@GetInitials(topbarAuth.User)</span>
+                                <span class="user-menu-name">@GetDisplayName(topbarAuth.User)</span>
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+
+                            @if (_userMenuOpen)
+                            {
+                                <div class="user-menu-backdrop" @onclick="CloseUserMenu"></div>
+                                <div class="user-menu-dropdown">                                
+                                    <NavLink class="user-menu-item" href="/logout" @onclick="CloseUserMenu">
+                                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                                    </NavLink>
+                                </div>
+                            }
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <NavLink class="btn btn-primary px-4" href="/login" style="background-color: var(--primary-blue); border: none; border-radius: 8px;">Login</NavLink>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
         </header>
 
         <main class="app-content">
@@ -91,15 +189,65 @@
 </div>
 
 @code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
+
     private bool _sidebarOpen;
     private bool _userMenuOpen;
 
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            FilterState.IsAdmin = authState.User.IsInRole(RoleNames.Admin);
+        }
+
+        await FilterState.LoadLookupsAsync();
+        FilterState.OnFiltersChanged += StateHasChanged;
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        FilterState.SearchQuery = e.Value?.ToString() ?? string.Empty;
+        FilterState.NotifyFiltersChanged();
+    }
+
+    private void ClearSearch()
+    {
+        FilterState.SearchQuery = string.Empty;
+        FilterState.NotifyFiltersChanged();
+    }
+
+    private void ToggleFilterPanel() => FilterState.FilterPanelOpen = !FilterState.FilterPanelOpen;
+
+    private void OnFilterFromInput(ChangeEventArgs e) => FilterState.FilterFromString = e.Value?.ToString() ?? string.Empty;
+    private void OnFilterToInput(ChangeEventArgs e) => FilterState.FilterToString = e.Value?.ToString() ?? string.Empty;
+
+    private void ApplyFiltersAsync()
+    {
+        FilterState.FilterPanelOpen = false;
+        FilterState.NotifyFiltersChanged();
+    }
+
+    private void ResetFiltersAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var periodFrom = new DateOnly(today.Year, today.Month, 1);
+        var periodTo = periodFrom.AddMonths(1).AddDays(-1);
+
+        FilterState.FilterFromString = periodFrom.ToString("yyyy-MM-dd");
+        FilterState.FilterToString = periodTo.ToString("yyyy-MM-dd");
+        FilterState.FilterEmployeeId = Guid.Empty;
+        FilterState.FilterProjectId = Guid.Empty;
+        FilterState.FilterStatusName = string.Empty;
+        FilterState.FilterPanelOpen = false;
+
+        FilterState.NotifyFiltersChanged();
+    }
+
     private void ToggleSidebar() => _sidebarOpen = !_sidebarOpen;
-
     private void CloseSidebar() => _sidebarOpen = false;
-
     private void ToggleUserMenu() => _userMenuOpen = !_userMenuOpen;
-
     private void CloseUserMenu() => _userMenuOpen = false;
 
     private static string GetDisplayName(System.Security.Claims.ClaimsPrincipal user)
@@ -108,11 +256,7 @@
     private static string GetInitials(System.Security.Claims.ClaimsPrincipal user)
     {
         var name = GetDisplayName(user);
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return "?";
-        }
-
+        if (string.IsNullOrWhiteSpace(name)) return "?";
         var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length switch
         {

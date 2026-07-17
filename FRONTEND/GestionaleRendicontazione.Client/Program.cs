@@ -27,6 +27,7 @@ builder.Services.AddScoped<ProjectApiClient>();
 builder.Services.AddScoped<EmployeeApiClient>();
 builder.Services.AddScoped<StatusApiClient>();
 builder.Services.AddScoped<TypeApiClient>();
+builder.Services.AddScoped<FilterStateService>();
 builder.Services.AddTransient<AuthenticatedHttpMessageHandler>();
 
 builder.Services.AddScoped(sp =>
