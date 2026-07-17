@@ -71,7 +71,7 @@
                         {
                             <div class="user-menu-backdrop" @onclick="CloseUserMenu"></div>
                             <div class="user-menu-dropdown">
-                                @if (!topbarAuth.User.IsInRole(RoleNames.Admin))
+                                @if (topbarAuth.User.IsInRole(RoleNames.Admin))
                                 {
                                     <NavLink class="user-menu-item" href="/profilo" @onclick="CloseUserMenu">
                                         <i class="bi bi-person me-2"></i>Profilo

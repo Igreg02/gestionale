@@ -1,9 +1,328 @@
 @page "/admin/tipologie"
 @attribute [Authorize(Roles = RoleNames.Admin)]
+@inject TypeApiClient ApiClient
 
 <PageTitle>Tipologie</PageTitle>
 
-<PlaceholderSection Title="Tipologie"
-                     Subtitle="Tipi di attività rendicontabile (es. Sviluppo, Fix, Analisi)"
-                     IconCss="bi bi-tags"
-                     PhaseLabel="Fase F4" />
+<div class="container-fluid px-4">
+
+    <div class="admin-toolbar">
+        <div>
+            <h2 class="dashboard-title mb-1">Tipologie</h2>
+            <p class="dashboard-subtitle mb-0">Tipologie di attività rendicontabili (es. FIX)</p>
+        </div>
+        <button class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2 px-4" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg"></i> Nuova tipologia
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="worklog-status-panel">
+            <i class="bi bi-arrow-repeat spin"></i> Caricamento...
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <Alert Color="Color.Danger" Visible="true">@_errorMessage</Alert>
+    }
+    else
+    {
+        <div class="admin-panel">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Nome</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_items.Count == 0)
+                    {
+                        <tr class="admin-empty-row">
+                            <td colspan="2">Nessun elemento registrato.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _items)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@item.Name</td>
+                                <td>
+                                    <div class="admin-table-actions">
+                                        <button class="admin-row-icon-btn" title="Modifica" @onclick="() => OpenEditModal(item)">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </button>
+                                        <button class="admin-row-icon-btn is-danger" title="Elimina" @onclick="() => ConfirmDelete(item)">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@* ====================== MODALE CREA/MODIFICA ====================== *@
+@if (_formModalOpen && _formModel is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseFormModal">
+        <div class="wl-modal-card" style="width:420px;" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label">@(_isEditing ? "MODIFICA" : "NUOVO ELEMENTO")</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="CloseFormModal" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">@(_isEditing ? "Modifica" : "Nuovo")</span>
+                </div>
+            </div>
+
+            @if (_modalError is not null)
+            {
+                <div class="alert alert-danger py-2 px-3 mx-0 mb-0" style="font-size:0.88rem; border-radius:0; margin-top:-1px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @_modalError
+                </div>
+            }
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Nome</label>
+                    <input class="wl-field-input" @bind="_formModel.Name" placeholder="Nome" />
+                </div>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="CloseFormModal" disabled="@_isSaving">Annulla</button>
+                    <button class="wl-btn-save" @onclick="SaveFormAsync" disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2"></i> <span>Salva</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@* ====================== MODALE CONFERMA ELIMINA ====================== *@
+@if (_deleteModalOpen && _deleteTarget is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseDeleteModal">
+        <div class="wl-modal-card" style="max-width:440px;" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label" style="color:#dc2626;">ELIMINA</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="CloseDeleteModal" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Conferma eliminazione</span>
+                </div>
+            </div>
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <p class="mb-2" style="font-size:0.95rem;">Stai per eliminare:</p>
+                <div style="background:var(--bg-light); border-radius:10px; padding:0.75rem 1rem; margin-bottom:0.75rem;">
+                    <strong>@_deleteTarget.Name</strong>
+                </div>
+                @if (_modalError is not null)
+                {
+                    <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.88rem; border-radius:10px;">
+                        <i class="bi bi-exclamation-triangle me-1"></i> @_modalError
+                    </div>
+                }
+                <p class="text-muted mb-0" style="font-size:0.88rem;">Questa operazione non può essere annullata.</p>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="CloseDeleteModal" disabled="@_isSaving">Annulla</button>
+                    <button class="wl-btn-delete wl-btn-delete--solid" @onclick="ExecuteDeleteAsync" disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Eliminazione...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-trash3 me-1"></i> <span>Conferma elimina</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private string? _errorMessage;
+    private List<WorkTypeResponse> _items = new();
+
+    private bool _formModalOpen;
+    private bool _isEditing;
+    private Guid _editingId;
+    private FormModel? _formModel;
+
+    private bool _deleteModalOpen;
+    private WorkTypeResponse? _deleteTarget;
+
+    private bool _isSaving;
+    private string? _modalError;
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            _items = (await ApiClient.GetAllAsync()).OrderBy(i => i.Name).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nel recupero dei dati: {ex}");
+            _errorMessage = "Impossibile recuperare i dati dal server. Riprova più tardi.";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void OpenCreateModal()
+    {
+        _isEditing = false;
+        _editingId = Guid.Empty;
+        _formModel = new FormModel();
+        _modalError = null;
+        _formModalOpen = true;
+    }
+
+    private void OpenEditModal(WorkTypeResponse item)
+    {
+        _isEditing = true;
+        _editingId = item.Id;
+        _formModel = new FormModel { Name = item.Name };
+        _modalError = null;
+        _formModalOpen = true;
+    }
+
+    private void CloseFormModal()
+    {
+        _formModalOpen = false;
+        _formModel = null;
+        _modalError = null;
+    }
+
+    private async Task SaveFormAsync()
+    {
+        if (_formModel is null) return;
+        if (string.IsNullOrWhiteSpace(_formModel.Name)) { _modalError = "Il nome è obbligatorio."; return; }
+
+        _isSaving = true;
+        _modalError = null;
+
+        try
+        {
+            if (_isEditing)
+            {
+                var result = await ApiClient.UpdateAsync(_editingId, new WorkTypeUpdateRequest { Name = _formModel.Name });
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+
+                var idx = _items.FindIndex(i => i.Id == _editingId);
+                if (idx >= 0) _items[idx] = result.Data!;
+            }
+            else
+            {
+                var result = await ApiClient.CreateAsync(new WorkTypeCreateRequest { Name = _formModel.Name });
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+
+                _items.Add(result.Data!);
+            }
+
+            _items = _items.OrderBy(i => i.Name).ToList();
+            CloseFormModal();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nel salvataggio: {ex}");
+            _modalError = "Errore di rete. Riprova più tardi.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void ConfirmDelete(WorkTypeResponse item)
+    {
+        _deleteTarget = item;
+        _modalError = null;
+        _deleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        _deleteModalOpen = false;
+        _deleteTarget = null;
+        _modalError = null;
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        if (_deleteTarget is null) return;
+
+        _isSaving = true;
+        _modalError = null;
+
+        try
+        {
+            var result = await ApiClient.DeleteAsync(_deleteTarget.Id);
+            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+
+            _items.RemoveAll(i => i.Id == _deleteTarget.Id);
+            CloseDeleteModal();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nell'eliminazione: {ex}");
+            _modalError = "Errore di rete. Riprova più tardi.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private static string FormatError(Dictionary<string, string[]> validationErrors, string? errorMessage)
+    {
+        if (validationErrors.Count > 0)
+            return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
+        return errorMessage ?? "Si è verificato un errore imprevisto.";
+    }
+
+    private sealed class FormModel
+    {
+        public string Name { get; set; } = string.Empty;
+    }
+}

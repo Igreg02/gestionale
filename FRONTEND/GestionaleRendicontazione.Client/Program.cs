@@ -22,6 +22,11 @@ builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredServ
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<WorkLogApiClient>();
+builder.Services.AddScoped<CompanyApiClient>();
+builder.Services.AddScoped<ProjectApiClient>();
+builder.Services.AddScoped<EmployeeApiClient>();
+builder.Services.AddScoped<StatusApiClient>();
+builder.Services.AddScoped<TypeApiClient>();
 builder.Services.AddTransient<AuthenticatedHttpMessageHandler>();
 
 builder.Services.AddScoped(sp =>
