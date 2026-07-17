@@ -5,8 +5,6 @@
 
     <AuthorizeView Roles="@RoleNames.Admin">
         <Authorized>
-            <!-- La sidebar di navigazione è riservata agli Admin: l'utente normale ha accesso -->
-            <!-- alla sola Dashboard, quindi non ha bisogno di un menu di navigazione laterale. -->
             <aside class="app-sidebar">
                 <div class="sidebar-brand">
                     <a href="/" class="sidebar-brand-link">
@@ -49,7 +47,6 @@
                     </button>
                 </Authorized>
             </AuthorizeView>
-
             <div class="topbar-search">
                 <i class="bi bi-search"></i>
                 <input type="search" placeholder="Cerca..." aria-label="Cerca" />
