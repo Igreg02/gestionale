@@ -3,56 +3,52 @@
 
 <div class="app-shell @(_sidebarOpen ? "sidebar-open" : "")">
 
-    <aside class="app-sidebar">
-        <div class="sidebar-brand">
-            <a href="/" class="sidebar-brand-link">
-                <span class="sidebar-brand-icon"><i class="bi bi-clock-history"></i></span>
-                <span class="sidebar-brand-text">
-                    <strong>WORKLOG</strong>
-                    <small>MANAGER</small>
-                </span>
-            </a>
-        </div>
+    <AuthorizeView Roles="@RoleNames.Admin">
+        <Authorized>
+            <!-- La sidebar di navigazione è riservata agli Admin: l'utente normale ha accesso -->
+            <!-- alla sola Dashboard, quindi non ha bisogno di un menu di navigazione laterale. -->
+            <aside class="app-sidebar">
+                <div class="sidebar-brand">
+                    <a href="/" class="sidebar-brand-link">
+                        <span class="sidebar-brand-icon"><i class="bi bi-clock-history"></i></span>
+                        <span class="sidebar-brand-text">
+                            <strong>WORKLOG</strong>
+                            <small>MANAGER</small>
+                        </span>
+                    </a>
+                </div>
 
-        <AuthorizeView Context="shellAuth">
-            <Authorized>
                 <nav class="sidebar-nav">
-                    @if (shellAuth.User.IsInRole(RoleNames.Admin))
-                    {
-                        <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All"><i class="bi bi-house"></i><span>Dashboard</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/aziende"><i class="bi bi-building"></i><span>Aziende</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/dipendenti"><i class="bi bi-people"></i><span>Dipendenti</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/progetti"><i class="bi bi-folder2"></i><span>Progetti</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/tipologie"><i class="bi bi-tags"></i><span>Tipologie</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/stati"><i class="bi bi-list-check"></i><span>Stati</span></NavLink>
-                        <NavLink class="sidebar-link" href="/report"><i class="bi bi-bar-chart-line"></i><span>Report</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/impostazioni"><i class="bi bi-gear"></i><span>Impostazioni</span></NavLink>
-                    }
-                    else
-                    {
-                        <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All"><i class="bi bi-house"></i><span>Dashboard</span></NavLink>
-                        <NavLink class="sidebar-link" href="/worklogs"><i class="bi bi-journal-text"></i><span>I miei Worklog</span></NavLink>
-                        <NavLink class="sidebar-link" href="/report"><i class="bi bi-bar-chart-line"></i><span>Report</span></NavLink>
-                        <NavLink class="sidebar-link" href="/profilo"><i class="bi bi-person"></i><span>Profilo</span></NavLink>
-                    }
+                    <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All"><i class="bi bi-house"></i><span>Dashboard</span></NavLink>
+                    <NavLink class="sidebar-link" href="/admin/aziende"><i class="bi bi-building"></i><span>Aziende</span></NavLink>
+                    <NavLink class="sidebar-link" href="/admin/dipendenti"><i class="bi bi-people"></i><span>Dipendenti</span></NavLink>
+                    <NavLink class="sidebar-link" href="/admin/progetti"><i class="bi bi-folder2"></i><span>Progetti</span></NavLink>
+                    <NavLink class="sidebar-link" href="/admin/tipologie"><i class="bi bi-tags"></i><span>Tipologie</span></NavLink>
+                    <NavLink class="sidebar-link" href="/admin/stati"><i class="bi bi-list-check"></i><span>Stati</span></NavLink>
+                    <NavLink class="sidebar-link" href="/report"><i class="bi bi-bar-chart-line"></i><span>Report</span></NavLink>
+                    <NavLink class="sidebar-link" href="/admin/impostazioni"><i class="bi bi-gear"></i><span>Impostazioni</span></NavLink>
                 </nav>
-            </Authorized>
-        </AuthorizeView>
 
-        <div class="sidebar-footer">
-            <a href="https://github.com" target="_blank" rel="noopener" class="sidebar-link sidebar-help">
-                <i class="bi bi-question-circle"></i><span>Aiuto</span>
-            </a>
-        </div>
-    </aside>
+                <div class="sidebar-footer">
+                    <a href="https://github.com" target="_blank" rel="noopener" class="sidebar-link sidebar-help">
+                        <i class="bi bi-question-circle"></i><span>Aiuto</span>
+                    </a>
+                </div>
+            </aside>
+        </Authorized>
+    </AuthorizeView>
 
     <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
 
     <div class="app-main">
         <header class="app-topbar">
-            <button class="topbar-burger" @onclick="ToggleSidebar" aria-label="Apri menu">
-                <i class="bi bi-list"></i>
-            </button>
+            <AuthorizeView Roles="@RoleNames.Admin">
+                <Authorized>
+                    <button class="topbar-burger" @onclick="ToggleSidebar" aria-label="Apri menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+                </Authorized>
+            </AuthorizeView>
 
             <div class="topbar-search">
                 <i class="bi bi-search"></i>

@@ -25,7 +25,16 @@
         <NotFound>
             <PageTitle>Pagina non trovata</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <NotFoundPage />
+                <AuthorizeView>
+                    <Authorized>
+                        <!-- Utente autenticato su un URL inesistente: torna alla Dashboard. -->
+                        <RedirectToDashboard />
+                    </Authorized>
+                    <NotAuthorized>
+                        <!-- Utente anonimo su un URL inesistente: non deve poter uscire dal login. -->
+                        <RedirectToLogin />
+                    </NotAuthorized>
+                </AuthorizeView>
             </LayoutView>
         </NotFound>
     </Router>
