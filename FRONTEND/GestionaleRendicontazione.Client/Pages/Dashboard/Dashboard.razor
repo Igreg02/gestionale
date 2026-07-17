@@ -1,12 +1,23 @@
 @page "/"
 @attribute [Authorize]
 @using System.Globalization
+@using System.Security.Claims
 @inject WorkLogApiClient WorkLogApiClient
 
 <PageTitle>Dashboard</PageTitle>
 
 <div class="container-fluid px-4">
 
+    <Row class="mb-4">
+        <Column ColumnSize="ColumnSize.Is12">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div>
+                    <h2 class="dashboard-title mb-1">I miei Worklog</h2>
+                    <p class="dashboard-subtitle mb-0">Consulta, modifica ed elimina le tue rendicontazioni ore</p>
+                </div>
+            </div>
+        </Column>
+    </Row>
 
     <Row class="mb-4">
         <Column ColumnSize="ColumnSize.Is12">
@@ -47,38 +58,44 @@
                                                 <span class="worklog-date">@item.Worklog.Date.ToString("dd/MM/yyyy")</span>
                                             </div>
                                         </div>
+                                        @if (_isAdmin && item.Worklog.EmployeeName is not null)
+                                        {
+                                            <div class="d-flex align-items-center gap-1 mb-2">
+                                                <i class="bi bi-person-fill text-muted" style="font-size:0.8rem;"></i>
+                                                <span style="font-size:0.82rem; color:var(--text-muted); font-weight:600;">@item.Worklog.EmployeeName</span>
+                                            </div>
+                                        }
                                         <p class="worklog-description text-muted mb-2" title="@item.Worklog.Description">@item.Worklog.Description</p>
                                         <div class="worklog-hours text-blue fw-bold">@FormatHours(item.Worklog.HoursCounter)</div>
                                         <span class="worklog-status-badge">@item.Worklog.StatusName</span>
                                     </div>
-                                    <div class="text-end mt-3">
-                                        <a href="/worklogs" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
-                                            Visualizza <i class="bi bi-arrow-right"></i>
-                                        </a>
+                                    <div class="d-flex align-items-center justify-content-between mt-3">
+                                        <button class="btn-visualizza text-blue d-inline-flex align-items-center gap-1 border-0 bg-transparent p-0"
+                                                @onclick="() => OpenEditModal(item.Worklog)">
+                                            <i class="bi bi-pencil-square"></i> Modifica
+                                        </button>
+                                        <button class="btn-elimina d-inline-flex align-items-center gap-1 border-0 bg-transparent p-0"
+                                                @onclick="() => ConfirmDelete(item.Worklog)"
+                                                disabled="@_isSaving">
+                                            <i class="bi bi-trash3"></i> Elimina
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         }
                     }
 
-                    <NavLink href="/worklogs" class="worklog-card card-placeholder-new">
+                    @* Card "+ Nuovo Worklog" *@
+                    <button class="worklog-card card-placeholder-new"
+                            @onclick="OpenCreateModal">
                         <div class="worklog-card-body d-flex flex-column align-items-center justify-content-center h-100 py-4">
                             <div class="icon-circle bg-light-blue mb-2">
                                 <i class="bi bi-plus-lg text-blue" style="font-size: 1.5rem;"></i>
                             </div>
                             <span class="fw-bold text-blue">Nuovo Worklog</span>
                         </div>
-                    </NavLink>
+                    </button>
                 </div>
-
-                @if (_totalCount > _worklogs.Count)
-                {
-                    <div class="mt-3">
-                        <NavLink href="/worklogs" class="btn-visualizza text-blue d-inline-flex align-items-center gap-1">
-                            Vedi tutti i worklog del periodo (@_totalCount) <i class="bi bi-arrow-right"></i>
-                        </NavLink>
-                    </div>
-                }
             }
         </Column>
     </Row>
@@ -125,6 +142,303 @@
     </Row>
 </div>
 
+@* ====================== MODALE CREA WORKLOG ====================== *@
+@if (_createModalOpen && _createModel is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseCreateModal">
+        <div class="wl-modal-card" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label">NUOVO WORKLOG</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="CloseCreateModal" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Nuovo Worklog</span>
+                </div>
+            </div>
+
+            @if (_modalError is not null)
+            {
+                <div class="alert alert-danger py-2 px-3 mx-0 mb-0" style="font-size:0.88rem; border-radius:0; margin-top:-1px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @_modalError
+                </div>
+            }
+
+            <div class="wl-modal-body">
+                <div class="wl-modal-left">
+
+                    @if (_isAdmin)
+                    {
+                        <div class="wl-field-row">
+                            <label class="wl-field-label">Dipendente</label>
+                            <select class="wl-field-input" @bind="_createModel.IdEmployee">
+                                <option value="@Guid.Empty">-- Seleziona --</option>
+                                @foreach (var emp in _employees)
+                                {
+                                    <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Data</label>
+                        <input type="date" class="wl-field-input"
+                               value="@_createDateString"
+                               @oninput="OnCreateDateInput" />
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Ore</label>
+                        <input type="number" class="wl-field-input"
+                               min="1" max="24" step="0.5"
+                               @bind="_createModel.HoursCounter" />
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Progetto</label>
+                        <select class="wl-field-input" @bind="_createModel.IdProject">
+                            <option value="@Guid.Empty">-- Seleziona --</option>
+                            @foreach (var proj in _projects)
+                            {
+                                <option value="@proj.Id">@proj.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Tipo</label>
+                        <select class="wl-field-input" @bind="_createModel.IdType">
+                            <option value="@Guid.Empty">-- Seleziona --</option>
+                            @foreach (var t in _types)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Stato</label>
+                        <select class="wl-field-input" @bind="_createModel.IdStatus">
+                            <option value="@Guid.Empty">-- Seleziona --</option>
+                            @foreach (var s in _statuses)
+                            {
+                                <option value="@s.Id">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="wl-modal-right">
+                    <label class="wl-field-label mb-2">Descrizione</label>
+                    <textarea class="wl-desc-area" rows="8"
+                              @bind="_createModel.Description"
+                              placeholder="Descrivi l'attività svolta..."></textarea>
+                </div>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="CloseCreateModal" disabled="@_isSaving">
+                        Annulla
+                    </button>
+                    <button class="wl-btn-save" @onclick="SaveCreateAsync" disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2"></i> <span>Salva</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@* ====================== MODALE MODIFICA WORKLOG ====================== *@
+@if (_editModalOpen && _editModel is not null && _editSource is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseEditModal">
+        <div class="wl-modal-card" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label">MODIFICA WORKLOG</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="CloseEditModal" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Worklog — @_editSource.ProjectName</span>
+                </div>
+            </div>
+
+            @if (_modalError is not null)
+            {
+                <div class="alert alert-danger py-2 px-3 mx-0 mb-0" style="font-size:0.88rem; border-radius:0; margin-top:-1px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @_modalError
+                </div>
+            }
+
+            <div class="wl-modal-body">
+                <div class="wl-modal-left">
+
+                    @if (_isAdmin)
+                    {
+                        <div class="wl-field-row">
+                            <label class="wl-field-label">Dipendente</label>
+                            <select class="wl-field-input" @bind="_editModel.IdEmployee">
+                                <option value="@Guid.Empty">-- Seleziona --</option>
+                                @foreach (var emp in _employees)
+                                {
+                                    <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Data</label>
+                        <input type="date" class="wl-field-input"
+                               value="@_editDateString"
+                               @oninput="OnDateInput" />
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Ore</label>
+                        <input type="number" class="wl-field-input"
+                               min="1" max="24" step="0.5"
+                               @bind="_editModel.HoursCounter" />
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Progetto</label>
+                        <select class="wl-field-input" @bind="_editModel.IdProject">
+                            <option value="@Guid.Empty">-- Seleziona --</option>
+                            @foreach (var proj in _projects)
+                            {
+                                <option value="@proj.Id">@proj.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Tipo</label>
+                        <select class="wl-field-input" @bind="_editModel.IdType">
+                            <option value="@Guid.Empty">-- Seleziona --</option>
+                            @foreach (var t in _types)
+                            {
+                                <option value="@t.Id">@t.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="wl-field-row">
+                        <label class="wl-field-label">Stato</label>
+                        <select class="wl-field-input" @bind="_editModel.IdStatus">
+                            <option value="@Guid.Empty">-- Seleziona --</option>
+                            @foreach (var s in _statuses)
+                            {
+                                <option value="@s.Id">@s.Name</option>
+                            }
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="wl-modal-right">
+                    <label class="wl-field-label mb-2">Descrizione</label>
+                    <textarea class="wl-desc-area" rows="8"
+                              @bind="_editModel.Description"
+                              placeholder="Descrivi l'attività svolta..."></textarea>
+                </div>
+            </div>
+
+            <div class="wl-modal-footer">
+                <button class="wl-btn-delete" @onclick="() => { CloseEditModal(); ConfirmDelete(_editSource!); }" disabled="@_isSaving">
+                    <i class="bi bi-trash3 me-1"></i> Elimina
+                </button>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="CloseEditModal" disabled="@_isSaving">
+                        Annulla
+                    </button>
+                    <button class="wl-btn-save" @onclick="SaveEditAsync" disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2"></i> <span>Salva</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@* ====================== MODALE CONFERMA ELIMINA ====================== *@
+@if (_deleteModalOpen && _deleteTarget is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseDeleteModal">
+        <div class="wl-modal-card" style="max-width:440px;" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label" style="color:#dc2626;">ELIMINA WORKLOG</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="CloseDeleteModal" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Conferma eliminazione</span>
+                </div>
+            </div>
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <p class="mb-2" style="font-size:0.95rem;">Stai per eliminare il worklog:</p>
+                <div style="background:var(--bg-light); border-radius:10px; padding:0.75rem 1rem; margin-bottom:0.75rem;">
+                    <strong>@_deleteTarget.ProjectName</strong>
+                    <span class="ms-2 text-muted" style="font-size:0.85rem;">@_deleteTarget.Date.ToString("dd/MM/yyyy")</span><br />
+                    <span class="text-muted" style="font-size:0.85rem;">@_deleteTarget.Description</span>
+                </div>
+                @if (_modalError is not null)
+                {
+                    <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.88rem; border-radius:10px;">
+                        <i class="bi bi-exclamation-triangle me-1"></i> @_modalError
+                    </div>
+                }
+                <p class="text-muted mb-0" style="font-size:0.88rem;">Questa operazione non può essere annullata.</p>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="CloseDeleteModal" disabled="@_isSaving">
+                        Annulla
+                    </button>
+                    <button class="wl-btn-delete wl-btn-delete--solid" @onclick="ExecuteDeleteAsync" disabled="@_isSaving">
+                        @if (_isSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Eliminazione...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-trash3 me-1"></i> <span>Conferma elimina</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
 
@@ -132,18 +446,44 @@
     {
         ("bi bi-clipboard-data", "bg-light-blue", "text-blue"),
         ("bi bi-code-slash", "bg-light-green", "text-green"),
-        ("bi bi-gear", "bg-light-orange", "text-orange")
+        ("bi bi-gear", "bg-light-orange", "text-orange"),
+        ("bi bi-journal-text", "bg-light-blue", "text-blue"),
+        ("bi bi-people", "bg-light-green", "text-green"),
     };
 
     private string _displayName = string.Empty;
     private bool _loading = true;
     private string? _errorMessage;
     private List<WorkLogResponseDto> _worklogs = new();
-    private int _totalCount;
+    private bool _isAdmin;
     private DateOnly _periodFrom;
     private DateOnly _periodTo;
-
     private string _periodLabel => $"{_periodFrom:dd/MM/yyyy} – {_periodTo:dd/MM/yyyy}";
+
+    // --- Lookup lists per i dropdown ---
+    private List<ProjectResponseDto> _projects = new();
+    private List<StatusResponseDto> _statuses = new();
+    private List<TypeResponseDto> _types = new();
+    private List<EmployeeResponseDto> _employees = new();
+
+    // --- Create modal ---
+    private bool _createModalOpen;
+    private WorkLogUpdateRequestDto? _createModel;
+    private string _createDateString = string.Empty;
+
+    // --- Edit modal ---
+    private bool _editModalOpen;
+    private WorkLogResponseDto? _editSource;
+    private WorkLogUpdateRequestDto? _editModel;
+    private string _editDateString = string.Empty;
+
+    // --- Delete modal ---
+    private bool _deleteModalOpen;
+    private WorkLogResponseDto? _deleteTarget;
+
+    // --- Shared ---
+    private bool _isSaving;
+    private string? _modalError;
 
     protected override async Task OnInitializedAsync()
     {
@@ -151,20 +491,19 @@
         {
             var authState = await AuthStateTask;
             _displayName = authState.User.FindFirst("display_name")?.Value ?? authState.User.Identity?.Name ?? string.Empty;
+            _isAdmin = authState.User.IsInRole(RoleNames.Admin);
         }
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         _periodFrom = new DateOnly(today.Year, today.Month, 1);
         _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
 
-        await LoadWorklogsAsync();
+        await Task.WhenAll(LoadWorklogsAsync(), LoadLookupsAsync());
     }
 
     /// <summary>
-    /// Recupera i worklog del mese corrente da GET /api/worklog (vedi Curl.md): con token User il
-    /// backend filtra già in automatico sul dipendente autenticato, con token Admin restituisce quelli
-    /// di tutti i dipendenti nel periodo. La dashboard mostra solo i 3 più recenti come anteprima;
-    /// l'elenco completo sarà /worklogs (Fase F5).
+    /// Recupera i worklog del mese corrente da GET /api/worklog: con token User il backend filtra
+    /// sul dipendente autenticato, con token Admin restituisce quelli di tutti.
     /// </summary>
     private async Task LoadWorklogsAsync()
     {
@@ -175,11 +514,9 @@
         try
         {
             var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo);
-            _totalCount = result.Count;
             _worklogs = result
                 .OrderByDescending(w => w.Date)
                 .ThenByDescending(w => w.CreateAt)
-                .Take(3)
                 .ToList();
         }
         catch (Exception ex)
@@ -190,6 +527,227 @@
         finally
         {
             _loading = false;
+        }
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        try
+        {
+            var projTask = WorkLogApiClient.GetProjectsAsync();
+            var statusTask = WorkLogApiClient.GetStatusesAsync();
+            var typeTask = WorkLogApiClient.GetTypesAsync();
+
+            if (_isAdmin)
+            {
+                var empTask = WorkLogApiClient.GetEmployeesAsync();
+                await Task.WhenAll(projTask, statusTask, typeTask, empTask);
+                _employees = await empTask;
+            }
+            else
+            {
+                await Task.WhenAll(projTask, statusTask, typeTask);
+            }
+
+            _projects = await projTask;
+            _statuses = await statusTask;
+            _types = await typeTask;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nel recupero dei dati di supporto: {ex}");
+        }
+    }
+
+    // ==============================
+    // Create Modal
+    // ==============================
+
+    private void OpenCreateModal()
+    {
+        _modalError = null;
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        _createModel = new WorkLogUpdateRequestDto
+        {
+            Date = today,
+            HoursCounter = 8,
+            IdEmployee = Guid.Empty,
+            IdProject = Guid.Empty,
+            IdType = Guid.Empty,
+            IdStatus = Guid.Empty,
+        };
+        _createDateString = today.ToString("yyyy-MM-dd");
+        _createModalOpen = true;
+    }
+
+    private void CloseCreateModal()
+    {
+        _createModalOpen = false;
+        _createModel = null;
+        _modalError = null;
+    }
+
+    private void OnCreateDateInput(ChangeEventArgs e)
+    {
+        _createDateString = e.Value?.ToString() ?? string.Empty;
+        if (_createModel is not null &&
+            DateOnly.TryParseExact(_createDateString, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var parsed))
+        {
+            _createModel.Date = parsed;
+        }
+    }
+
+    private async Task SaveCreateAsync()
+    {
+        if (_createModel is null) return;
+
+        if (string.IsNullOrWhiteSpace(_createModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
+        if (_createModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
+        if (_createModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
+        if (_createModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
+        if (_isAdmin && _createModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
+
+        _isSaving = true;
+        _modalError = null;
+
+        try
+        {
+            var created = await WorkLogApiClient.CreateAsync(_createModel);
+            if (created is null) { _modalError = "Errore durante la creazione. Riprova più tardi."; return; }
+
+            _worklogs.Insert(0, created);
+            CloseCreateModal();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore POST worklog: {ex}");
+            _modalError = "Errore di rete. Riprova più tardi.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    // ==============================
+    // Edit Modal
+    // ==============================
+
+    private void OpenEditModal(WorkLogResponseDto worklog)
+    {
+        _editSource = worklog;
+        _modalError = null;
+        _editModel = new WorkLogUpdateRequestDto
+        {
+            Description = worklog.Description,
+            HoursCounter = worklog.HoursCounter,
+            Date = worklog.Date,
+            IdProject = worklog.IdProject,
+            IdEmployee = worklog.IdEmployee ?? Guid.Empty,
+            IdType = worklog.IdType,
+            IdStatus = worklog.IdStatus,
+        };
+        _editDateString = worklog.Date.ToString("yyyy-MM-dd");
+        _editModalOpen = true;
+    }
+
+    private void CloseEditModal()
+    {
+        _editModalOpen = false;
+        _editSource = null;
+        _editModel = null;
+        _modalError = null;
+    }
+
+    private void OnDateInput(ChangeEventArgs e)
+    {
+        _editDateString = e.Value?.ToString() ?? string.Empty;
+        if (_editModel is not null &&
+            DateOnly.TryParseExact(_editDateString, "yyyy-MM-dd", null, System.Globalization.DateTimeStyles.None, out var parsed))
+        {
+            _editModel.Date = parsed;
+        }
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (_editModel is null || _editSource is null) return;
+
+        if (string.IsNullOrWhiteSpace(_editModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
+        if (_editModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
+        if (_editModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
+        if (_editModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
+        if (_isAdmin && _editModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
+
+        // Per utenti normali il backend ignora IdEmployee
+        if (!_isAdmin)
+            _editModel.IdEmployee = _editSource.IdEmployee ?? Guid.Empty;
+
+        _isSaving = true;
+        _modalError = null;
+
+        try
+        {
+            var updated = await WorkLogApiClient.UpdateAsync(_editSource.Id, _editModel);
+            if (updated is null) { _modalError = "Errore durante il salvataggio. Riprova più tardi."; return; }
+
+            var idx = _worklogs.FindIndex(w => w.Id == updated.Id);
+            if (idx >= 0) _worklogs[idx] = updated;
+
+            CloseEditModal();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore PUT worklog: {ex}");
+            _modalError = "Errore di rete. Riprova più tardi.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    // ==============================
+    // Delete Modal
+    // ==============================
+
+    private void ConfirmDelete(WorkLogResponseDto worklog)
+    {
+        _deleteTarget = worklog;
+        _modalError = null;
+        _deleteModalOpen = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        _deleteModalOpen = false;
+        _deleteTarget = null;
+        _modalError = null;
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        if (_deleteTarget is null) return;
+
+        _isSaving = true;
+        _modalError = null;
+
+        try
+        {
+            var ok = await WorkLogApiClient.DeleteAsync(_deleteTarget.Id);
+            if (!ok) { _modalError = "Impossibile eliminare il worklog. Riprova più tardi."; return; }
+
+            _worklogs.RemoveAll(w => w.Id == _deleteTarget.Id);
+            CloseDeleteModal();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore DELETE worklog: {ex}");
+            _modalError = "Errore di rete. Riprova più tardi.";
+        }
+        finally
+        {
+            _isSaving = false;
         }
     }
 
