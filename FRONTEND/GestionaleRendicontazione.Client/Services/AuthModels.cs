@@ -14,6 +14,21 @@ namespace GestionaleRendicontazione.Client.Services
         string UserName,
         string DisplayName);
 
+    public sealed class RegisterRequestDto
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+    }
+
+    public sealed record RegisterResponseDto(
+        Guid Id,
+        string UserName,
+        string FirstName,
+        string LastName,
+        bool IsActive);
+
     public sealed record StoredSession(
         string Token,
         DateTime ExpiresAt,

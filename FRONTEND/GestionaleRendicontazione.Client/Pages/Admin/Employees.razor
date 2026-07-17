@@ -1,6 +1,7 @@
 @page "/admin/dipendenti"
 @attribute [Authorize(Roles = RoleNames.Admin)]
 @inject EmployeeApiClient EmployeeApiClient
+@inject AuthService AuthService
 
 <PageTitle>Dipendenti</PageTitle>
 
@@ -9,8 +10,11 @@
     <div class="admin-toolbar">
         <div>
             <h2 class="dashboard-title mb-1">Dipendenti</h2>
-            <p class="dashboard-subtitle mb-0">Tecnici che rendicontano le ore. La creazione avviene tramite registrazione (Login → Registra nuovo dipendente).</p>
+            <p class="dashboard-subtitle mb-0">Tecnici che rendicontano le ore</p>
         </div>
+        <button class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2 px-4" @onclick="OpenRegisterModal">
+            <i class="bi bi-person-plus"></i> Nuovo dipendente
+        </button>
     </div>
 
     @if (_loading)
@@ -68,6 +72,69 @@
         </div>
     }
 </div>
+
+@* ====================== MODALE REGISTRA DIPENDENTE ====================== *@
+@if (_registerModalOpen && _registerModel is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="CloseRegisterModal">
+        <div class="wl-modal-card" style="width:480px;" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label">NUOVO DIPENDENTE</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="CloseRegisterModal" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Registra dipendente</span>
+                </div>
+            </div>
+
+            @if (_registerError is not null)
+            {
+                <div class="alert alert-danger py-2 px-3 mx-0 mb-0" style="font-size:0.88rem; border-radius:0; margin-top:-1px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @_registerError
+                </div>
+            }
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Username</label>
+                    <input class="wl-field-input" @bind="_registerModel.UserName" placeholder="Username di accesso" />
+                </div>
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Password</label>
+                    <input class="wl-field-input" type="password" @bind="_registerModel.Password" placeholder="Almeno 6 caratteri" />
+                </div>
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Nome</label>
+                    <input class="wl-field-input" @bind="_registerModel.FirstName" placeholder="Nome" />
+                </div>
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Cognome</label>
+                    <input class="wl-field-input" @bind="_registerModel.LastName" placeholder="Cognome" />
+                </div>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="CloseRegisterModal" disabled="@_isRegistering">Annulla</button>
+                    <button class="wl-btn-save" @onclick="SaveRegisterAsync" disabled="@_isRegistering">
+                        @if (_isRegistering)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Creazione...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2"></i> <span>Crea dipendente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
 
 @* ====================== MODALE MODIFICA DIPENDENTE ====================== *@
 @if (_formModalOpen && _formModel is not null)
@@ -185,6 +252,11 @@
     private string? _errorMessage;
     private List<EmployeeResponse> _employees = new();
 
+    private bool _registerModalOpen;
+    private RegisterFormModel? _registerModel;
+    private bool _isRegistering;
+    private string? _registerError;
+
     private bool _formModalOpen;
     private Guid _editingId;
     private EmployeeFormModel? _formModel;
@@ -215,6 +287,75 @@
         finally
         {
             _loading = false;
+        }
+    }
+
+    // ==============================
+    // Register Modal (crea nuovo Employee via POST /api/auth/register)
+    // ==============================
+
+    private void OpenRegisterModal()
+    {
+        _registerModel = new RegisterFormModel();
+        _registerError = null;
+        _registerModalOpen = true;
+    }
+
+    private void CloseRegisterModal()
+    {
+        _registerModalOpen = false;
+        _registerModel = null;
+        _registerError = null;
+    }
+
+    private async Task SaveRegisterAsync()
+    {
+        if (_registerModel is null) return;
+
+        if (string.IsNullOrWhiteSpace(_registerModel.UserName)) { _registerError = "Lo username è obbligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(_registerModel.Password) || _registerModel.Password.Length < 6) { _registerError = "La password deve essere di almeno 6 caratteri."; return; }
+        if (string.IsNullOrWhiteSpace(_registerModel.FirstName)) { _registerError = "Il nome è obbligatorio."; return; }
+        if (string.IsNullOrWhiteSpace(_registerModel.LastName)) { _registerError = "Il cognome è obbligatorio."; return; }
+
+        _isRegistering = true;
+        _registerError = null;
+
+        try
+        {
+            var result = await AuthService.RegisterAsync(new RegisterRequestDto
+            {
+                UserName = _registerModel.UserName,
+                Password = _registerModel.Password,
+                FirstName = _registerModel.FirstName,
+                LastName = _registerModel.LastName,
+            });
+
+            if (!result.IsSuccess)
+            {
+                _registerError = FormatError(result.ValidationErrors, result.ErrorMessage);
+                return;
+            }
+
+            var created = result.Data!;
+            _employees.Add(new EmployeeResponse
+            {
+                Id = created.Id,
+                Username = created.UserName,
+                FirstName = created.FirstName,
+                LastName = created.LastName,
+            });
+            _employees = _employees.OrderBy(e => e.Username).ToList();
+
+            CloseRegisterModal();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nella registrazione del dipendente: {ex}");
+            _registerError = "Errore di rete. Riprova più tardi.";
+        }
+        finally
+        {
+            _isRegistering = false;
         }
     }
 
@@ -320,6 +461,14 @@
         if (validationErrors.Count > 0)
             return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
         return errorMessage ?? "Si è verificato un errore imprevisto.";
+    }
+
+    private sealed class RegisterFormModel
+    {
+        public string UserName { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
     }
 
     private sealed class EmployeeFormModel
