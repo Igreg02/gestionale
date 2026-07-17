@@ -21,6 +21,68 @@
 
     <Row class="mb-4">
         <Column ColumnSize="ColumnSize.Is12">
+            <div class="report-panel">
+                <div class="row align-items-end g-3">
+                    <div class="col-6 col-md-2">
+                        <label class="form-label text-muted fw-bold small">Dal</label>
+                        <input type="date" class="form-control custom-input"
+                               value="@_filterFromString" @oninput="OnFilterFromInput" />
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label text-muted fw-bold small">Al</label>
+                        <input type="date" class="form-control custom-input"
+                               value="@_filterToString" @oninput="OnFilterToInput" />
+                    </div>
+                    @if (_isAdmin)
+                    {
+                        <div class="col-12 col-md-2">
+                            <label class="form-label text-muted fw-bold small">Dipendente</label>
+                            <select class="form-select custom-input" @bind="_filterEmployeeId">
+                                <option value="@Guid.Empty">Tutti</option>
+                                @foreach (var emp in _employees)
+                                {
+                                    <option value="@emp.Id">@emp.Username</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <label class="form-label text-muted fw-bold small">Progetto</label>
+                            <select class="form-select custom-input" @bind="_filterProjectId">
+                                <option value="@Guid.Empty">Tutti</option>
+                                @foreach (var proj in _projects)
+                                {
+                                    <option value="@proj.Id">@proj.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <label class="form-label text-muted fw-bold small">Stato</label>
+                            <select class="form-select custom-input" @bind="_filterStatusName">
+                                <option value="">Tutti</option>
+                                @foreach (var s in _statuses)
+                                {
+                                    <option value="@s.Name">@s.Name</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    <div class="col-12 col-md-2 d-flex gap-2">
+                        <button class="btn btn-primary btn-genera flex-fill d-flex align-items-center justify-content-center gap-1"
+                                @onclick="ApplyFiltersAsync" disabled="@_loading">
+                            <i class="bi bi-funnel"></i> Filtra
+                        </button>
+                        <button class="btn btn-outline-secondary btn-genera" title="Reimposta filtri"
+                                @onclick="ResetFiltersAsync" disabled="@_loading">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Column>
+    </Row>
+
+    <Row class="mb-4">
+        <Column ColumnSize="ColumnSize.Is12">
             @if (_loading)
             {
                 <div class="worklog-status-panel">
@@ -460,6 +522,13 @@
     private DateOnly _periodTo;
     private string _periodLabel => $"{_periodFrom:dd/MM/yyyy} – {_periodTo:dd/MM/yyyy}";
 
+    // --- Filtri (periodo + admin: dipendente/progetto/stato) ---
+    private string _filterFromString = string.Empty;
+    private string _filterToString = string.Empty;
+    private Guid _filterEmployeeId = Guid.Empty;
+    private Guid _filterProjectId = Guid.Empty;
+    private string _filterStatusName = string.Empty;
+
     // --- Lookup lists per i dropdown ---
     private List<ProjectResponseDto> _projects = new();
     private List<StatusResponseDto> _statuses = new();
@@ -497,6 +566,8 @@
         var today = DateOnly.FromDateTime(DateTime.Today);
         _periodFrom = new DateOnly(today.Year, today.Month, 1);
         _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
+        _filterFromString = _periodFrom.ToString("yyyy-MM-dd");
+        _filterToString = _periodTo.ToString("yyyy-MM-dd");
 
         await Task.WhenAll(LoadWorklogsAsync(), LoadLookupsAsync());
     }
@@ -513,7 +584,12 @@
 
         try
         {
-            var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo);
+            var result = await WorkLogApiClient.GetAsync(
+                _periodFrom,
+                _periodTo,
+                _isAdmin && _filterEmployeeId != Guid.Empty ? _filterEmployeeId : null,
+                _isAdmin && _filterProjectId != Guid.Empty ? _filterProjectId : null,
+                _isAdmin && !string.IsNullOrWhiteSpace(_filterStatusName) ? _filterStatusName : null);
             _worklogs = result
                 .OrderByDescending(w => w.Date)
                 .ThenByDescending(w => w.CreateAt)
@@ -528,6 +604,53 @@
         {
             _loading = false;
         }
+    }
+
+    // ==============================
+    // Filtri (periodo, dipendente, progetto, stato)
+    // ==============================
+
+    private void OnFilterFromInput(ChangeEventArgs e)
+    {
+        _filterFromString = e.Value?.ToString() ?? string.Empty;
+        if (DateOnly.TryParseExact(_filterFromString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
+        {
+            _periodFrom = parsed;
+        }
+    }
+
+    private void OnFilterToInput(ChangeEventArgs e)
+    {
+        _filterToString = e.Value?.ToString() ?? string.Empty;
+        if (DateOnly.TryParseExact(_filterToString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
+        {
+            _periodTo = parsed;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        if (_periodFrom > _periodTo)
+        {
+            _errorMessage = "L'intervallo di date non è valido: 'Dal' deve precedere 'Al'.";
+            return;
+        }
+
+        await LoadWorklogsAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        _periodFrom = new DateOnly(today.Year, today.Month, 1);
+        _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
+        _filterFromString = _periodFrom.ToString("yyyy-MM-dd");
+        _filterToString = _periodTo.ToString("yyyy-MM-dd");
+        _filterEmployeeId = Guid.Empty;
+        _filterProjectId = Guid.Empty;
+        _filterStatusName = string.Empty;
+
+        await LoadWorklogsAsync();
     }
 
     private async Task LoadLookupsAsync()
@@ -602,6 +725,7 @@
         if (_createModel is null) return;
 
         if (string.IsNullOrWhiteSpace(_createModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
+        if (_createModel.HoursCounter < 1 || _createModel.HoursCounter > 24) { _modalError = "Le ore devono essere comprese tra 1 e 24."; return; }
         if (_createModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
         if (_createModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
         if (_createModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
@@ -674,6 +798,7 @@
         if (_editModel is null || _editSource is null) return;
 
         if (string.IsNullOrWhiteSpace(_editModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
+        if (_editModel.HoursCounter < 1 || _editModel.HoursCounter > 24) { _modalError = "Le ore devono essere comprese tra 1 e 24."; return; }
         if (_editModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
         if (_editModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
         if (_editModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }

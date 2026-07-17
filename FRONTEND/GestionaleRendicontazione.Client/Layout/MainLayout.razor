@@ -70,14 +70,7 @@
                         @if (_userMenuOpen)
                         {
                             <div class="user-menu-backdrop" @onclick="CloseUserMenu"></div>
-                            <div class="user-menu-dropdown">
-                                @if (topbarAuth.User.IsInRole(RoleNames.Admin))
-                                {
-                                    <NavLink class="user-menu-item" href="/profilo" @onclick="CloseUserMenu">
-                                        <i class="bi bi-person me-2"></i>Profilo
-                                    </NavLink>
-                                    <div class="user-menu-divider"></div>
-                                }
+                            <div class="user-menu-dropdown">                                
                                 <NavLink class="user-menu-item" href="/logout" @onclick="CloseUserMenu">
                                     <i class="bi bi-box-arrow-right me-2"></i>Logout
                                 </NavLink>
