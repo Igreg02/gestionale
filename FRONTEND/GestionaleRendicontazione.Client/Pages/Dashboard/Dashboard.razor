@@ -71,13 +71,15 @@
                                                 <span class="worklog-date">@item.Worklog.Date.ToString("dd/MM/yyyy")</span>
                                             </div>
                                         </div>
-                                        @if (FilterState.IsAdmin && item.Worklog.EmployeeName is not null)
+                                        <AuthorizeView Roles="@RoleNames.Admin">
+                                        @if (item.Worklog.EmployeeName is not null)
                                         {
                                             <div class="d-flex align-items-center gap-1 mb-2">
                                                 <i class="bi bi-person-fill text-muted" style="font-size:0.8rem;"></i>
                                                 <span style="font-size:0.82rem; color:var(--text-muted); font-weight:600;">@item.Worklog.EmployeeName</span>
                                             </div>
                                         }
+                                        </AuthorizeView>
                                         <p class="worklog-description text-muted mb-2" title="@item.Worklog.Description">@item.Worklog.Description</p>
                                         <div class="worklog-hours text-blue fw-bold">@FormatHours(item.Worklog.HoursCounter)</div>
                                         <span class="worklog-status-badge">@item.Worklog.StatusName</span>
@@ -156,8 +158,7 @@
 
             <div class="wl-modal-body">
                 <div class="wl-modal-left">
-                    @if (FilterState.IsAdmin)
-                    {
+                    <AuthorizeView Roles="@RoleNames.Admin">
                         <div class="wl-field-row">
                             <label class="wl-field-label">Dipendente</label>
                             <select class="wl-field-input" @bind="_createModel.IdEmployee">
@@ -175,7 +176,7 @@
                                 }
                             </select>
                         </div>
-                    }
+                    </AuthorizeView>
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Data</label>
@@ -263,8 +264,7 @@
 
             <div class="wl-modal-body">
                 <div class="wl-modal-left">
-                    @if (FilterState.IsAdmin)
-                    {
+                    <AuthorizeView Roles="@RoleNames.Admin">
                         <div class="wl-field-row">
                             <label class="wl-field-label">Dipendente</label>
                             <select class="wl-field-input" @bind="_editModel.IdEmployee">
@@ -282,7 +282,7 @@
                                 }
                             </select>
                         </div>
-                    }
+                    </AuthorizeView>
 
                     <div class="wl-field-row">
                         <label class="wl-field-label">Data</label>

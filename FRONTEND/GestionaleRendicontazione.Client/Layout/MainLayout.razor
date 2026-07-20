@@ -47,6 +47,8 @@
                             <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
 
                             <div class="app-main">
+                                <AuthorizeView>
+                                <Authorized>
                                 <header class="app-topbar d-flex align-items-center justify-content-between px-3">
 
                                     <div class="d-flex align-items-center gap-2">
@@ -59,10 +61,6 @@
                                         </AuthorizeView>
                                     </div>
 
-                                    @*
-               Controllo condizionale: la barra di ricerca e il filtro vengono renderizzati
-               solo ed esclusivamente se ci si trova sull'URL principale ("/")
-            *@
                                     @if (_isDashboard)
                                     {
                                         <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
@@ -108,8 +106,7 @@
                                                                 <input type="date" class="form-control custom-input" value="@FilterState.FilterToString"
                                                                        @oninput="OnFilterToInput" />
                                                             </div>
-                                                            @if (FilterState.IsAdmin)
-                                                            {
+                                                            <AuthorizeView Roles="@RoleNames.Admin">
                                                                 <div class="col-12">
                                                                     <label class="form-label text-muted fw-bold small">Dipendente</label>
                                                                     <select class="form-select custom-input" @bind="FilterState.FilterEmployeeId">
@@ -140,7 +137,7 @@
                                                                         }
                                                                     </select>
                                                                 </div>
-                                                            }
+                                                            </AuthorizeView>
                                                         </div>
                                                         <div class="d-flex gap-2 mt-3">
                                                             <button
@@ -159,10 +156,7 @@
                                             </div>
                                         </div>
                                     }
-                                    else
-                                    {
-                                        <div class="topbar-spacer"></div>
-                                    }
+                                    
 
                                     <div class="d-flex align-items-center gap-3">
                                         <AuthorizeView Context="topbarAuth">
@@ -189,14 +183,11 @@
                                                     }
                                                 </div>
                                             </Authorized>
-                                            <NotAuthorized>
-                                                <NavLink class="btn btn-primary px-4" href="/login"
-                                                         style="background-color: var(--primary-blue); border: none; border-radius: 8px;">Login
-                                                </NavLink>[cite: 2]
-                                            </NotAuthorized>
                                         </AuthorizeView>
                                     </div>
                                 </header>
+                                            </Authorized>
+                                        </AuthorizeView>
 
                                 <main class="app-content">
                                     @Body
