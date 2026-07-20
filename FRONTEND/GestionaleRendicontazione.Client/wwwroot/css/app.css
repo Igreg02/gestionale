@@ -1100,6 +1100,125 @@ body {
     background: #fff;
 }
 
+/* Toggle switch (restyle su palette app: bianco -> grigio chiaro -> grigio field -> blu primario) */
+.wl-switch {
+    /* switch */
+    --switch-width: 40px;
+    --switch-height: 22px;
+    --switch-bg: var(--border-color);
+    --switch-checked-bg: var(--primary-blue);
+    --switch-offset: calc((var(--switch-height) - var(--circle-diameter)) / 2);
+    --switch-transition: all 0.2s cubic-bezier(0.27, 0.2, 0.25, 1.51);
+    /* circle */
+    --circle-diameter: 16px;
+    --circle-bg: #fff;
+    --circle-shadow: 1px 1px 2px rgba(15, 23, 42, 0.18);
+    --circle-checked-shadow: -1px 1px 2px rgba(15, 23, 42, 0.18);
+    --circle-transition: var(--switch-transition);
+    /* icon */
+    --icon-transition: all 0.2s cubic-bezier(0.27, 0.2, 0.25, 1.51);
+    --icon-cross-color: var(--text-muted);
+    --icon-cross-size: 6px;
+    --icon-checkmark-color: var(--primary-blue);
+    --icon-checkmark-size: 10px;
+    /* effect line */
+    --effect-width: calc(var(--circle-diameter) / 2);
+    --effect-height: calc(var(--effect-width) / 2 - 1px);
+    --effect-bg: var(--bg-light);
+    --effect-border-radius: 1px;
+    --effect-transition: all 0.2s ease-in-out;
+
+    display: inline-block;
+    line-height: 0;
+}
+
+.wl-switch input {
+    display: none;
+}
+
+.wl-switch svg {
+    transition: var(--icon-transition);
+    position: absolute;
+    height: auto;
+}
+
+.wl-switch .wl-switch-checkmark {
+    width: var(--icon-checkmark-size);
+    color: var(--icon-checkmark-color);
+    transform: scale(0);
+}
+
+.wl-switch .wl-switch-cross {
+    width: var(--icon-cross-size);
+    color: var(--icon-cross-color);
+}
+
+.wl-switch-slider {
+    box-sizing: border-box;
+    width: var(--switch-width);
+    height: var(--switch-height);
+    background: var(--switch-bg);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: var(--switch-transition);
+    cursor: pointer;
+}
+
+.wl-switch-circle {
+    width: var(--circle-diameter);
+    height: var(--circle-diameter);
+    background: var(--circle-bg);
+    border-radius: inherit;
+    box-shadow: var(--circle-shadow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--circle-transition);
+    z-index: 1;
+    position: absolute;
+    left: var(--switch-offset);
+}
+
+.wl-switch-slider::before {
+    content: "";
+    position: absolute;
+    width: var(--effect-width);
+    height: var(--effect-height);
+    left: calc(var(--switch-offset) + (var(--effect-width) / 2));
+    background: var(--effect-bg);
+    border-radius: var(--effect-border-radius);
+    transition: var(--effect-transition);
+}
+
+/* stato attivo (checked) */
+.wl-switch input:checked + .wl-switch-slider {
+    background: var(--switch-checked-bg);
+}
+
+.wl-switch input:checked + .wl-switch-slider .wl-switch-checkmark {
+    transform: scale(1);
+}
+
+.wl-switch input:checked + .wl-switch-slider .wl-switch-cross {
+    transform: scale(0);
+}
+
+.wl-switch input:checked + .wl-switch-slider::before {
+    left: calc(100% - var(--effect-width) - (var(--effect-width) / 2) - var(--switch-offset));
+}
+
+.wl-switch input:checked + .wl-switch-slider .wl-switch-circle {
+    left: calc(100% - var(--circle-diameter) - var(--switch-offset));
+    box-shadow: var(--circle-checked-shadow);
+}
+
+.wl-switch.is-disabled .wl-switch-slider {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
 /* Footer */
 .wl-modal-footer {
     display: flex;

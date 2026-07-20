@@ -20,6 +20,7 @@
     <!-- Blazorise Free/Community — provider Bootstrap 5 + icone FontAwesome (vedi TDD §7, Fase F1) -->
     <PackageReference Include="Blazorise.Bootstrap5" Version="2.1.2" />
     <PackageReference Include="Blazorise.Icons.FontAwesome" Version="2.1.2" />
+    <PackageReference Include="PDFsharp" Version="6.2.0" />
   </ItemGroup>
 
 </Project>

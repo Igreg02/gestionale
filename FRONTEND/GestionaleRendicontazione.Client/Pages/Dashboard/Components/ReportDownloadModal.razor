@@ -1,0 +1,454 @@
+@using System.Globalization
+@using GestionaleRendicontazione.Client.Services
+@using GestionaleRendicontazione.Client.Services.Reports
+@implements IDisposable
+@inject WorkLogApiClient WorkLogApiClient
+@inject PdfReportService PdfReport
+@inject DownloadInterop Downloader
+@inject FilterStateService FilterState
+@inject ReportDataApiClient ReportDataApiClient
+
+@if (Visible)
+{
+    <div class="custom-modal-backdrop" @onclick="TryClose">
+        <div class="wl-modal-card" style="max-width: 600px;" @onclick:stopPropagation="true">
+            <div class="wl-modal-header">
+                <span class="wl-modal-label">REPORT</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="TryClose" aria-label="Chiudi" disabled="@_busy">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Genera report PDF</span>
+                </div>
+            </div>
+
+            @if (_modalError is not null)
+            {
+                <div class="alert alert-danger py-2 px-3 mx-0 mb-0" style="font-size:0.88rem; border-radius:0; margin-top:-1px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @_modalError
+                </div>
+            }
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <p class="mb-3 text-muted" style="font-size:0.9rem;">
+                    Scegli periodo e tipo di report (per dipendente o per progetto), poi genera il PDF.
+                    Il file viene creato <strong>direttamente nel browser</strong> a partire dai worklog
+                    caricati dal server per i filtri selezionati.
+                </p>
+
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="wl-field-label">Periodo da</label>
+                        <input type="date" class="wl-field-input" value="@_fromString"
+                               @oninput="OnFromInput" disabled="@_busy" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="wl-field-label">Periodo a</label>
+                        <input type="date" class="wl-field-input" value="@_toString"
+                               @oninput="OnToInput" disabled="@_busy" />
+                    </div>
+                </div>
+
+                <AuthorizeView Roles="@RoleNames.Admin">
+                    <Authorized>
+                        <div class="wl-field-row mt-2">
+                            <span class="wl-field-label m-0">Tipo report</span>
+                            <label class="wl-switch @(_busy ? "is-disabled" : "")">
+                                <input type="checkbox" @bind="_reportByProject" @bind:after="OnReportModeChanged" disabled="@_busy" />
+                                <div class="wl-switch-slider">
+                                    <div class="wl-switch-circle">
+                                        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="6" height="6" viewBox="0 0 365.696 365.696" class="wl-switch-cross">
+                                            <g>
+                                                <path d="M243.188 182.86 356.32 69.726c12.5-12.5 12.5-32.766 0-45.247L341.238 9.398c-12.504-12.503-32.77-12.503-45.25 0L182.86 122.528 69.727 9.374c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.457c-12.5 12.504-12.5 32.77 0 45.25l113.152 113.152L9.398 295.99c-12.503 12.503-12.503 32.769 0 45.25L24.48 356.32c12.5 12.5 32.766 12.5 45.247 0l113.132-113.132L295.99 356.32c12.503 12.5 32.769 12.5 45.25 0l15.081-15.082c12.5-12.504 12.5-32.77 0-45.25zm0 0" fill="currentColor" data-original="#000000"></path>
+                                            </g>
+                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="10" height="10" viewBox="0 0 24 24" class="wl-switch-checkmark">
+                                            <g>
+                                                <path d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z" fill="currentColor" data-original="#000000"></path>
+                                            </g>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </label>
+                            <span class="text-muted" style="font-size:0.82rem;">@(_reportByProject ? "Per progetto" : "Per dipendente")</span>
+                        </div>
+
+                        @if (_reportByProject)
+                        {
+                            <div class="wl-field-row">
+                                <label class="wl-field-label">Progetto</label>
+                                <select class="wl-field-input" @bind="_selectedProjectId" @bind:after="OnProjectChanged" disabled="@_busy">
+                                    <option value="@Guid.Empty">-- Seleziona un progetto --</option>
+                                    @foreach (var proj in FilterState.Projects)
+                                    {
+                                        <option value="@proj.Id">@proj.Name (@proj.CompanyName)</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="wl-field-row">
+                                <label class="wl-field-label">Dipendente</label>
+                                <select class="wl-field-input" @bind="_selectedEmployeeId" @bind:after="OnEmployeeChanged" disabled="@_busy">
+                                    <option value="@Guid.Empty">Tutti i dipendenti</option>
+                                    @foreach (var emp in FilterState.Employees)
+                                    {
+                                        <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                    </Authorized>
+                </AuthorizeView>
+
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Nome file</label>
+                    <input type="text" class="wl-field-input" @bind="_fileName" disabled="@_busy" />
+                </div>
+
+                <div class="wl-field-row" style="background: var(--bg-light); border-radius: 10px; padding: 0.75rem 1rem;">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-info-circle text-blue"></i>
+                        <strong>Anteprima</strong>
+                    </div>
+                    @if (_loadingPreview)
+                    {
+                        <div class="text-muted" style="font-size:0.85rem;">
+                            <i class="bi bi-arrow-repeat spin"></i> Caricamento worklog per i filtri selezionati...
+                        </div>
+                    }
+                    else if (_reportByProject && _selectedProjectId == Guid.Empty)
+                    {
+                        <div class="text-muted" style="font-size:0.85rem;">
+                            Seleziona un progetto per vedere l'anteprima.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted" style="font-size:0.85rem;">
+                            Totale voci: <strong>@_previewWorklogs.Count</strong> &middot;
+                            Totale ore: <strong>@FormatHours(SumHours())</strong>
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(_statusMessage))
+                {
+                    <div class="alert alert-@_statusColor py-2 px-3 mb-0 mt-3" style="font-size:0.88rem; border-radius:10px;">
+                        <i class="bi @_statusIcon me-1"></i> @_statusMessage
+                    </div>
+                }
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="TryClose" disabled="@_busy">Annulla</button>
+                    <button class="wl-btn-save" @onclick="GenerateAndDownloadAsync" disabled="@(_busy || _loadingPreview || (_reportByProject && _selectedProjectId == Guid.Empty))">
+                        @if (_busy)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i>
+                            <span>Generazione...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-file-earmark-pdf"></i>
+                            <span>Genera e scarica</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public string? GeneratedBy { get; set; }
+
+    private bool _busy;
+    private bool _loadingPreview;
+    private string? _modalError;
+    private string? _statusMessage;
+    private string _statusColor = "info";
+    private string _statusIcon = "bi-info-circle";
+
+    private DateOnly _periodFrom;
+    private DateOnly _periodTo;
+    private string _fromString = string.Empty;
+    private string _toString = string.Empty;
+
+    private Guid _selectedEmployeeId = Guid.Empty;
+    private bool _reportByProject;
+    private Guid _selectedProjectId = Guid.Empty;
+    private string _fileName = string.Empty;
+
+    private List<WorkLogResponseDto> _previewWorklogs = new();
+    private CancellationTokenSource? _previewCts;
+    private bool _initialized;
+
+    protected override void OnParametersSet()
+    {
+        if (Visible && !_initialized)
+        {
+            // Inizializza le date e il dipendente riprendendo esattamente i filtri
+            // attualmente selezionati nella topbar (FilterState), così l'anteprima
+            // e il PDF partono già coerenti con quello che l'utente sta vedendo
+            // nella dashboard. Da qui in poi le modifiche vivono solo nella modale.
+            if (!DateOnly.TryParseExact(FilterState.FilterFromString, "yyyy-MM-dd", null, DateTimeStyles.None, out _periodFrom))
+            {
+                var today = DateOnly.FromDateTime(DateTime.Today);
+                _periodFrom = new DateOnly(today.Year, today.Month, 1);
+            }
+            if (!DateOnly.TryParseExact(FilterState.FilterToString, "yyyy-MM-dd", null, DateTimeStyles.None, out _periodTo))
+            {
+                _periodTo = _periodFrom.AddMonths(1).AddDays(-1);
+            }
+            _fromString = _periodFrom.ToString("yyyy-MM-dd");
+            _toString = _periodTo.ToString("yyyy-MM-dd");
+            _selectedEmployeeId = FilterState.IsAdmin ? FilterState.FilterEmployeeId : Guid.Empty;
+            _fileName = $"report-worklog-{DateTime.Now:yyyyMMdd-HHmm}.pdf";
+            _initialized = true;
+        }
+        if (!Visible && _initialized)
+        {
+            // Reset alla chiusura, così la prossima apertura riparte pulita
+            // (e riprende di nuovo i filtri correnti della topbar).
+            _initialized = false;
+            _previewWorklogs = new();
+            _modalError = null;
+            _statusMessage = null;
+            _selectedEmployeeId = Guid.Empty;
+            _reportByProject = false;
+            _selectedProjectId = Guid.Empty;
+        }
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (Visible && _initialized && !_loadingPreview && _previewWorklogs.Count == 0 && _previewCts is null)
+        {
+            // Carica in automatico l'anteprima appena la modale si apre
+            // (senza bloccare il render: il refresh arriva in un OnAfterRender successivo).
+            _ = LoadPreviewAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        _previewCts?.Cancel();
+        _previewCts?.Dispose();
+    }
+
+    private void OnFromInput(ChangeEventArgs e)
+    {
+        _fromString = e.Value?.ToString() ?? string.Empty;
+        if (DateOnly.TryParseExact(_fromString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
+        {
+            _periodFrom = parsed;
+            _ = LoadPreviewAsync();
+        }
+    }
+
+    private void OnToInput(ChangeEventArgs e)
+    {
+        _toString = e.Value?.ToString() ?? string.Empty;
+        if (DateOnly.TryParseExact(_toString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
+        {
+            _periodTo = parsed;
+            _ = LoadPreviewAsync();
+        }
+    }
+
+    private Task OnEmployeeChanged() => LoadPreviewAsync();
+
+    private Task OnProjectChanged() => LoadPreviewAsync();
+
+    private Task OnReportModeChanged()
+    {
+        // Cambiando modalità i selettori precedenti non hanno più senso: si riparte puliti
+        // così l'anteprima non mescola un dipendente/progetto ormai non più visibile.
+        _selectedEmployeeId = Guid.Empty;
+        _selectedProjectId = Guid.Empty;
+        return LoadPreviewAsync();
+    }
+
+    private async Task LoadPreviewAsync()
+    {
+        _previewCts?.Cancel();
+        _previewCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _previewCts = cts;
+
+        if (_reportByProject && _selectedProjectId == Guid.Empty)
+        {
+            // Nessun progetto selezionato: niente da caricare, l'anteprima resta vuota
+            // finché l'utente non sceglie un progetto.
+            _previewWorklogs = new();
+            _loadingPreview = false;
+            StateHasChanged();
+            return;
+        }
+
+        _loadingPreview = true;
+        StateHasChanged();
+
+        try
+        {
+            if (_reportByProject)
+            {
+                var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo, cts.Token);
+                _previewWorklogs = report?.WorkLogs ?? new();
+                if (report is null)
+                    _modalError = "Impossibile caricare il report per il progetto selezionato.";
+            }
+            else
+            {
+                Guid? employeeFilter = null;
+                if (FilterState.IsAdmin && _selectedEmployeeId != Guid.Empty)
+                    employeeFilter = _selectedEmployeeId;
+
+                var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null);
+                _previewWorklogs = result.ToList();
+            }
+        }
+        catch (OperationCanceledException) { /* cambio filtri: scarto il risultato */ }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore caricamento worklog per anteprima report: {ex}");
+            _modalError = "Impossibile caricare i worklog per i filtri selezionati.";
+            _previewWorklogs = new();
+        }
+        finally
+        {
+            if (!cts.IsCancellationRequested)
+            {
+                _loadingPreview = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private double SumHours() => _previewWorklogs.Sum(w => (double)w.HoursCounter);
+
+    private static string FormatHours(double hours) =>
+        hours.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture).Replace('.', ',') + " ore";
+
+    private async Task TryClose()
+    {
+        if (_busy) return;
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task GenerateAndDownloadAsync()
+    {
+        if (_busy) return;
+        if (_periodFrom > _periodTo)
+        {
+            _modalError = "La data di inizio non può essere successiva alla data di fine.";
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_fileName))
+        {
+            _modalError = "Inserisci un nome file.";
+            return;
+        }
+        if (_reportByProject && _selectedProjectId == Guid.Empty)
+        {
+            _modalError = "Seleziona un progetto.";
+            return;
+        }
+
+        _busy = true;
+        _modalError = null;
+        _statusMessage = "Sto caricando i dati aggiornati dal server...";
+        _statusColor = "info";
+        _statusIcon = "bi-arrow-repeat spin";
+        StateHasChanged();
+
+        // Ricarico dati freschi con i filtri correnti, così il PDF corrisponde
+        // esattamente a ciò che vede l'utente nei filtri della modale.
+        List<WorkLogResponseDto> worklogs;
+        try
+        {
+            if (_reportByProject)
+            {
+                var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo);
+                if (report is null)
+                {
+                    _modalError = "Impossibile recuperare il report per il progetto selezionato. Riprova.";
+                    _busy = false;
+                    _statusMessage = null;
+                    return;
+                }
+                worklogs = report.WorkLogs;
+            }
+            else
+            {
+                Guid? employeeFilter = null;
+                if (FilterState.IsAdmin && _selectedEmployeeId != Guid.Empty)
+                    employeeFilter = _selectedEmployeeId;
+
+                var fetched = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null);
+                worklogs = fetched.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore caricamento worklog per generazione PDF: {ex}");
+            _modalError = "Impossibile recuperare i worklog dal server. Riprova.";
+            _busy = false;
+            _statusMessage = null;
+            return;
+        }
+
+        _statusMessage = "Sto generando il PDF...";
+        StateHasChanged();
+
+        try
+        {
+            var bytes = await PdfReport.BuildReportAsync(
+                worklogs,
+                _periodFrom,
+                _periodTo,
+                GeneratedBy,
+                groupByEmployee: FilterState.IsAdmin);
+
+            if (bytes is null || bytes.Length == 0)
+            {
+                _statusMessage = "Generazione fallita: PDF vuoto.";
+                _statusColor = "danger";
+                _statusIcon = "bi-exclamation-triangle";
+                return;
+            }
+
+            var saved = await Downloader.SaveAsAsync(_fileName, "application/pdf", bytes);
+            if (saved)
+            {
+                _statusMessage = $"Download avviato ({worklogs.Count} voci).";
+                _statusColor = "success";
+                _statusIcon = "bi-check2-circle";
+            }
+            else
+            {
+                _statusMessage = "Il browser ha bloccato il download.";
+                _statusColor = "warning";
+                _statusIcon = "bi-exclamation-triangle";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore generazione PDF: {ex}");
+            _statusMessage = $"Errore durante la generazione: {ex.Message}";
+            _statusColor = "danger";
+            _statusIcon = "bi-exclamation-triangle";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
