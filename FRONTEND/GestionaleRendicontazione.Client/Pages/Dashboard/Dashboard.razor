@@ -119,36 +119,45 @@
                     <h4 class="report-title m-0">Report</h4>
                 </div>
 
-                <div class="row align-items-end g-3">
-                    <div class="col-12 col-md-3">
+                <div class="d-flex flex-column flex-md-row align-items-md-end gap-3">
+                    <div class="flex-grow-1" style="min-width: 150px;">
                         <label class="form-label text-muted fw-bold small">Periodo da</label>
                         <div class="input-group">
-                            @* Adesso attingono e mostrano sempre il mese corrente inizializzato dal service *@
-                            <input type="text" class="form-control custom-input" value="@_periodFrom.ToString("dd/MM/yyyy")" readonly />
-                            <span class="input-group-text custom-input-icon bg-light"><i class="bi bi-calendar3"></i></span>
-                        </div>
+                            <input type="date" class="form-control custom-input" value="@_periodFrom.ToString("yyyy-MM-dd")" />
+                            </div>
                     </div>
-                    <div class="col-12 col-md-3">
+                    <div class="flex-grow-1" style="min-width: 150px;">
                         <label class="form-label text-muted fw-bold small">Periodo a</label>
                         <div class="input-group">
-                            <input type="text" class="form-control custom-input" value="@_periodTo.ToString("dd/MM/yyyy")" readonly />
-                            <span class="input-group-text custom-input-icon bg-light"><i class="bi bi-calendar3"></i></span>
+                            <input type="date" class="form-control custom-input" value="@_periodTo.ToString("yyyy-MM-dd")" />
                         </div>
                     </div>
-                    <div class="col-12 col-md-3">
-                        <label class="form-label text-muted fw-bold small">Dipendente</label>
-                        <select class="form-select custom-input">
-                            <option>Me (@_displayName)</option>
+                    <AuthorizeView Roles="@RoleNames.Admin">
+            <div class="flex-grow-1" style="min-width: 200px;">
+                <label class="form-label text-muted fw-bold small">Dipendente</label>
+                <select class="form-select custom-input">
+                    @if (_employeesLoading)
+                    {
+                        <option disabled>Caricamento...</option>
+                    }
+                    else
+                    {
+                        @foreach (var emp in _employees)
+                        {
+                            <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                        }
+                    }
                         </select>
                     </div>
-                    <div class="col-12 col-md-3">
+            </AuthorizeView>
+                    <div class="flex-grow-1" style="min-width: 180px;">
                         <NavLink href="/report" class="btn btn-primary w-100 btn-genera d-flex align-items-center justify-content-center gap-2">
                             <i class="bi bi-bar-chart-line-fill"></i> Genera Report
                         </NavLink>
                     </div>
                 </div>
             </div>
-        </Column>
+    </Column>
     </Row>
 </div>
 
@@ -180,9 +189,16 @@
                             <label class="wl-field-label">Dipendente</label>
                             <select class="wl-field-input" @bind="_createModel.IdEmployee">
                                 <option value="@Guid.Empty">-- Seleziona --</option>
-                                @foreach (var emp in FilterState.Employees)
+                                @if (_employeesLoading)
                                 {
-                                    <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                    <option disabled>Caricamento...</option>
+                                }
+                                else
+                                {
+                                    @foreach (var emp in _employees)
+                                    {
+                                        <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                    }
                                 }
                             </select>
                         </div>
@@ -280,9 +296,16 @@
                             <label class="wl-field-label">Dipendente</label>
                             <select class="wl-field-input" @bind="_editModel.IdEmployee">
                                 <option value="@Guid.Empty">-- Seleziona --</option>
-                                @foreach (var emp in FilterState.Employees)
+                                @if (_employeesLoading)
                                 {
-                                    <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                    <option disabled>Caricamento...</option>
+                                }
+                                else
+                                {
+                                    @foreach (var emp in _employees)
+                                    {
+                                        <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                                    }
                                 }
                             </select>
                         </div>
@@ -418,6 +441,8 @@
     private string _periodLabel => $"{_periodFrom:dd/MM/yyyy} – {_periodTo:dd/MM/yyyy}";
 
     private List<TypeResponseDto> _types = new();
+    private List<EmployeeResponseDto> _employees = new();
+    private bool _employeesLoading;
 
     private IEnumerable<WorkLogResponseDto> FilteredWorklogs
     {
@@ -469,6 +494,30 @@
         // Recupera le date iniziali del mese corrente fin da subito dal service
         ParseDatesFromService();
         await Task.WhenAll(LoadWorklogsAsync(), LoadDashboardSpecificLookupsAsync());
+
+        // Carica i dipendenti direttamente dall'API (evita la lista desincronizzata di FilterState)
+        if (FilterState.IsAdmin)
+        {
+            await LoadEmployeesAsync();
+        }
+    }
+
+    private async Task LoadEmployeesAsync()
+    {
+        _employeesLoading = true;
+        try
+        {
+            _employees = await WorkLogApiClient.GetEmployeesAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore nel recupero dei dipendenti: {ex}");
+            _employees = new();
+        }
+        finally
+        {
+            _employeesLoading = false;
+        }
     }
 
     private void ParseDatesFromService()
@@ -528,9 +577,13 @@
         }
     }
 
-    private void OpenCreateModal()
+    private async Task OpenCreateModal()
     {
         _modalError = null;
+        if (FilterState.IsAdmin && _employees.Count == 0)
+        {
+            await LoadEmployeesAsync();
+        }
         var today = DateOnly.FromDateTime(DateTime.Today);
         _createModel = new WorkLogUpdateRequestDto
         {
@@ -593,10 +646,14 @@
         }
     }
 
-    private void OpenEditModal(WorkLogResponseDto worklog)
+    private async Task OpenEditModal(WorkLogResponseDto worklog)
     {
         _editSource = worklog;
         _modalError = null;
+        if (FilterState.IsAdmin && _employees.Count == 0)
+        {
+            await LoadEmployeesAsync();
+        }
         _editModel = new WorkLogUpdateRequestDto
         {
             Description = worklog.Description,
