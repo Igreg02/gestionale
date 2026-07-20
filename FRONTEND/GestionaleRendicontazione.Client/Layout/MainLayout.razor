@@ -48,7 +48,7 @@
 
                             <div class="app-main">
                                 <AuthorizeView>
-                                <Authorized>
+                                <Authorized Context="outerAuth">
                                 <header class="app-topbar d-flex align-items-center justify-content-between px-3">
 
                                     <div class="d-flex align-items-center gap-2">
@@ -201,6 +201,8 @@
     private bool _sidebarOpen;
     private bool _userMenuOpen;
     private bool _isDashboard;
+    private const int SearchDebounceMs = 300;
+    private System.Timers.Timer? _searchDebounceTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -238,11 +240,24 @@
     private void OnSearchInput(ChangeEventArgs e)
     {
         FilterState.SearchQuery = e.Value?.ToString() ?? string.Empty;
-        FilterState.NotifyFiltersChanged();
+
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer?.Dispose();
+        _searchDebounceTimer = new System.Timers.Timer(SearchDebounceMs) { AutoReset = false };
+        _searchDebounceTimer.Elapsed += (_, _) =>
+        {
+            _searchDebounceTimer?.Dispose();
+            _searchDebounceTimer = null;
+            InvokeAsync(() => FilterState.NotifyFiltersChanged());
+        };
+        _searchDebounceTimer.Start();
     }
 
     private void ClearSearch()
     {
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer?.Dispose();
+        _searchDebounceTimer = null;
         FilterState.SearchQuery = string.Empty;
         FilterState.NotifyFiltersChanged();
     }
@@ -297,8 +312,11 @@
 
     public void Dispose()
     {
-        // Rimuove la sottoscrizione agli eventi per prevenire Memory Leak
         FilterState.OnFiltersChanged -= StateHasChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
+
+        _searchDebounceTimer?.Stop();
+        _searchDebounceTimer?.Dispose();
+        _searchDebounceTimer = null;
     }
 }

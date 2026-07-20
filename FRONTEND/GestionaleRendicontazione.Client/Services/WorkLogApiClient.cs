@@ -7,6 +7,9 @@ namespace GestionaleRendicontazione.Client.Services
     /// lato server dipende dal ruolo codificato nel token già allegato da
     /// <see cref="AuthenticatedHttpMessageHandler"/> — con un token User restituisce/filtra solo i
     /// worklog del dipendente autenticato, con un token Admin quelli di tutti (eventualmente filtrati).
+    /// I metodi CRUD ritornano <see cref="ApiResult{T}"/> per esporre in modo tipizzato errori di
+    /// validazione (400) e distinguere 401/403/404/5xx; i metodi di lookup tornano direttamente
+    /// <see cref="List{T}"/> perché trattati come best-effort.
     /// </summary>
     public sealed class WorkLogApiClient
     {
@@ -17,7 +20,7 @@ namespace GestionaleRendicontazione.Client.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<WorkLogResponseDto>> GetAsync(
+        public async Task<ApiResult<List<WorkLogResponseDto>>> GetAsync(
             DateOnly? dateFrom = null,
             DateOnly? dateTo = null,
             Guid? employeeId = null,
@@ -34,39 +37,76 @@ namespace GestionaleRendicontazione.Client.Services
 
             var url = "api/worklog" + (query.Count > 0 ? $"?{string.Join('&', query)}" : string.Empty);
 
-            var result = await _httpClient.GetFromJsonAsync<List<WorkLogResponseDto>>(url, cancellationToken);
-            return result ?? new List<WorkLogResponseDto>();
+            try
+            {
+                var response = await _httpClient.GetAsync(url, cancellationToken);
+                return await response.ToApiResultAsync<List<WorkLogResponseDto>>(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Il chiamante ha cancellato: non è un errore dell'utente, lascialo propagare
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Network error / DNS / TLS / CORS / body non-JSON: arriva qui invece che a
+                // ToApiResultAsync perché GetAsync lancia prima di avere una HttpResponseMessage.
+                Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
+                return ApiResult<List<WorkLogResponseDto>>.WithError(
+                    $"Errore di rete: {ex.Message}",
+                    statusCode: 0);
+            }
         }
 
-        public async Task<WorkLogResponseDto?> CreateAsync(
+        public async Task<ApiResult<WorkLogResponseDto>> CreateAsync(
             WorkLogUpdateRequestDto dto,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PostAsJsonAsync("api/worklog", dto, cancellationToken);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return await response.Content.ReadFromJsonAsync<WorkLogResponseDto>(cancellationToken: cancellationToken);
+                var response = await _httpClient.PostAsJsonAsync("api/worklog", dto, cancellationToken);
+                return await response.ToApiResultAsync<WorkLogResponseDto>(cancellationToken);
             }
-            return null;
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Console.Error.WriteLine($"Errore di rete POST api/worklog: {ex.Message}");
+                return ApiResult<WorkLogResponseDto>.WithError(
+                    $"Errore di rete: {ex.Message}",
+                    statusCode: 0);
+            }
         }
 
-        public async Task<WorkLogResponseDto?> UpdateAsync(
+        public async Task<ApiResult<WorkLogResponseDto>> UpdateAsync(
             Guid id,
             WorkLogUpdateRequestDto dto,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.PutAsJsonAsync($"api/worklog/{id}", dto, cancellationToken);
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return await response.Content.ReadFromJsonAsync<WorkLogResponseDto>(cancellationToken: cancellationToken);
+                var response = await _httpClient.PutAsJsonAsync($"api/worklog/{id}", dto, cancellationToken);
+                return await response.ToApiResultAsync<WorkLogResponseDto>(cancellationToken);
             }
-            return null;
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Console.Error.WriteLine($"Errore di rete PUT api/worklog/{id}: {ex.Message}");
+                return ApiResult<WorkLogResponseDto>.WithError(
+                    $"Errore di rete: {ex.Message}",
+                    statusCode: 0);
+            }
         }
 
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<ApiResult> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.DeleteAsync($"api/worklog/{id}", cancellationToken);
-            return response.IsSuccessStatusCode;
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/worklog/{id}", cancellationToken);
+                return await response.ToApiResultAsync(cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                Console.Error.WriteLine($"Errore di rete DELETE api/worklog/{id}: {ex.Message}");
+                return ApiResult.WithError($"Errore di rete: {ex.Message}", statusCode: 0);
+            }
         }
 
         public async Task<List<ProjectResponseDto>> GetProjectsAsync(CancellationToken cancellationToken = default)

@@ -312,7 +312,9 @@
                     employeeFilter = _selectedEmployeeId;
 
                 var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null);
-                _previewWorklogs = result.ToList();
+                _previewWorklogs = result.IsSuccess && result.Data is not null
+                    ? result.Data.ToList()
+                    : new List<WorkLogResponseDto>();
             }
         }
         catch (OperationCanceledException) { /* cambio filtri: scarto il risultato */ }
@@ -393,7 +395,9 @@
                     employeeFilter = _selectedEmployeeId;
 
                 var fetched = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null);
-                worklogs = fetched.ToList();
+                worklogs = fetched.IsSuccess && fetched.Data is not null
+                    ? fetched.Data.ToList()
+                    : new List<WorkLogResponseDto>();
             }
         }
         catch (Exception ex)

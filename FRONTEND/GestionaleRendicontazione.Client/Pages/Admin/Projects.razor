@@ -2,6 +2,7 @@
 @attribute [Authorize(Roles = RoleNames.Admin)]
 @inject ProjectApiClient ProjectApiClient
 @inject CompanyApiClient CompanyApiClient
+@inject FilterStateService FilterState
 
 <PageTitle>Progetti</PageTitle>
 
@@ -25,7 +26,12 @@
     }
     else if (_errorMessage is not null)
     {
-        <Alert Color="Color.Danger" Visible="true">@_errorMessage</Alert>
+        <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+                <i class="bi bi-arrow-clockwise"></i> Riprova
+            </button>
+        </Alert>
     }
     else
     {
@@ -289,6 +295,7 @@
             }
 
             _projects = _projects.OrderBy(p => p.Name).ToList();
+            _ = FilterState.ReloadLookupsAsync();
             CloseFormModal();
         }
         catch (Exception ex)
@@ -329,6 +336,7 @@
             if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
 
             _projects.RemoveAll(p => p.Id == _deleteTarget.Id);
+            _ = FilterState.ReloadLookupsAsync();
             CloseDeleteModal();
         }
         catch (Exception ex)

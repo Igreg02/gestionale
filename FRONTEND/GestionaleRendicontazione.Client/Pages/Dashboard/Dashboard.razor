@@ -34,7 +34,12 @@
             }
             else if (_errorMessage is not null)
             {
-                <Alert Color="Color.Danger" Visible="true">@_errorMessage</Alert>
+                <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
+                    <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadWorklogsAsync()" disabled="@FilterState.Loading">
+                        <i class="bi bi-arrow-clockwise"></i> Riprova
+                    </button>
+                </Alert>
             }
             else
             {
@@ -460,6 +465,7 @@
 
     private bool _isSaving;
     private string? _modalError;
+    private CancellationTokenSource? _loadCts;
 
     protected override async Task OnInitializedAsync()
     {
@@ -470,6 +476,7 @@
         }
 
         FilterState.OnFiltersChanged += HandleFiltersChanged;
+        FilterState.OnLookupsChanged += HandleLookupsChanged;
 
         // Recupera le date iniziali del mese corrente fin da subito dal service
         ParseDatesFromService();
@@ -479,6 +486,20 @@
         if (FilterState.IsAdmin)
         {
             await LoadEmployeesAsync();
+        }
+    }
+    private async void HandleLookupsChanged()
+    {
+        try
+        {
+            _types = await WorkLogApiClient.GetTypesAsync();
+            if (FilterState.IsAdmin)
+                await LoadEmployeesAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore reload tipologie/dipendenti dopo modifica admin: {ex}");
         }
     }
 
@@ -510,13 +531,29 @@
 
     private async void HandleFiltersChanged()
     {
-        ParseDatesFromService();
-        await LoadWorklogsAsync();
-        StateHasChanged();
+        try
+        {
+            ParseDatesFromService();
+            await LoadWorklogsAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            // Richiesta precedente cancellata da una nuova richiesta: ignoriamo
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore in HandleFiltersChanged: {ex}");
+        }
     }
 
     private async Task LoadWorklogsAsync()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        var cts = new CancellationTokenSource();
+        _loadCts = cts;
+        var token = cts.Token;
+
         FilterState.Loading = true;
         _errorMessage = null;
 
@@ -527,21 +564,37 @@
                 _periodTo,
                 FilterState.IsAdmin && FilterState.FilterEmployeeId != Guid.Empty ? FilterState.FilterEmployeeId : null,
                 FilterState.IsAdmin && FilterState.FilterProjectId != Guid.Empty ? FilterState.FilterProjectId : null,
-                FilterState.IsAdmin && !string.IsNullOrWhiteSpace(FilterState.FilterStatusName) ? FilterState.FilterStatusName : null);
-                
-            _worklogs = result
+                FilterState.IsAdmin && !string.IsNullOrWhiteSpace(FilterState.FilterStatusName) ? FilterState.FilterStatusName : null,
+                token);
+
+            if (token.IsCancellationRequested) return;
+
+            if (!result.IsSuccess)
+            {
+                _errorMessage = result.ToUserMessage("Impossibile recuperare i worklog dal server.");
+                _worklogs = new();
+                return;
+            }
+
+            _worklogs = (result.Data ?? new List<WorkLogResponseDto>())
                 .OrderByDescending(w => w.Date)
                 .ThenByDescending(w => w.CreateAt)
                 .ToList();
         }
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
+        {
+        }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Errore nel recupero dei worklog: {ex}");
-            _errorMessage = "Impossibile recuperare i worklog dal server. Riprova più tardi.";
+            _errorMessage = ex.Message.Contains("HTTP", StringComparison.OrdinalIgnoreCase)
+                ? ex.Message
+                : "Impossibile recuperare i worklog dal server. Riprova più tardi.";
         }
         finally
         {
-            FilterState.Loading = false;
+            if (!token.IsCancellationRequested)
+                FilterState.Loading = false;
         }
     }
 
@@ -609,10 +662,15 @@
 
         try
         {
-            var created = await WorkLogApiClient.CreateAsync(_createModel);
-            if (created is null) { _modalError = "Errore durante la creazione. Riprova più tardi."; return; }
+            var result = await WorkLogApiClient.CreateAsync(_createModel);
+            if (!result.IsSuccess)
+            {
+                _modalError = result.ToUserMessage("Errore durante la creazione del worklog.");
+                return;
+            }
 
-            _worklogs.Insert(0, created);
+            if (result.Data is not null)
+                _worklogs.Insert(0, result.Data);
             CloseCreateModal();
         }
         catch (Exception ex)
@@ -683,7 +741,14 @@
 
         try
         {
-            var updated = await WorkLogApiClient.UpdateAsync(_editSource.Id, _editModel);
+            var updateResult = await WorkLogApiClient.UpdateAsync(_editSource.Id, _editModel);
+            if (!updateResult.IsSuccess)
+            {
+                _modalError = updateResult.ToUserMessage("Errore durante il salvataggio. Riprova più tardi.");
+                return;
+            }
+
+            var updated = updateResult.Data;
             if (updated is null) { _modalError = "Errore durante il salvataggio. Riprova più tardi."; return; }
 
             var idx = _worklogs.FindIndex(w => w.Id == updated.Id);
@@ -735,8 +800,12 @@ _deleteModalOpen = false;
 
         try
         {
-            var ok = await WorkLogApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!ok) { _modalError = "Impossibile eliminare il worklog. Riprova più tardi."; return; }
+            var result = await WorkLogApiClient.DeleteAsync(_deleteTarget.Id);
+            if (!result.IsSuccess)
+            {
+                _modalError = result.ToUserMessage("Impossibile eliminare il worklog. Riprova più tardi.");
+                return;
+            }
 
             _worklogs.RemoveAll(w => w.Id == _deleteTarget.Id);
             CloseDeleteModal();

@@ -23,6 +23,13 @@ namespace GestionaleRendicontazione.Client.Services
 
         public event Action? OnFiltersChanged;
 
+        /// <summary>
+        /// Scatta quando le liste di lookup (Projects, Statuses, Employees) sono state ricaricate
+        /// dal server — ad esempio dopo un Create/Update/Delete da una pagina admin. Le pagine
+        /// interessate (es. Dashboard) possono sottoscriversi per aggiornare le proprie select.
+        /// </summary>
+        public event Action? OnLookupsChanged;
+
         // Stato dei Filtri applicati
         public string SearchQuery { get; set; } = string.Empty;
         public string FilterFromString { get; set; }
@@ -70,6 +77,40 @@ namespace GestionaleRendicontazione.Client.Services
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Errore caricamento lookup nel FilterStateService: {ex}");
+            }
+        }
+        private static readonly TimeSpan ReloadDebounce = TimeSpan.FromMilliseconds(500);
+        private CancellationTokenSource? _reloadCts;
+
+        /// <summary>
+        /// Ricarica le liste di lookup dal server e notifica gli ascoltatori di <see cref="OnLookupsChanged"/>.
+        /// Da chiamare dalle pagine admin dopo un Create/Update/Delete andato a buon fine.
+        /// È debounced internamente per evitare N reload quando l'admin fa molte modifiche di fila.
+        /// </summary>
+        public async Task ReloadLookupsAsync()
+        {
+            _reloadCts?.Cancel();
+            _reloadCts?.Dispose();
+            var cts = new CancellationTokenSource();
+            _reloadCts = cts;
+            var token = cts.Token;
+
+            try
+            {
+                await Task.Delay(ReloadDebounce, token);
+                if (token.IsCancellationRequested) return;
+
+                await LoadLookupsAsync();
+                if (token.IsCancellationRequested) return;
+
+                OnLookupsChanged?.Invoke();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore durante ReloadLookupsAsync: {ex}");
             }
         }
     }

@@ -16,40 +16,117 @@ namespace GestionaleRendicontazione.Client.Services
         public bool IsSuccess { get; private init; }
         public T? Data { get; private init; }
 
+        /// <summary>Codice HTTP della risposta (0 se la richiesta non è partita, es. network error).</summary>
+        public int StatusCode { get; private init; }
+
         /// <summary>Errori di validazione: chiave = nome campo (camelCase), value = lista messaggi.</summary>
         public Dictionary<string, string[]> ValidationErrors { get; private init; } = new();
 
         /// <summary>Messaggio d'errore generico (non-400).</summary>
         public string? ErrorMessage { get; private init; }
 
-        public static ApiResult<T> Ok(T data) => new() { IsSuccess = true, Data = data };
+        public static ApiResult<T> Ok(T data, int statusCode = 200) => new()
+        {
+            IsSuccess = true,
+            Data = data,
+            StatusCode = statusCode,
+        };
 
-        public static ApiResult<T> WithValidationErrors(Dictionary<string, string[]> errors)
-            => new() { IsSuccess = false, ValidationErrors = errors };
+        public static ApiResult<T> WithValidationErrors(Dictionary<string, string[]> errors, int statusCode = 400)
+            => new()
+            {
+                IsSuccess = false,
+                ValidationErrors = errors,
+                StatusCode = statusCode,
+            };
 
-        public static ApiResult<T> WithError(string message)
-            => new() { IsSuccess = false, ErrorMessage = message };
+        public static ApiResult<T> WithError(string message, int statusCode = 500)
+            => new()
+            {
+                IsSuccess = false,
+                ErrorMessage = message,
+                StatusCode = statusCode,
+            };
     }
 
     /// <summary>Risultato senza body (es. Delete che ritorna 204).</summary>
     public sealed class ApiResult
     {
         public bool IsSuccess { get; private init; }
+
+        /// <summary>Codice HTTP della risposta (0 se la richiesta non è partita, es. network error).</summary>
+        public int StatusCode { get; private init; }
+
         public Dictionary<string, string[]> ValidationErrors { get; private init; } = new();
         public string? ErrorMessage { get; private init; }
 
-        public static ApiResult Ok() => new() { IsSuccess = true };
-        public static ApiResult WithValidationErrors(Dictionary<string, string[]> errors)
-            => new() { IsSuccess = false, ValidationErrors = errors };
-        public static ApiResult WithError(string message)
-            => new() { IsSuccess = false, ErrorMessage = message };
+        public static ApiResult Ok(int statusCode = 200) => new() { IsSuccess = true, StatusCode = statusCode };
+        public static ApiResult WithValidationErrors(Dictionary<string, string[]> errors, int statusCode = 400)
+            => new() { IsSuccess = false, ValidationErrors = errors, StatusCode = statusCode };
+        public static ApiResult WithError(string message, int statusCode = 500)
+            => new() { IsSuccess = false, ErrorMessage = message, StatusCode = statusCode };
     }
 
     /// <summary>
-    /// Metodi helper per deserializzare HttpResponseMessage → ApiResult.
+    /// Metodi helper per deserializzare HttpResponseMessage → ApiResult e per
+    /// trasformare i risultati in stringhe leggibili dall'utente finale.
     /// </summary>
     public static class ApiResultExtensions
     {
+        /// <summary>
+        /// Mappa uno <see cref="ApiResult"/> a un messaggio leggibile in italiano per l'utente finale.
+        /// Se il risultato contiene errori di validazione (400), li restituisce concatenati;
+        /// altrimenti mappa lo StatusCode a un testo contestuale.
+        /// </summary>
+        public static string ToUserMessage(this ApiResult result, string? fallback = null)
+        {
+            return ToUserMessage(result.StatusCode, result.ValidationErrors, result.ErrorMessage, fallback);
+        }
+
+        /// <summary>
+        /// Overload generico per <see cref="ApiResult{T}"/>: riusa la stessa logica di
+        /// mapping dell'overload non generico.
+        /// </summary>
+        public static string ToUserMessage<T>(this ApiResult<T> result, string? fallback = null)
+        {
+            return ToUserMessage(result.StatusCode, result.ValidationErrors, result.ErrorMessage, fallback);
+        }
+
+        private static string ToUserMessage(
+            int statusCode,
+            Dictionary<string, string[]> validationErrors,
+            string? errorMessage,
+            string? fallback)
+        {
+            // 400 con validation errors: meglio mostrare i messaggi specifici del backend
+            if (statusCode == 400 && validationErrors.Count > 0)
+                return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
+
+            // 400 senza validation errors: messaggio generico sul 400
+            if (statusCode == 400)
+                return "Alcuni dati non sono validi. Controlla i campi evidenziati.";
+
+            // 401 viene gestito da AuthenticatedHttpMessageHandler prima di arrivare qui,
+            // ma se capita (es. con un client che non usa l'handler) mostriamo un fallback decente
+            if (statusCode == 401)
+                return "Sessione scaduta. Accedi di nuovo per continuare.";
+
+            if (statusCode == 403)
+                return "Non hai i permessi per eseguire questa operazione.";
+
+            if (statusCode == 404)
+                return "Risorsa non trovata.";
+
+            if (statusCode >= 500 && statusCode < 600)
+                return "Il server ha risposto con un errore. Riprova più tardi.";
+
+            // StatusCode == 0: la richiesta non è partita (network/down/timeout/CORS)
+            if (statusCode == 0)
+                return "Impossibile contattare il server. Verifica la connessione.";
+
+            return errorMessage ?? fallback ?? "Si è verificato un errore imprevisto.";
+        }
+
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
             PropertyNameCaseInsensitive = true
@@ -62,17 +139,17 @@ namespace GestionaleRendicontazione.Client.Services
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadFromJsonAsync<T>(_jsonOptions, ct);
-                return ApiResult<T>.Ok(data!);
+                return ApiResult<T>.Ok(data!, (int)response.StatusCode);
             }
 
             if ((int)response.StatusCode == 400)
             {
                 var problem = await TryReadValidationProblemAsync(response, ct);
                 if (problem is not null)
-                    return ApiResult<T>.WithValidationErrors(problem);
+                    return ApiResult<T>.WithValidationErrors(problem, (int)response.StatusCode);
             }
 
-            return ApiResult<T>.WithError($"Errore HTTP {(int)response.StatusCode}");
+            return ApiResult<T>.WithError($"Errore HTTP {(int)response.StatusCode}", (int)response.StatusCode);
         }
 
         public static async Task<ApiResult> ToApiResultAsync(
@@ -80,16 +157,16 @@ namespace GestionaleRendicontazione.Client.Services
             CancellationToken ct = default)
         {
             if (response.IsSuccessStatusCode)
-                return ApiResult.Ok();
+                return ApiResult.Ok((int)response.StatusCode);
 
             if ((int)response.StatusCode == 400)
             {
                 var problem = await TryReadValidationProblemAsync(response, ct);
                 if (problem is not null)
-                    return ApiResult.WithValidationErrors(problem);
+                    return ApiResult.WithValidationErrors(problem, (int)response.StatusCode);
             }
 
-            return ApiResult.WithError($"Errore HTTP {(int)response.StatusCode}");
+            return ApiResult.WithError($"Errore HTTP {(int)response.StatusCode}", (int)response.StatusCode);
         }
 
         private static async Task<Dictionary<string, string[]>?> TryReadValidationProblemAsync(
