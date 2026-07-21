@@ -1,0 +1,124 @@
+@using System.Globalization
+@using GestionaleRendicontazione.Client.Services
+
+<Row class="mb-4">
+    <Column ColumnSize="ColumnSize.Is12">
+        @if (Loading)
+        {
+            <div class="worklog-status-panel">
+                <i class="bi bi-arrow-repeat spin"></i> Caricamento worklog...
+            </div>
+        }
+        else if (ErrorMessage is not null)
+        {
+            <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <span><i class="bi bi-exclamation-triangle me-1"></i> @ErrorMessage</span>
+                <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => OnRetry.InvokeAsync()" disabled="@Loading">
+                    <i class="bi bi-arrow-clockwise"></i> Riprova
+                </button>
+            </Alert>
+        }
+        else
+        {
+            <div class="worklog-grid">
+                @{ var visibleWorklogs = Worklogs.ToList(); }
+                @if (visibleWorklogs.Count == 0)
+                {
+                    <div class="worklog-empty">
+                        <i class="bi bi-inbox"></i>
+                        @if (!string.IsNullOrWhiteSpace(SearchQuery))
+                        {
+                            <p class="mb-0">Nessun worklog corrisponde alla ricerca "@SearchQuery".</p>
+                        }
+                        else
+                        {
+                            <p class="mb-0">Nessun worklog registrato nel periodo @PeriodLabel.</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in visibleWorklogs.Select((w, i) => (Worklog: w, Index: i)))
+                    {
+                        var palette = _iconPalette[item.Index % _iconPalette.Length];
+                        <div class="worklog-card">
+                            <div class="worklog-card-body d-flex flex-column justify-content-between h-100">
+                                <div>
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="icon-circle @palette.Background">
+                                            <i class="@palette.Icon @palette.Text"></i>
+                                        </div>
+                                        <div class="ms-3">
+                                            <h5 class="worklog-id" title="@item.Worklog.ProjectName">@item.Worklog.ProjectName</h5>
+                                            <span class="worklog-date">@item.Worklog.Date.ToString("dd/MM/yyyy")</span>
+                                        </div>
+                                    </div>
+                                    <AuthorizeView Roles="@RoleNames.Admin">
+                                    @if (item.Worklog.EmployeeName is not null)
+                                    {
+                                        <div class="d-flex align-items-center gap-1 mb-2">
+                                            <i class="bi bi-person-fill text-muted" style="font-size:0.8rem;"></i>
+                                            <span style="font-size:0.82rem; color:var(--text-muted); font-weight:600;">@item.Worklog.EmployeeName</span>
+                                        </div>
+                                    }
+                                    </AuthorizeView>
+                                    <p class="worklog-description text-muted mb-2" title="@item.Worklog.Description">@item.Worklog.Description</p>
+                                    <div class="worklog-hours text-blue fw-bold">@FormatHours(item.Worklog.HoursCounter)</div>
+                                    <span class="worklog-status-badge">@item.Worklog.StatusName</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mt-3">
+                                    <button class="btn-visualizza text-blue d-inline-flex align-items-center gap-1 border-0 bg-transparent p-0"
+                                            @onclick="() => OnEdit.InvokeAsync(item.Worklog)">
+                                        <i class="bi bi-pencil-square"></i> Modifica
+                                    </button>
+                                    <button class="btn-elimina d-inline-flex align-items-center gap-1 border-0 bg-transparent p-0"
+                                            @onclick="() => OnDelete.InvokeAsync(item.Worklog)"
+                                            disabled="@IsSaving">
+                                        <i class="bi bi-trash3"></i> Elimina
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+
+                <button class="worklog-card card-placeholder-new" @onclick="() => OnCreate.InvokeAsync()">
+                    <div class="worklog-card-body d-flex flex-column align-items-center justify-content-center h-100 py-4">
+                        <div class="icon-circle bg-light-blue mb-2">
+                            <i class="bi bi-plus-lg text-blue" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <span class="fw-bold text-blue">Nuovo Worklog</span>
+                    </div>
+                </button>
+            </div>
+        }
+    </Column>
+</Row>
+
+@code {
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public string? ErrorMessage { get; set; }
+    [Parameter] public IEnumerable<WorkLogResponseDto> Worklogs { get; set; } = Enumerable.Empty<WorkLogResponseDto>();
+    [Parameter] public string? SearchQuery { get; set; }
+    [Parameter] public string PeriodLabel { get; set; } = string.Empty;
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback OnRetry { get; set; }
+    [Parameter] public EventCallback<WorkLogResponseDto> OnEdit { get; set; }
+    [Parameter] public EventCallback<WorkLogResponseDto> OnDelete { get; set; }
+    [Parameter] public EventCallback OnCreate { get; set; }
+
+    private static readonly (string Icon, string Background, string Text)[] _iconPalette =
+    {
+        ("bi bi-clipboard-data", "bg-light-blue", "text-blue"),
+        ("bi bi-code-slash", "bg-light-green", "text-green"),
+        ("bi bi-gear", "bg-light-orange", "text-orange"),
+        ("bi bi-journal-text", "bg-light-blue", "text-blue"),
+        ("bi bi-people", "bg-light-green", "text-green"),
+    };
+
+    private static string FormatHours(float hours)
+    {
+        var formatted = hours.ToString("0.##", CultureInfo.InvariantCulture).Replace('.', ',');
+        return $"{formatted} ore";
+    }
+}

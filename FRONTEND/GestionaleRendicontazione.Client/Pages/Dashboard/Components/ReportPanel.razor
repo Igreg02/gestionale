@@ -1,0 +1,26 @@
+<Row class="mt-4">
+    <Column ColumnSize="ColumnSize.Is12">
+        <div class="report-panel">
+            <div class="report-header mb-4 d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-report-circle me-2">
+                        <i class="bi bi-bar-chart-line text-blue"></i>
+                    </div>
+                    <h4 class="report-title m-0">Report</h4>
+                </div>
+                <button type="button" class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2"
+                        @onclick="() => OnGenerateReport.InvokeAsync()" disabled="@Loading">
+                    <i class="bi bi-bar-chart-line-fill"></i> Genera Report
+                </button>
+            </div>
+            <p class="text-muted mb-0" style="font-size:0.9rem;">
+                Periodo, dipendente e opzioni di raggruppamento si scelgono direttamente nella modale di generazione.
+            </p>
+        </div>
+    </Column>
+</Row>
+
+@code {
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public EventCallback OnGenerateReport { get; set; }
+}
