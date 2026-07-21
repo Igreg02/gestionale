@@ -143,7 +143,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return false;
 
-                entity.IsWorkLogDeleted = true;
+                uow.Delete(entity);
                 return true;
             });
         }

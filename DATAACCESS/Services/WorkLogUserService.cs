@@ -143,8 +143,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (entity == null || entity.IsWorkLogDeleted) return false;
                 if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return false;
 
-                entity.IsWorkLogDeleted = true;
-                entity.UpdateAt = DateTime.UtcNow;
+                uow.Delete(entity);
                 return true;
             });
         }

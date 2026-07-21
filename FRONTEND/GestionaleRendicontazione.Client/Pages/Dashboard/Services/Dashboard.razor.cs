@@ -139,6 +139,7 @@ public partial class Dashboard : IDisposable
         {
             ParseDatesFromService();
             await LoadWorklogsAsync();
+            await InvokeAsync(StateHasChanged);
         }
         catch (OperationCanceledException)
         {
