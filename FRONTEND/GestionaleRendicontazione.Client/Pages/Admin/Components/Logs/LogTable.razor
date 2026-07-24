@@ -4,12 +4,12 @@
     <table class="admin-table">
         <thead>
             <tr>
-                <th style="white-space: nowrap;">Data</th>
+                <th>Utente</th>
                 <th>Livello</th>
                 <th>Metodo</th>
                 <th>Path</th>
                 <th>Messaggio</th>
-                <th>Utente</th>
+                <th style="white-space: nowrap;">Data</th>
             </tr>
         </thead>
         <tbody>
@@ -24,12 +24,12 @@
                 @foreach (var log in Items)
                 {
                     <tr style="cursor: pointer;" title="Clicca per vedere il dettaglio" @onclick="() => OnRowClick.InvokeAsync(log)">
-                        <td class="text-muted" style="white-space: nowrap;">@log.Data.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td class="text-muted">@log.UserId</td>
                         <td><span class="badge @LevelBadgeClass(log.Livello)">@log.Livello</span></td>
                         <td class="text-muted">@log.Metodo</td>
-                        <td class="text-muted text-truncate d-inline-block" style="max-width: 260px;" title="@log.Path">@log.Path</td>
+                        <td class="text-muted text-truncate" style="max-width: 260px;" title="@log.Path">@log.Path</td>
                         <td class="text-truncate d-inline-block" style="max-width: 360px;" title="@log.Messaggio">@log.Messaggio</td>
-                        <td class="text-muted">@log.UserId</td>
+                        <td class="text-muted" style="white-space: nowrap;">@log.Data.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
                     </tr>
                 }
             }
