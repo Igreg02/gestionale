@@ -29,6 +29,7 @@ builder.Services.AddScoped<StatusApiClient>();
 builder.Services.AddScoped<TypeApiClient>();
 builder.Services.AddScoped<ReportDataApiClient>();
 builder.Services.AddScoped<FilterStateService>();
+builder.Services.AddScoped<LogApiClient>();
 builder.Services.AddScoped<GestionaleRendicontazione.Client.Services.Reports.PdfReportService>();
 builder.Services.AddScoped<GestionaleRendicontazione.Client.Services.Reports.DownloadInterop>();
 builder.Services.AddTransient<AuthenticatedHttpMessageHandler>();

@@ -1,0 +1,52 @@
+@using GestionaleRendicontazione.Client.Services
+
+<div class="admin-panel">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th style="white-space: nowrap;">Data</th>
+                <th>Livello</th>
+                <th>Metodo</th>
+                <th>Path</th>
+                <th>Messaggio</th>
+                <th>Utente</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Items.Count == 0)
+            {
+                <tr class="admin-empty-row">
+                    <td colspan="6">Nessun log trovato per i filtri selezionati.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var log in Items)
+                {
+                    <tr style="cursor: pointer;" title="Clicca per vedere il dettaglio" @onclick="() => OnRowClick.InvokeAsync(log)">
+                        <td class="text-muted" style="white-space: nowrap;">@log.Data.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                        <td><span class="badge @LevelBadgeClass(log.Livello)">@log.Livello</span></td>
+                        <td class="text-muted">@log.Metodo</td>
+                        <td class="text-muted text-truncate d-inline-block" style="max-width: 260px;" title="@log.Path">@log.Path</td>
+                        <td class="text-truncate d-inline-block" style="max-width: 360px;" title="@log.Messaggio">@log.Messaggio</td>
+                        <td class="text-muted">@log.UserId</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public List<LogResponse> Items { get; set; } = new();
+    [Parameter] public EventCallback<LogResponse> OnRowClick { get; set; }
+
+    private static string LevelBadgeClass(string livello) => livello switch
+    {
+        "Error" or "Fatal" => "bg-danger",
+        "Warning" => "bg-warning text-dark",
+        "Information" => "bg-info text-dark",
+        "Debug" or "Verbose" => "bg-secondary",
+        _ => "bg-secondary"
+    };
+}
