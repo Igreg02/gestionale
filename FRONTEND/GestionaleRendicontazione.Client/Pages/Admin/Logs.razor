@@ -2,7 +2,6 @@
 @attribute [Authorize(Roles = RoleNames.Admin)]
 @implements IDisposable
 @using GestionaleRendicontazione.Client.Pages.Admin.Components.Logs
-@inject LogApiClient LogApiClient
 
 <PageTitle>Logs</PageTitle>
 
@@ -15,81 +14,6 @@
         </div>
 
         <div class="d-flex align-items-center gap-2">
-            <div class="worklog-search m-0" style="position: relative; min-width: 260px;">
-                <i class="bi bi-search"></i>
-                <input type="text" placeholder="Messaggio, path, utente..." value="@_search"
-                       @oninput="OnSearchInput" />
-                @if (!string.IsNullOrEmpty(_search))
-                {
-                    <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearSearch">
-                        <i class="bi bi-x-circle-fill"></i>
-                    </button>
-                }
-            </div>
-
-            <div class="filter-menu" style="position: relative;">
-                <button type="button"
-                        class="btn btn-primary filter-toggle-btn d-inline-flex align-items-center gap-1 py-2 px-3"
-                        @onclick="ToggleFilterPanel"
-                        style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem;">
-                    <i class="bi bi-funnel@(HasActiveFilters ? "-fill" : "")"></i>
-                    <span>Filtro</span>
-                    @if (HasActiveFilters)
-                    {
-                        <span class="filter-badge" style="background-color: #fff;"></span>
-                    }
-                </button>
-
-                @if (_filterPanelOpen)
-                {
-                    <div class="filter-menu-backdrop" @onclick="() => _filterPanelOpen = false"></div>
-                    <div class="filter-menu-dropdown" @onclick:stopPropagation="true">
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <label class="form-label text-muted fw-bold small">Dal</label>
-                                <input type="date" class="form-control custom-input" value="@_dateFrom" @onchange="OnDateFromChanged" />
-                            </div>
-                            <div class="col-6">
-                                <label class="form-label text-muted fw-bold small">Al</label>
-                                <input type="date" class="form-control custom-input" value="@_dateTo" @onchange="OnDateToChanged" />
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label text-muted fw-bold small">Livello</label>
-                                <select class="form-select custom-input" @bind="_level">
-                                    <option value="">Tutti</option>
-                                    <option value="Information">Information</option>
-                                    <option value="Warning">Warning</option>
-                                    <option value="Error">Error</option>
-                                    <option value="Fatal">Fatal</option>
-                                </select>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label text-muted fw-bold small">Metodo</label>
-                                <select class="form-select custom-input" @bind="_method">
-                                    <option value="">Tutti</option>
-                                    <option value="GET">GET</option>
-                                    <option value="POST">POST</option>
-                                    <option value="PUT">PUT</option>
-                                    <option value="DELETE">DELETE</option>
-                                    <option value="PATCH">PATCH</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
-                                    @onclick="ApplyFiltersAsync"
-                                    style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
-                                <i class="bi bi-funnel"></i> Filtra
-                            </button>
-                            <button class="btn btn-outline-secondary" title="Reimposta filtri"
-                                    @onclick="ResetFiltersAsync" style="height: 40px; border-radius: 8px;">
-                                <i class="bi bi-arrow-counterclockwise"></i>
-                            </button>
-                        </div>
-                    </div>
-                }
-            </div>
-
             <button class="btn btn-outline-secondary d-inline-flex align-items-center gap-1" style="height: 46px; border-radius: 10px;"
                     @onclick="() => LoadAsync()" disabled="@_loading" title="Aggiorna">
                 <i class="bi bi-arrow-repeat @(_loading ? "spin" : "")"></i>

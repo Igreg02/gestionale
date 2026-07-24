@@ -4,6 +4,7 @@
 @implements IDisposable
 @inject NavigationManager NavigationManager
 @inject FilterStateService FilterState
+@inject LogFilterStateService LogFilterState
 
 <div class="app-shell @(_sidebarOpen ? "sidebar-open" : "")">
 
@@ -158,7 +159,89 @@
                                             </div>
                                         </div>
                                     }
-                                    
+                                    else if (_isLogs)
+                                    {
+                                        <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
+                                            <div class="worklog-search flex-fill m-0" style="position: relative;">
+                                                <i class="bi bi-search"></i>
+                                                <input type="text" placeholder="Messaggio, path, utente..." value="@LogFilterState.SearchQuery"
+                                                       @oninput="OnLogSearchInput" />
+                                                @if (!string.IsNullOrEmpty(LogFilterState.SearchQuery))
+                                                {
+                                                    <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearLogSearch">
+                                                        <i class="bi bi-x-circle-fill"></i>
+                                                    </button>
+                                                }
+                                            </div>
+
+                                            <div class="filter-menu" style="position: relative;">
+                                                <button type="button"
+                                                        class="btn btn-primary filter-toggle-btn d-inline-flex align-items-center gap-1 py-2 px-3"
+                                                        @onclick="ToggleLogFilterPanel"
+                                                        style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;"
+                                                        onmouseover="this.style.backgroundColor='var(--primary-blue-hover)'"
+                                                        onmouseout="this.style.backgroundColor='var(--primary-blue)'">
+                                                    <i class="bi bi-funnel@(LogFilterState.HasActiveFilters ? "-fill" : "")"></i>
+                                                    <span>Filtro</span>
+                                                    @if (LogFilterState.HasActiveFilters)
+                                                    {
+                                                        <span class="filter-badge" style="background-color: #fff;"></span>
+                                                    }
+                                                </button>
+
+                                                @if (LogFilterState.FilterPanelOpen)
+                                                {
+                                                    <div class="filter-menu-dropdown" @onclick:stopPropagation="true"
+                                                         style="position: absolute; right: 0; top: 54px; z-index: 1050; width: 320px; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12); padding: 1rem;">
+                                                        <div class="row g-3">
+                                                            <div class="col-6">
+                                                                <label class="form-label text-muted fw-bold small">Dal</label>
+                                                                <input type="date" class="form-control custom-input"
+                                                                       value="@LogFilterState.FilterFromString" @onchange="OnLogFilterFromChanged" />
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="form-label text-muted fw-bold small">Al</label>
+                                                                <input type="date" class="form-control custom-input"
+                                                                       value="@LogFilterState.FilterToString" @onchange="OnLogFilterToChanged" />
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label class="form-label text-muted fw-bold small">Livello</label>
+                                                                <select class="form-select custom-input" @bind="LogFilterState.FilterLevel">
+                                                                    <option value="">Tutti</option>
+                                                                    <option value="Information">Information</option>
+                                                                    <option value="Warning">Warning</option>
+                                                                    <option value="Error">Error</option>
+                                                                    <option value="Fatal">Fatal</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label class="form-label text-muted fw-bold small">Metodo</label>
+                                                                <select class="form-select custom-input" @bind="LogFilterState.FilterMethod">
+                                                                    <option value="">Tutti</option>
+                                                                    <option value="GET">GET</option>
+                                                                    <option value="POST">POST</option>
+                                                                    <option value="PUT">PUT</option>
+                                                                    <option value="DELETE">DELETE</option>
+                                                                    <option value="PATCH">PATCH</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex gap-2 mt-3">
+                                                            <button class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
+                                                                    @onclick="ApplyLogFiltersAsync"
+                                                                    style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
+                                                                <i class="bi bi-funnel"></i> Filtra
+                                                            </button>
+                                                            <button class="btn btn-outline-secondary" title="Reimposta filtri"
+                                                                    @onclick="ResetLogFiltersAsync" style="height: 40px; border-radius: 8px;">
+                                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
 
                                     <div class="d-flex align-items-center gap-3">
                                         <AuthorizeView Context="topbarAuth">
@@ -199,8 +282,10 @@
     private bool _sidebarOpen;
     private bool _userMenuOpen;
     private bool _isDashboard;
+    private bool _isLogs;
     private const int SearchDebounceMs = 300;
     private System.Timers.Timer? _searchDebounceTimer;
+    private System.Timers.Timer? _logSearchDebounceTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -212,6 +297,7 @@
 
         await FilterState.LoadLookupsAsync();
         FilterState.OnFiltersChanged += StateHasChanged;
+        LogFilterState.OnFiltersChanged += StateHasChanged;
 
         // Verifica l'URL iniziale all'avvio
         CheckCurrentLocation();
@@ -233,6 +319,9 @@
 
         // Se la stringa è vuota o equivale a un singolo slash, l'utente è nella dashboard principale
         _isDashboard = string.IsNullOrEmpty(relativeUri) || relativeUri == "/";
+
+        // Pagina Logs admin
+        _isLogs = relativeUri.StartsWith("admin/logs", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnSearchInput(ChangeEventArgs e)
@@ -287,6 +376,59 @@
         FilterState.NotifyFiltersChanged();
     }
 
+    // ────────────────── Log filter (topbar) ──────────────────
+
+    private void OnLogSearchInput(ChangeEventArgs e)
+    {
+        LogFilterState.SearchQuery = e.Value?.ToString() ?? string.Empty;
+
+        _logSearchDebounceTimer?.Stop();
+        _logSearchDebounceTimer?.Dispose();
+        _logSearchDebounceTimer = new System.Timers.Timer(SearchDebounceMs) { AutoReset = false };
+        _logSearchDebounceTimer.Elapsed += (_, _) =>
+        {
+            _logSearchDebounceTimer?.Dispose();
+            _logSearchDebounceTimer = null;
+            InvokeAsync(() => LogFilterState.NotifyFiltersChanged());
+        };
+        _logSearchDebounceTimer.Start();
+    }
+
+    private void ClearLogSearch()
+    {
+        _logSearchDebounceTimer?.Stop();
+        _logSearchDebounceTimer?.Dispose();
+        _logSearchDebounceTimer = null;
+        LogFilterState.SearchQuery = string.Empty;
+        LogFilterState.NotifyFiltersChanged();
+    }
+
+    private void ToggleLogFilterPanel() => LogFilterState.FilterPanelOpen = !LogFilterState.FilterPanelOpen;
+
+    private void OnLogFilterFromChanged(ChangeEventArgs e) => LogFilterState.FilterFromString = e.Value?.ToString() ?? string.Empty;
+    private void OnLogFilterToChanged(ChangeEventArgs e) => LogFilterState.FilterToString = e.Value?.ToString() ?? string.Empty;
+
+    private void ApplyLogFiltersAsync()
+    {
+        LogFilterState.FilterPanelOpen = false;
+        LogFilterState.NotifyFiltersChanged();
+    }
+
+    private void ResetLogFiltersAsync()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var periodFrom = new DateOnly(today.Year, today.Month, 1);
+        var periodTo = periodFrom.AddMonths(1).AddDays(-1);
+
+        LogFilterState.FilterFromString = periodFrom.ToString("yyyy-MM-dd");
+        LogFilterState.FilterToString = periodTo.ToString("yyyy-MM-dd");
+        LogFilterState.FilterLevel = string.Empty;
+        LogFilterState.FilterMethod = string.Empty;
+        LogFilterState.FilterPanelOpen = false;
+
+        LogFilterState.NotifyFiltersChanged();
+    }
+
     private void ToggleSidebar() => _sidebarOpen = !_sidebarOpen;
     private void CloseSidebar() => _sidebarOpen = false;
     private void ToggleUserMenu() => _userMenuOpen = !_userMenuOpen;
@@ -311,10 +453,15 @@
     public void Dispose()
     {
         FilterState.OnFiltersChanged -= StateHasChanged;
+        LogFilterState.OnFiltersChanged -= StateHasChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
 
         _searchDebounceTimer?.Stop();
         _searchDebounceTimer?.Dispose();
         _searchDebounceTimer = null;
+
+        _logSearchDebounceTimer?.Stop();
+        _logSearchDebounceTimer?.Dispose();
+        _logSearchDebounceTimer = null;
     }
 }

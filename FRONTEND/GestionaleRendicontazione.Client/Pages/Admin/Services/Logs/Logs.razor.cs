@@ -6,40 +6,47 @@ namespace GestionaleRendicontazione.Client.Pages.Admin;
 // Pagina di sola consultazione: nessuna modale di creazione/modifica/eliminazione,
 // a differenza delle altre pagine Admin — i log sono alimentati esclusivamente dal
 // sink Serilog lato server (vedi LogController).
+// I filtri (search + date/level/method) vivono nella topbar, gestiti da
+// LogFilterStateService. Questa pagina reagisce a OnFiltersChanged e ricarica.
 public partial class Logs
 {
+    [Inject] private LogApiClient LogApi { get; set; } = default!;
+    [Inject] private LogFilterStateService LogFilterState { get; set; } = default!;
+
     private const int PageSize = 50;
-    private const int SearchDebounceMs = 350;
 
     private bool _loading = true;
     private string? _errorMessage;
     private List<LogResponse> _items = new();
 
-    private string _search = string.Empty;
-    private string _level = string.Empty;
-    private string _method = string.Empty;
-    private string _dateFrom = string.Empty;
-    private string _dateTo = string.Empty;
-
     private int _page = 1;
     private int _totalCount;
 
-    private bool _filterPanelOpen;
     private bool _viewOpen;
     private LogResponse? _viewTarget;
 
-    private System.Timers.Timer? _searchDebounceTimer;
     private CancellationTokenSource? _loadCts;
-
-    private bool HasActiveFilters =>
-        !string.IsNullOrWhiteSpace(_level) || !string.IsNullOrWhiteSpace(_method)
-        || !string.IsNullOrWhiteSpace(_dateFrom) || !string.IsNullOrWhiteSpace(_dateTo);
 
     private int _totalPages => _totalCount == 0 ? 1 : (int)Math.Ceiling(_totalCount / (double)PageSize);
     private int _firstRowIndex => _totalCount == 0 ? 0 : ((_page - 1) * PageSize) + 1;
     private int _lastRowIndex => Math.Min(_page * PageSize, _totalCount);
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        LogFilterState.OnFiltersChanged += OnFilterStateChanged;
+        await LoadAsync();
+    }
+
+    private void OnFilterStateChanged()
+    {
+        // Trigger scatenato dalla topbar (ricerca o Filtra/Reset). Debounce già
+        // applicato lato topbar: qui resettiamo la pagina e ricarichiamo.
+        _ = InvokeAsync(async () =>
+        {
+            _page = 1;
+            await LoadAsync();
+        });
+    }
 
     private async Task LoadAsync()
     {
@@ -53,12 +60,12 @@ public partial class Logs
 
         try
         {
-            var result = await LogApiClient.GetAllAsync(
-                search: _search,
-                level: _level,
-                method: _method,
-                dateFrom: ParseDate(_dateFrom),
-                dateTo: ParseDate(_dateTo),
+            var result = await LogApi.GetAllAsync(
+                search: LogFilterState.SearchQuery,
+                level: string.IsNullOrWhiteSpace(LogFilterState.FilterLevel) ? null : LogFilterState.FilterLevel,
+                method: string.IsNullOrWhiteSpace(LogFilterState.FilterMethod) ? null : LogFilterState.FilterMethod,
+                dateFrom: LogFilterState.TryGetDateFrom(),
+                dateTo: LogFilterState.TryGetDateTo(),
                 page: _page,
                 pageSize: PageSize,
                 cancellationToken: cts.Token);
@@ -96,58 +103,6 @@ public partial class Logs
         }
     }
 
-    private static DateOnly? ParseDate(string value)
-        => DateOnly.TryParse(value, out var d) ? d : null;
-
-    private void OnSearchInput(ChangeEventArgs e)
-    {
-        _search = e.Value?.ToString() ?? string.Empty;
-
-        _searchDebounceTimer?.Stop();
-        _searchDebounceTimer?.Dispose();
-        _searchDebounceTimer = new System.Timers.Timer(SearchDebounceMs) { AutoReset = false };
-        _searchDebounceTimer.Elapsed += (_, _) =>
-        {
-            _searchDebounceTimer?.Dispose();
-            _searchDebounceTimer = null;
-            InvokeAsync(ApplyFiltersAsync);
-        };
-        _searchDebounceTimer.Start();
-    }
-
-    private void OnDateFromChanged(ChangeEventArgs e) => _dateFrom = e.Value?.ToString() ?? string.Empty;
-    private void OnDateToChanged(ChangeEventArgs e) => _dateTo = e.Value?.ToString() ?? string.Empty;
-
-    private void ClearSearch()
-    {
-        _searchDebounceTimer?.Stop();
-        _searchDebounceTimer?.Dispose();
-        _searchDebounceTimer = null;
-        _search = string.Empty;
-        _ = InvokeAsync(ApplyFiltersAsync);
-    }
-
-    private void ToggleFilterPanel() => _filterPanelOpen = !_filterPanelOpen;
-
-    private async Task ApplyFiltersAsync()
-    {
-        _filterPanelOpen = false;
-        _page = 1;
-        await LoadAsync();
-    }
-
-    private async Task ResetFiltersAsync()
-    {
-        _search = string.Empty;
-        _level = string.Empty;
-        _method = string.Empty;
-        _dateFrom = string.Empty;
-        _dateTo = string.Empty;
-        _filterPanelOpen = false;
-        _page = 1;
-        await LoadAsync();
-    }
-
     private void OpenView(LogResponse log)
     {
         _viewTarget = log;
@@ -169,8 +124,7 @@ public partial class Logs
 
     public void Dispose()
     {
-        _searchDebounceTimer?.Stop();
-        _searchDebounceTimer?.Dispose();
+        LogFilterState.OnFiltersChanged -= OnFilterStateChanged;
         _loadCts?.Cancel();
     }
 }
