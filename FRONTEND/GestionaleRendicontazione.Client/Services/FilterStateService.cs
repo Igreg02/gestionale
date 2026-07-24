@@ -53,6 +53,27 @@ namespace GestionaleRendicontazione.Client.Services
 
         public void NotifyFiltersChanged() => OnFiltersChanged?.Invoke();
 
+        /// <summary>
+        /// Riporta il servizio allo stato "pulito" quando cambia l'utente autenticato (login/logout)
+        /// senza un refresh completo della pagina. Essendo registrato come Scoped, in Blazor WASM
+        /// questo servizio vive per l'intera durata della tab del browser: senza questo reset, un
+        /// logout/login rapido farebbe "ereditare" al nuovo utente IsAdmin, i filtri e le liste di
+        /// lookup (es. Employees) della sessione precedente.
+        /// </summary>
+        public void ResetForNewSession()
+        {
+            IsAdmin = false;
+            Employees = new();
+            Projects = new();
+            Statuses = new();
+
+            SearchQuery = string.Empty;
+            FilterEmployeeId = Guid.Empty;
+            FilterProjectId = Guid.Empty;
+            FilterStatusName = string.Empty;
+            FilterPanelOpen = false;
+        }
+
         public async Task LoadLookupsAsync()
         {
             try

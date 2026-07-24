@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using GestionaleRendicontazione.Client.Constants;
 
 namespace GestionaleRendicontazione.Client.Services
 {
@@ -7,14 +8,17 @@ namespace GestionaleRendicontazione.Client.Services
     {
         private readonly HttpClient _httpClient;
         private readonly CustomAuthenticationStateProvider _authenticationStateProvider;
+        private readonly FilterStateService _filterState;
         private readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
         public AuthService(
             HttpClient httpClient,
-            CustomAuthenticationStateProvider authenticationStateProvider)
+            CustomAuthenticationStateProvider authenticationStateProvider,
+            FilterStateService filterState)
         {
             _httpClient = httpClient;
             _authenticationStateProvider = authenticationStateProvider;
+            _filterState = filterState;
         }
 
         public async Task<bool> LoginAsync(string userName, string password)
@@ -38,6 +42,15 @@ namespace GestionaleRendicontazione.Client.Services
             }
 
             await _authenticationStateProvider.MarkUserAsAuthenticatedAsync(loginResponse);
+
+            // Sincronizza subito FilterStateService (IsAdmin + liste di lookup, inclusi i dipendenti)
+            // con l'utente appena autenticato. Il servizio è Scoped ma in Blazor WASM la scope dura
+            // quanto la tab del browser: senza questo passaggio, Dashboard troverebbe ancora
+            // IsAdmin/Employees della sessione precedente finché la pagina non viene ricaricata.
+            var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
+            _filterState.IsAdmin = authState.User.IsInRole(RoleNames.Admin);
+            await _filterState.LoadLookupsAsync();
+
             return true;
         }
 
@@ -53,6 +66,11 @@ namespace GestionaleRendicontazione.Client.Services
             }
 
             await _authenticationStateProvider.MarkUserAsLoggedOutAsync();
+
+            // Pulisce lo stato condiviso: senza questo reset, il prossimo login nella stessa tab
+            // (senza refresh della pagina) erediterebbe IsAdmin/filtri/liste dipendenti dell'utente
+            // che si è appena disconnesso.
+            _filterState.ResetForNewSession();
         }
 
         /// <summary>
