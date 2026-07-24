@@ -1,0 +1,47 @@
+@using GestionaleRendicontazione.Client.Services
+
+<div class="admin-panel">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Companies.Count == 0)
+            {
+                <tr class="admin-empty-row">
+                    <td colspan="3">Nessuna azienda registrata.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var company in Companies)
+                {
+                    <tr>
+                        <td class="fw-semibold">@company.Name</td>
+                        <td class="text-muted">@company.Email</td>
+                        <td>
+                            <div class="admin-table-actions">
+                                <button class="admin-row-icon-btn" title="Modifica" @onclick="() => OnEdit.InvokeAsync(company)">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="admin-row-icon-btn is-danger" title="Elimina" @onclick="() => OnDelete.InvokeAsync(company)">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter] public List<CompanyResponse> Companies { get; set; } = new();
+    [Parameter] public EventCallback<CompanyResponse> OnEdit { get; set; }
+    [Parameter] public EventCallback<CompanyResponse> OnDelete { get; set; }
+}

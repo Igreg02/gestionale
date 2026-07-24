@@ -1,0 +1,55 @@
+@page "/admin/tipologie"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+@using GestionaleRendicontazione.Client.Pages.Admin.Components.Types
+@inject TypeApiClient ApiClient
+@inject FilterStateService FilterState
+
+<PageTitle>Tipologie</PageTitle>
+
+<div class="container-fluid px-4">
+
+    <div class="admin-toolbar">
+        <div>
+            <h2 class="dashboard-title mb-1">Tipologie</h2>
+            <p class="dashboard-subtitle mb-0">Tipologie di attività rendicontabili (es. FIX)</p>
+        </div>
+        <button class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2 px-4" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg"></i> Nuova tipologia
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="worklog-status-panel">
+            <i class="bi bi-arrow-repeat spin"></i> Caricamento...
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+                <i class="bi bi-arrow-clockwise"></i> Riprova
+            </button>
+        </Alert>
+    }
+    else
+    {
+        <TypeTable Items="_items" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+    }
+</div>
+
+<TypeFormModal Open="_formModalOpen"
+                    IsEditing="_isEditing"
+                    Model="_formModel"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseFormModal"
+                    OnSave="SaveFormAsync" />
+
+<TypeDeleteModal Open="_deleteModalOpen"
+                    Target="_deleteTarget"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseDeleteModal"
+                    OnConfirm="ExecuteDeleteAsync" />

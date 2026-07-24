@@ -1,0 +1,55 @@
+@page "/admin/aziende"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+@using GestionaleRendicontazione.Client.Pages.Admin.Components.Companies
+@inject CompanyApiClient CompanyApiClient
+@inject FilterStateService FilterState
+
+<PageTitle>Aziende</PageTitle>
+
+<div class="container-fluid px-4">
+
+    <div class="admin-toolbar">
+        <div>
+            <h2 class="dashboard-title mb-1">Aziende</h2>
+            <p class="dashboard-subtitle mb-0">Anagrafica delle società cliente/interne</p>
+        </div>
+        <button class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2 px-4" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-lg"></i> Nuova azienda
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="worklog-status-panel">
+            <i class="bi bi-arrow-repeat spin"></i> Caricamento aziende...
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+                <i class="bi bi-arrow-clockwise"></i> Riprova
+            </button>
+        </Alert>
+    }
+    else
+    {
+        <CompanyTable Companies="_companies" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+    }
+</div>
+
+<CompanyFormModal Open="_formModalOpen"
+                    IsEditing="_isEditing"
+                    Model="_formModel"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseFormModal"
+                    OnSave="SaveFormAsync" />
+
+<CompanyDeleteModal Open="_deleteModalOpen"
+                    Target="_deleteTarget"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseDeleteModal"
+                    OnConfirm="ExecuteDeleteAsync" />

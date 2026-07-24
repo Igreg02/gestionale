@@ -1,0 +1,64 @@
+@page "/admin/progetti"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+@using GestionaleRendicontazione.Client.Pages.Admin.Components.Projects
+@inject ProjectApiClient ProjectApiClient
+@inject CompanyApiClient CompanyApiClient
+@inject FilterStateService FilterState
+
+<PageTitle>Progetti</PageTitle>
+
+<div class="container-fluid px-4">
+
+    <div class="admin-toolbar">
+        <div>
+            <h2 class="dashboard-title mb-1">Progetti</h2>
+            <p class="dashboard-subtitle mb-0">Progetti collegati alle aziende cliente/interne</p>
+        </div>
+        <button class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2 px-4" @onclick="OpenCreateModal" disabled="@(_companies.Count == 0)">
+            <i class="bi bi-plus-lg"></i> Nuovo progetto
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="worklog-status-panel">
+            <i class="bi bi-arrow-repeat spin"></i> Caricamento progetti...
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+                <i class="bi bi-arrow-clockwise"></i> Riprova
+            </button>
+        </Alert>
+    }
+    else
+    {
+        @if (_companies.Count == 0)
+        {
+            <Alert Color="Color.Warning" Visible="true">
+                Devi creare almeno un'azienda prima di poter aggiungere un progetto.
+            </Alert>
+        }
+
+        <ProjectTable Projects="_projects" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+    }
+</div>
+
+<ProjectFormModal Open="_formModalOpen"
+                    IsEditing="_isEditing"
+                    Model="_formModel"
+                    Companies="_companies"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseFormModal"
+                    OnSave="SaveFormAsync" />
+
+<ProjectDeleteModal Open="_deleteModalOpen"
+                    Target="_deleteTarget"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseDeleteModal"
+                    OnConfirm="ExecuteDeleteAsync" />

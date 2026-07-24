@@ -21,6 +21,18 @@ builder.Services.AddScoped<CustomAuthenticationStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(sp => sp.GetRequiredService<CustomAuthenticationStateProvider>());
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<WorkLogApiClient>();
+builder.Services.AddScoped<CompanyApiClient>();
+builder.Services.AddScoped<ProjectApiClient>();
+builder.Services.AddScoped<EmployeeApiClient>();
+builder.Services.AddScoped<StatusApiClient>();
+builder.Services.AddScoped<TypeApiClient>();
+builder.Services.AddScoped<ReportDataApiClient>();
+builder.Services.AddScoped<FilterStateService>();
+builder.Services.AddScoped<LogApiClient>();
+builder.Services.AddScoped<LogFilterStateService>();
+builder.Services.AddScoped<GestionaleRendicontazione.Client.Services.Reports.PdfReportService>();
+builder.Services.AddScoped<GestionaleRendicontazione.Client.Services.Reports.DownloadInterop>();
 builder.Services.AddTransient<AuthenticatedHttpMessageHandler>();
 
 builder.Services.AddScoped(sp =>

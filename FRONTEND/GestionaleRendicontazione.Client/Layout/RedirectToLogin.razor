@@ -1,0 +1,11 @@
+@inject NavigationManager NavigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        // Preserviamo la pagina richiesta come returnUrl, così dopo il login l'utente può essere
+        // riportato dove voleva andare invece di atterrare sempre sulla Dashboard.
+        var returnUrl = Uri.EscapeDataString(NavigationManager.ToBaseRelativePath(NavigationManager.Uri));
+        NavigationManager.NavigateTo($"/login?returnUrl={returnUrl}", replace: true);
+    }
+}

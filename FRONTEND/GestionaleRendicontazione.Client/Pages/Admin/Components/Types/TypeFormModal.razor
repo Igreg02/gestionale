@@ -1,0 +1,61 @@
+@using GestionaleRendicontazione.Client.Pages.Admin
+
+@if (Open && Model is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="() => OnClose.InvokeAsync()">
+        <div class="wl-modal-card" style="width:420px;" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label">@(IsEditing ? "MODIFICA" : "NUOVO ELEMENTO")</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="() => OnClose.InvokeAsync()" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">@(IsEditing ? "Modifica" : "Nuovo")</span>
+                </div>
+            </div>
+
+            @if (ModalError is not null)
+            {
+                <div class="alert alert-danger py-2 px-3 mx-0 mb-0" style="font-size:0.88rem; border-radius:0; margin-top:-1px;">
+                    <i class="bi bi-exclamation-triangle me-1"></i> @ModalError
+                </div>
+            }
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <div class="wl-field-row">
+                    <label class="wl-field-label">Nome</label>
+                    <input class="wl-field-input" @bind="Model.Name" placeholder="Nome" />
+                </div>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="() => OnClose.InvokeAsync()" disabled="@IsSaving">Annulla</button>
+                    <button class="wl-btn-save" @onclick="() => OnSave.InvokeAsync()" disabled="@IsSaving">
+                        @if (IsSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2"></i> <span>Salva</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public bool IsEditing { get; set; }
+    [Parameter] public TypeFormModel? Model { get; set; }
+    [Parameter] public string? ModalError { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+}

@@ -1,0 +1,80 @@
+@inject FilterStateService FilterState
+
+<div class="wl-modal-left">
+    <AuthorizeView Roles="@RoleNames.Admin">
+        <div class="wl-field-row">
+            <label class="wl-field-label">Dipendente</label>
+            <select class="wl-field-input" @bind="Model!.IdEmployee">
+                <option value="@Guid.Empty">-- Seleziona --</option>
+                @if (EmployeesLoading)
+                {
+                    <option disabled>Caricamento...</option>
+                }
+                else
+                {
+                    @foreach (var emp in Employees)
+                    {
+                        <option value="@emp.Id">@emp.Username (@emp.FirstName @emp.LastName)</option>
+                    }
+                }
+            </select>
+        </div>
+    </AuthorizeView>
+
+    <div class="wl-field-row">
+        <label class="wl-field-label">Data</label>
+        <input type="date" class="wl-field-input" value="@DateString" @oninput="OnDateInput" />
+    </div>
+
+    <div class="wl-field-row">
+        <label class="wl-field-label">Ore</label>
+        <input type="number" class="wl-field-input" min="1" max="24" step="0.5" @bind="Model!.HoursCounter" />
+    </div>
+
+    <div class="wl-field-row">
+        <label class="wl-field-label">Progetto</label>
+        <select class="wl-field-input" @bind="Model!.IdProject">
+            <option value="@Guid.Empty">-- Seleziona --</option>
+            @foreach (var proj in FilterState.Projects)
+            {
+                <option value="@proj.Id">@proj.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="wl-field-row">
+        <label class="wl-field-label">Tipo</label>
+        <select class="wl-field-input" @bind="Model!.IdType">
+            <option value="@Guid.Empty">-- Seleziona --</option>
+            @foreach (var t in Types)
+            {
+                <option value="@t.Id">@t.Name</option>
+            }
+        </select>
+    </div>
+
+    <div class="wl-field-row">
+        <label class="wl-field-label">Stato</label>
+        <select class="wl-field-input" @bind="Model!.IdStatus">
+            <option value="@Guid.Empty">-- Seleziona --</option>
+            @foreach (var s in FilterState.Statuses)
+            {
+                <option value="@s.Id">@s.Name</option>
+            }
+        </select>
+    </div>
+</div>
+
+<div class="wl-modal-right">
+    <label class="wl-field-label mb-2">Descrizione</label>
+    <textarea class="wl-desc-area" rows="8" @bind="Model!.Description" placeholder="Descrivi l'attività svolta..."></textarea>
+</div>
+
+@code {
+    [Parameter] public WorkLogUpdateRequestDto? Model { get; set; }
+    [Parameter] public string DateString { get; set; } = string.Empty;
+    [Parameter] public EventCallback<ChangeEventArgs> OnDateInput { get; set; }
+    [Parameter] public List<EmployeeResponseDto> Employees { get; set; } = new();
+    [Parameter] public bool EmployeesLoading { get; set; }
+    [Parameter] public List<TypeResponseDto> Types { get; set; } = new();
+}

@@ -20,27 +20,15 @@ namespace GestionaleRendicontazione.Client.Services
                 return new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
             }
 
-            var identity = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, session.UserName),
-                new Claim(ClaimTypes.NameIdentifier, session.UserName),
-                new Claim("display_name", session.DisplayName)
-            }, "Bearer");
-
-            return new AuthenticationState(new ClaimsPrincipal(identity));
+            return new AuthenticationState(new ClaimsPrincipal(BuildIdentity(session)));
         }
 
         public async Task MarkUserAsAuthenticatedAsync(LoginResponseDto session)
         {
             await _tokenStorageService.SaveSessionAsync(session);
-            var identity = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, session.UserName),
-                new Claim(ClaimTypes.NameIdentifier, session.UserName),
-                new Claim("display_name", session.DisplayName)
-            }, "Bearer");
 
-            var authState = new AuthenticationState(new ClaimsPrincipal(identity));
+            var stored = new StoredSession(session.Token, session.ExpiresAt, session.UserName, session.DisplayName);
+            var authState = new AuthenticationState(new ClaimsPrincipal(BuildIdentity(stored)));
             NotifyAuthenticationStateChanged(Task.FromResult(authState));
         }
 
@@ -49,6 +37,34 @@ namespace GestionaleRendicontazione.Client.Services
             await _tokenStorageService.ClearSessionAsync();
             var anonymous = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
             NotifyAuthenticationStateChanged(Task.FromResult(anonymous));
+        }
+
+        /// <summary>
+        /// Costruisce l'identità a partire dai claim reali contenuti nel JWT (inclusi i ruoli), invece
+        /// che da soli UserName/DisplayName: è il presupposto perché &lt;AuthorizeView Roles="Admin"&gt;
+        /// e le route protette per ruolo (Fase F3) funzionino correttamente. Il DisplayName restituito
+        /// dal login (comodo per la UI ma non presente nel token) viene aggiunto come claim separato.
+        /// </summary>
+        private static ClaimsIdentity BuildIdentity(StoredSession session)
+        {
+            try
+            {
+                var claims = JwtParser.ParseClaimsFromJwt(session.Token).ToList();
+                claims.Add(new Claim("display_name", session.DisplayName));
+
+                return new ClaimsIdentity(
+                    claims,
+                    authenticationType: "Bearer",
+                    nameType: ClaimTypes.Name,
+                    roleType: ClaimTypes.Role);
+            }
+            catch
+            {
+                // Token presente ma non decodificabile (corrotto/manomesso): trattiamo l'utente come
+                // anonimo piuttosto che fallire l'intera pagina. Al prossimo giro TokenStorageService
+                // lo ripulirà comunque se anche la scadenza risulta superata.
+                return new ClaimsIdentity();
+            }
         }
     }
 }

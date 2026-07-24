@@ -1,0 +1,60 @@
+@using GestionaleRendicontazione.Client.Services
+
+@if (Open && Target is not null)
+{
+    <div class="custom-modal-backdrop" @onclick="() => OnClose.InvokeAsync()">
+        <div class="wl-modal-card" style="max-width:440px;" @onclick:stopPropagation="true">
+
+            <div class="wl-modal-header">
+                <span class="wl-modal-label" style="color:#dc2626;">ELIMINA</span>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="wl-back-btn" @onclick="() => OnClose.InvokeAsync()" aria-label="Chiudi">
+                        <i class="bi bi-arrow-left"></i>
+                    </button>
+                    <span class="wl-modal-title">Conferma eliminazione</span>
+                </div>
+            </div>
+
+            <div class="wl-modal-body" style="display:block; padding:1.5rem;">
+                <p class="mb-2" style="font-size:0.95rem;">Stai per eliminare:</p>
+                <div style="background:var(--bg-light); border-radius:10px; padding:0.75rem 1rem; margin-bottom:0.75rem;">
+                    <strong>@Target.Name</strong>
+                </div>
+                @if (ModalError is not null)
+                {
+                    <div class="alert alert-danger py-2 px-3 mb-2" style="font-size:0.88rem; border-radius:10px;">
+                        <i class="bi bi-exclamation-triangle me-1"></i> @ModalError
+                    </div>
+                }
+                <p class="text-muted mb-0" style="font-size:0.88rem;">Questa operazione non può essere annullata. Se lo stato ha worklog collegati, l'eliminazione potrebbe non essere consentita dal backend.</p>
+            </div>
+
+            <div class="wl-modal-footer">
+                <div></div>
+                <div class="d-flex gap-2">
+                    <button class="wl-btn-cancel" @onclick="() => OnClose.InvokeAsync()" disabled="@IsSaving">Annulla</button>
+                    <button class="wl-btn-delete wl-btn-delete--solid" @onclick="() => OnConfirm.InvokeAsync()" disabled="@IsSaving">
+                        @if (IsSaving)
+                        {
+                            <i class="bi bi-arrow-repeat spin"></i> <span>Eliminazione...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-trash3 me-1"></i> <span>Conferma elimina</span>
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public StatusResponse? Target { get; set; }
+    [Parameter] public string? ModalError { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

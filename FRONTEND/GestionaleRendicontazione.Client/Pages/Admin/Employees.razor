@@ -1,0 +1,62 @@
+@page "/admin/dipendenti"
+@attribute [Authorize(Roles = RoleNames.Admin)]
+@using GestionaleRendicontazione.Client.Pages.Admin.Components.Employees
+@inject EmployeeApiClient EmployeeApiClient
+@inject AuthService AuthService
+@inject FilterStateService FilterState
+
+<PageTitle>Dipendenti</PageTitle>
+
+<div class="container-fluid px-4">
+
+    <div class="admin-toolbar">
+        <div>
+            <h2 class="dashboard-title mb-1">Dipendenti</h2>
+            <p class="dashboard-subtitle mb-0">Tecnici che rendicontano le ore</p>
+        </div>
+        <button class="btn btn-primary btn-genera d-inline-flex align-items-center gap-2 px-4" @onclick="OpenRegisterModal">
+            <i class="bi bi-person-plus"></i> Nuovo dipendente
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="worklog-status-panel">
+            <i class="bi bi-arrow-repeat spin"></i> Caricamento dipendenti...
+        </div>
+    }
+    else if (_errorMessage is not null)
+    {
+        <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+                <i class="bi bi-arrow-clockwise"></i> Riprova
+            </button>
+        </Alert>
+    }
+    else
+    {
+        <EmployeeTable Employees="_employees" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+    }
+</div>
+
+<EmployeeRegisterModal Open="_registerModalOpen"
+                    Model="_registerModel"
+                    ModalError="@_registerError"
+                    IsSaving="_isRegistering"
+                    OnClose="CloseRegisterModal"
+                    OnSave="SaveRegisterAsync" />
+
+<EmployeeEditModal Open="_formModalOpen"
+                    Model="_formModel"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseFormModal"
+                    OnSave="SaveFormAsync" />
+
+<EmployeeDeleteModal Open="_deleteModalOpen"
+                    Target="_deleteTarget"
+                    ModalError="@_modalError"
+                    IsSaving="_isSaving"
+                    OnClose="CloseDeleteModal"
+                    OnConfirm="ExecuteDeleteAsync" />
