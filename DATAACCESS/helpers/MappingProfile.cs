@@ -25,6 +25,9 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
             // Type
             CreateMap<Domain.Entities.Type, TypeDto.Response>();
 
+            // LogApplicativo: mappato solo in lettura, escludendo StackTrace dal payload
+            CreateMap<LogApplicativo, LogDto.Response>();
+
             // WorkLog
             CreateMap<WorkLog, WorkLogDto.Admin.Response>()
                 .ForMember(dest => dest.IdProject, opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : Guid.Empty))

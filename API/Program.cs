@@ -146,6 +146,7 @@ builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IStatusService, StatusService>();
 builder.Services.AddScoped<ITypeService, TypeService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<ILogService, LogService>();
 
 var app = builder.Build();
 
