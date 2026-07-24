@@ -48,7 +48,7 @@ public partial class Statuses
             if (_isEditing)
             {
                 var result = await ApiClient.UpdateAsync(_editingId, new StatusUpdateRequest { Name = _formModel.Name });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 var idx = _items.FindIndex(i => i.Id == _editingId);
                 if (idx >= 0) _items[idx] = result.Data!;
@@ -56,7 +56,7 @@ public partial class Statuses
             else
             {
                 var result = await ApiClient.CreateAsync(new StatusCreateRequest { Name = _formModel.Name });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 _items.Add(result.Data!);
             }

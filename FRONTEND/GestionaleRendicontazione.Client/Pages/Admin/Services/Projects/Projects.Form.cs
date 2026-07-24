@@ -49,7 +49,7 @@ public partial class Projects
             if (_isEditing)
             {
                 var result = await ProjectApiClient.UpdateAsync(_editingId, new ProjectUpdateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 var idx = _projects.FindIndex(p => p.Id == _editingId);
                 if (idx >= 0) _projects[idx] = result.Data!;
@@ -57,7 +57,7 @@ public partial class Projects
             else
             {
                 var result = await ProjectApiClient.CreateAsync(new ProjectCreateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 _projects.Add(result.Data!);
             }

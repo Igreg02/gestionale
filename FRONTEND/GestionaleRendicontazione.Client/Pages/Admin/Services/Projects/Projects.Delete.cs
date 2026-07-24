@@ -32,7 +32,7 @@ public partial class Projects
         try
         {
             var result = await ProjectApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
             _projects.RemoveAll(p => p.Id == _deleteTarget.Id);
             _ = FilterState.ReloadLookupsAsync();

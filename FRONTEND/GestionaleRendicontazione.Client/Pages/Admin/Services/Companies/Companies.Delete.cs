@@ -32,7 +32,7 @@ public partial class Companies
         try
         {
             var result = await CompanyApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
             _companies.RemoveAll(c => c.Id == _deleteTarget.Id);
             _ = FilterState.ReloadLookupsAsync();

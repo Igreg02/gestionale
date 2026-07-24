@@ -47,7 +47,7 @@ public partial class Employees
                 FirstName = _formModel.FirstName,
                 LastName = _formModel.LastName,
             });
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
             var idx = _employees.FindIndex(e => e.Id == _editingId);
             if (idx >= 0) _employees[idx] = result.Data!;

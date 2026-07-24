@@ -32,7 +32,7 @@ public partial class Employees
         try
         {
             var result = await EmployeeApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
             _employees.RemoveAll(e => e.Id == _deleteTarget.Id);
             _ = FilterState.ReloadLookupsAsync();

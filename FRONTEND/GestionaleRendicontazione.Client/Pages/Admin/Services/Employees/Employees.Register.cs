@@ -48,7 +48,7 @@ public partial class Employees
 
             if (!result.IsSuccess)
             {
-                _registerError = FormatError(result.ValidationErrors, result.ErrorMessage);
+                _registerError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode);
                 return;
             }
 

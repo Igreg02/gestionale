@@ -92,7 +92,7 @@ namespace GestionaleRendicontazione.Client.Services
             return ToUserMessage(result.StatusCode, result.ValidationErrors, result.ErrorMessage, fallback);
         }
 
-        private static string ToUserMessage(
+        internal static string ToUserMessage(
             int statusCode,
             Dictionary<string, string[]> validationErrors,
             string? errorMessage,
@@ -116,6 +116,12 @@ namespace GestionaleRendicontazione.Client.Services
 
             if (statusCode == 404)
                 return "Risorsa non trovata.";
+
+            if (statusCode == 409)
+            {
+                var detail = errorMessage ?? "Errore HTTP 409";
+                return $"Impossibile completare l'operazione: l'elemento è referenziato da altri dati collegati. Rimuovi prima i riferimenti e riprova. ({detail})";
+            }
 
             if (statusCode >= 500 && statusCode < 600)
                 return "Il server ha risposto con un errore. Riprova più tardi.";

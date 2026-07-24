@@ -44,8 +44,10 @@ public partial class Projects
         }
     }
 
-    private static string FormatError(Dictionary<string, string[]> validationErrors, string? errorMessage)
+    private static string FormatError(Dictionary<string, string[]> validationErrors, string? errorMessage, int statusCode = 0)
     {
+        if (statusCode == 409)
+            return ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
         if (validationErrors.Count > 0)
             return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
         return errorMessage ?? "Si è verificato un errore imprevisto.";

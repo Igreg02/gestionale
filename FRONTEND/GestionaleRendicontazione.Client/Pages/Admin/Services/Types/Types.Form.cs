@@ -48,7 +48,7 @@ public partial class Types
             if (_isEditing)
             {
                 var result = await ApiClient.UpdateAsync(_editingId, new WorkTypeUpdateRequest { Name = _formModel.Name });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 var idx = _items.FindIndex(i => i.Id == _editingId);
                 if (idx >= 0) _items[idx] = result.Data!;
@@ -56,7 +56,7 @@ public partial class Types
             else
             {
                 var result = await ApiClient.CreateAsync(new WorkTypeCreateRequest { Name = _formModel.Name });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 _items.Add(result.Data!);
             }

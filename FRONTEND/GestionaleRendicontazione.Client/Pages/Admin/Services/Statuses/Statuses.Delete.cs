@@ -32,7 +32,7 @@ public partial class Statuses
         try
         {
             var result = await ApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage); return; }
+            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
             _items.RemoveAll(i => i.Id == _deleteTarget.Id);
             _ = FilterState.ReloadLookupsAsync();
