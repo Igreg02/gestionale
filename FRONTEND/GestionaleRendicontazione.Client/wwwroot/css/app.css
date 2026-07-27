@@ -1515,6 +1515,23 @@ body {
     font-weight: 600;
 }
 
+/* Modali Delete (Azienda / Dipendente / Progetto / Stato / Tipologia):
+   il markup ha "Stai per eliminare..." con un box contenente <strong>Nome</strong>
+   su sfondo var(--bg-light). In dark --bg-light coincide con lo sfondo
+   pagina → il box sparisce e <strong> è scuro.
+   Da CSS-only seleziono il pattern: <strong> dentro .wl-modal-card e
+   i div con style inline che cita --bg-light */
+.wl-modal-card strong {
+    color: var(--color-text-dark);
+    font-weight: 700;
+}
+/* Box con background:var(--bg-light) nelle modali: in dark diventa
+   scuro come la pagina → uso un token che resta distinto. */
+.wl-modal-card div[style*="--bg-light"] {
+    background: var(--color-bg-input) !important;
+    border: 1px solid var(--color-border);
+}
+
 /* Tabella Logs: Messaggio colorato come gli altri campi (text-muted)
    e troncato con "..." su una sola riga se troppo lungo. Il Path resta
    come gli altri campi. Annulliamo gli stili inline del markup con
@@ -2136,9 +2153,6 @@ body.dark .admin-empty-row td {
 .admin-row-icon-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-lapse: collapse;
-    font-size: 0.92rem;
 }
 
 .admin-table thead th {
