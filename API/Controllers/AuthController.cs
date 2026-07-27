@@ -1,3 +1,5 @@
+using GestionaleRendicontazione.Api.Helpers;
+using GestionaleRendicontazione.Api.Helpers.Audit;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Domain.Constants;
@@ -14,21 +16,17 @@ namespace GestionaleRendicontazione.Api.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ITokenBlacklistService _blacklistService;
-        private readonly ILogger<AuthController> _logger;
+        private readonly IAuditLogger _audit;
 
         public AuthController(
             IAuthService authService,
             ITokenBlacklistService blacklistService,
-            ILogger<AuthController> logger)
+            IAuditLogger audit)
         {
             _authService = authService;
             _blacklistService = blacklistService;
-            _logger = logger;
+            _audit = audit;
         }
-
-
-
-        // TODO: AGGIUNGERE MESSAGGIO D'ERRORE PER LOGIN FALLITO
 
         [HttpPost("login")]
         [AllowAnonymous]
@@ -47,14 +45,14 @@ namespace GestionaleRendicontazione.Api.Controllers
             var result = await _authService.LoginAsync(request, cancellationToken);
             if (result is null)
             {
-                _logger.LogWarning("Login fallito per userName={UserName}", request.UserName);
+                _audit.AuthEvent("Login", request.UserName, success: false);
                 return Problem(
                     title: "Credenziali non valide",
                     detail: "userName o password errati.",
                     statusCode: StatusCodes.Status401Unauthorized);
             }
 
-            _logger.LogInformation("Login riuscito per userName={UserName}", request.UserName);
+            _audit.AuthEvent("Login", request.UserName, success: true);
             return Ok(result);
         }
 
@@ -64,10 +62,7 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Logout()
         {
-            var userName = User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
-                           ?? User.FindFirst("unique_name")?.Value
-                           ?? User.Identity?.Name
-                           ?? "(sconosciuto)";
+            var userName = User.GetUserName() ?? "(sconosciuto)";
 
             var jti = User.FindFirst("jti")?.Value;
             var expClaim = User.FindFirst("exp")?.Value;
@@ -79,10 +74,9 @@ namespace GestionaleRendicontazione.Api.Controllers
                     expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
                 }
                 await _blacklistService.BlacklistTokenAsync(jti, expiresAt);
-                _logger.LogInformation("Token JTI={Jti} inserito in blacklist per {UserName}", jti, userName);
             }
 
-            _logger.LogInformation("Logout completato per {UserName}", userName);
+            _audit.AuthEvent("Logout", userName, success: true);
             return NoContent();
         }
 
@@ -102,14 +96,14 @@ namespace GestionaleRendicontazione.Api.Controllers
 
             if (result is null)
             {
-                _logger.LogWarning("Registrazione fallita per userName={UserName}", request.UserName);
+                _audit.AuthEvent("Register", request.UserName, success: false);
                 return Problem(
                     title: "Registrazione fallita",
                     detail: "Impossibile creare l'utente. Lo userName potrebbe essere già in uso o la password non soddisfa i requisiti.",
                     statusCode: StatusCodes.Status422UnprocessableEntity);
             }
 
-            _logger.LogInformation("Registrazione completata con successo per userName={UserName}", request.UserName);
+            _audit.AuthEvent("Register", request.UserName, success: true);
             return Ok(result);
         }
     }

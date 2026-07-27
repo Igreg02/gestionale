@@ -1,10 +1,74 @@
+/* =========================================================================
+   Palette Colori — variabili centralizzate
+   Per cambiare un colore in tutto il sito basta modificare la variabile
+   corrispondente in :root qui sotto.
+   ========================================================================= */
+:root {
+    /* --- Bianco / neri base --- */
+    --color-white: #ffffff;
+    --color-white-08: rgba(255, 255, 255, 0.08);
+    --color-white-30: rgba(255, 255, 255, 0.3);
+    --color-white-65: rgba(255, 255, 255, 0.65);
+    --color-white-85: rgba(255, 255, 255, 0.85);
+
+    /* --- Testi --- */
+    --color-text-dark: #0f172a;
+    --color-text-muted: #64748b;
+    --color-text-loading: #6c757d;
+
+    /* --- Sfondi --- */
+    --color-bg-light: #f8fafc;
+    --color-bg-input: #fafbfc;
+    --color-bg-placeholder: #fdfdfd;
+
+    /* --- Bordi --- */
+    --color-border: #e2e8f0;
+    --color-border-strong: #cbd5e1;
+    --color-border-hover: #94a3b8;
+
+    /* --- Brand / Primary (blu) --- */
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+    --color-primary-light: #60a5fa;
+    --color-primary-bg: #eff6ff;
+    --color-primary-bg-hover: #f0f7ff;
+    --color-primary-bg-brand: rgba(37, 99, 235, 0.18);
+    --color-focus-ring: rgba(37, 99, 235, 0.1);
+
+    /* --- Success (verde) --- */
+    --color-success: #16a34a;
+    --color-success-bg: #f0fdf4;
+
+    /* --- Warning (arancione) --- */
+    --color-warning: #d97706;
+    --color-warning-bg: #fffbeb;
+
+    /* --- Danger (rosso) --- */
+    --color-danger: #dc2626;
+    --color-danger-hover: #b91c1c;
+    --color-danger-bg-hover: #fef2f2;
+    --color-danger-border-light: #fca5a5;
+    --color-danger-border-hover: #f87171;
+
+    /* --- Ombre / Overlay --- */
+    --shadow-color-dark: rgba(15, 23, 42, 0.05);
+    --shadow-color-dark-02: rgba(15, 23, 42, 0.02);
+    --shadow-color-dark-06: rgba(15, 23, 42, 0.06);
+    --shadow-color-dark-08: rgba(15, 23, 42, 0.08);
+    --shadow-color-dark-12: rgba(15, 23, 42, 0.12);
+    --shadow-color-dark-15: rgba(15, 23, 42, 0.15);
+    --shadow-color-dark-18: rgba(15, 23, 42, 0.18);
+    --shadow-color-dark-40: rgba(15, 23, 42, 0.4);
+    --shadow-color-dark-45: rgba(15, 23, 42, 0.45);
+}
+
 .loading-splash {
     display: flex;
     align-items: center;
     justify-content: center;
     height: 100vh;
     font-family: sans-serif;
-    color: #6c757d;
+    color: var(--color-text-loading);
 }
 
 #blazor-error-ui {
@@ -26,18 +90,20 @@
     top: 0.5rem;
 }
 
-/* Palette Colori & Stili Generali */
+/* =========================================================================
+   Stili Generali (alias legacy per retrocompatibilità)
+   ========================================================================= */
 :root {
-    --primary-blue: #2563eb;
-    --primary-blue-hover: #1d4ed8;
-    --bg-light: #f8fafc;
-    --text-dark: #0f172a;
-    --text-muted: #64748b;
-    --border-color: #e2e8f0;
+    --primary-blue: var(--color-primary);
+    --primary-blue-hover: var(--color-primary-hover);
+    --bg-light: var(--color-bg-light);
+    --text-dark: var(--color-text-dark);
+    --text-muted: var(--color-text-muted);
+    --border-color: var(--color-border);
 }
 
 body {
-    background-color: #f8fafc;
+    background-color: var(--color-bg-light);
     font-family: 'Inter', system-ui, sans-serif;
 }
 
@@ -45,16 +111,16 @@ body {
 .dashboard-title {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .dashboard-subtitle {
     font-size: 1.1rem;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .btn-new-worklog {
-    background-color: var(--primary-blue);
+    background-color: var(--color-primary);
     border: none;
     border-radius: 8px;
     padding: 10px 20px;
@@ -64,7 +130,7 @@ body {
 }
 
 .btn-new-worklog:hover {
-    background-color: var(--primary-blue-hover);
+    background-color: var(--color-primary-hover);
 }
 
 /* Griglia Worklog orizzontale fluida */
@@ -77,8 +143,8 @@ body {
 
 /* Card Singola - Si allarga per coprire tutta la riga disponibile */
 .worklog-card {
-    background: #ffffff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     flex: 1 1 260px; /* Minimo 260px, poi si espande proporzionalmente fino alla fine dello schermo */
     min-height: 180px;
@@ -100,25 +166,25 @@ body {
     font-size: 1.25rem;
 }
 
-.bg-light-blue { background-color: #eff6ff; }
-.bg-light-green { background-color: #f0fdf4; }
-.bg-light-orange { background-color: #fffbeb; }
+.bg-light-blue { background-color: var(--color-primary-bg); }
+.bg-light-green { background-color: var(--color-success-bg); }
+.bg-light-orange { background-color: var(--color-warning-bg); }
 
-.text-blue { color: var(--primary-blue); }
-.text-green { color: #16a34a; }
-.text-orange { color: #d97706; }
+.text-blue { color: var(--color-primary); }
+.text-green { color: var(--color-success); }
+.text-orange { color: var(--color-warning); }
 
 /* Testi Card */
 .worklog-id {
     font-size: 0.95rem;
     font-weight: 700;
     margin: 0;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .worklog-date {
     font-size: 0.8rem;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .worklog-hours {
@@ -142,7 +208,7 @@ body {
     font-size: 0.9rem;
     text-decoration: none;
     font-weight: 600;
-    color: #dc2626;
+    color: var(--color-danger);
     cursor: pointer;
     transition: opacity 0.15s ease;
 }
@@ -159,27 +225,27 @@ body {
 
 /* Card Placeholder tratteggiata */
 .card-placeholder-new {
-    border: 2px dashed #cbd5e1;
-    background: #fdfdfd;
+    border: 2px dashed var(--color-border-strong);
+    background: var(--color-bg-placeholder);
     cursor: pointer;
 }
 
 .card-placeholder-new:hover {
-    border-color: var(--primary-blue);
-    background-color: #f0f7ff;
+    border-color: var(--color-primary);
+    background-color: var(--color-primary-bg-hover);
 }
 
 /* Pannello Report */
 .report-panel {
-    background: #ffffff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 16px;
     padding: 1.75rem;
-    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.02);
+    box-shadow: 0 4px 12px var(--shadow-color-dark-02);
 }
 
 .icon-report-circle {
-    background: #eff6ff;
+    background: var(--color-primary-bg);
     padding: 6px;
     border-radius: 8px;
     display: inline-flex;
@@ -188,31 +254,31 @@ body {
 .report-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 /* Input personalizzati */
 .custom-input {
-    background-color: #f8fafc;
-    border: 1px solid var(--border-color);
+    background-color: var(--color-bg-light);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 10px 14px;
     font-size: 0.95rem;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .custom-input:focus {
-    background-color: #fff;
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background-color: var(--color-white);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .custom-input-icon {
-    background-color: #f8fafc;
-    border: 1px solid var(--border-color);
+    background-color: var(--color-bg-light);
+    border: 1px solid var(--color-border);
     border-left: none;
     border-radius: 0 10px 10px 0;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 /* Barra di ricerca worklog (accanto al bottone filtro) */
@@ -220,19 +286,19 @@ body {
     display: flex;
     align-items: center;
     gap: 0.55rem;
-    background-color: #f8fafc;
-    border: 1px solid var(--border-color);
+    background-color: var(--color-bg-light);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 0 14px;
     height: 46px;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     min-width: 220px;
 }
 
 .worklog-search:focus-within {
-    background-color: #fff;
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background-color: var(--color-white);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .worklog-search input {
@@ -241,14 +307,14 @@ body {
     background: transparent;
     outline: none;
     font-size: 0.95rem;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     height: 100%;
 }
 
 .worklog-search-clear {
     border: none;
     background: transparent;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     display: inline-flex;
     align-items: center;
     padding: 0;
@@ -256,7 +322,7 @@ body {
 }
 
 .worklog-search-clear:hover {
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 /* Bottone Filtro + popover */
@@ -267,8 +333,8 @@ body {
 
 .filter-toggle-btn {
     position: relative;
-    background-color: #fff;
-    color: var(--text-dark);
+    background-color: var(--color-white);
+    color: var(--color-text-dark);
     white-space: nowrap;
 }
 
@@ -276,7 +342,7 @@ body {
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background-color: var(--primary-blue);
+    background-color: var(--color-primary);
     display: inline-block;
     margin-left: 2px;
 }
@@ -294,27 +360,27 @@ body {
     right: 0;
     width: 320px;
     max-width: 90vw;
-    background: #fff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 12px 24px var(--shadow-color-dark-12);
     padding: 1rem;
     z-index: 1030;
 }
 
 /* Bottone Genera Report */
 .btn-genera {
-    background-color: var(--primary-blue);
+    background-color: var(--color-primary);
     border: none;
     border-radius: 10px;
     font-weight: 600;
     font-size: 0.95rem;
     transition: background 0.2s;
-    height: 46px; 
+    height: 46px;
 }
 
 .btn-genera:hover {
-    background-color: var(--primary-blue-hover);
+    background-color: var(--color-primary-hover);
 }
 /* =========================================================================
    F3 — App shell: sidebar + topbar (vedi TDD §7, Fase F3)
@@ -323,9 +389,9 @@ body {
 :root {
     --sidebar-width: 248px;
     --topbar-height: 64px;
-    --sidebar-bg: var(--text-dark);            /* riusa il token esistente: coerenza col resto della palette */
-    --sidebar-text-muted: rgba(255, 255, 255, 0.65);
-    --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+    --sidebar-bg: var(--color-text-dark);            /* riusa il token esistente: coerenza col resto della palette */
+    --sidebar-text-muted: var(--color-white-65);
+    --sidebar-hover-bg: var(--color-white-08);
 }
 
 * {
@@ -354,7 +420,7 @@ body {
 
 .sidebar-brand {
     padding: 1.35rem 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--color-white-08);
 }
 
 .sidebar-brand-link {
@@ -362,15 +428,19 @@ body {
     align-items: center;
     gap: 0.65rem;
     text-decoration: none;
-    color: #fff;
+    color: var(--color-white);
+}
+
+.sidebar-brand-text strong {
+    color: #ffffff;
 }
 
 .sidebar-brand-icon {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(37, 99, 235, 0.18);
-    color: #60a5fa;
+    background: var(--color-primary-bg-brand);
+    color: var(--color-primary-light);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -425,17 +495,24 @@ body {
 
 .sidebar-link:hover {
     background: var(--sidebar-hover-bg);
-    color: #fff;
+    /* Bianco fisso hardcoded: slegato da --color-white, che in dark viene
+       rimappato al colore delle card (#111a2e) e farebbe sparire la scritta
+       durante l'hover. */
+    color: #ffffff;
 }
 
 .sidebar-link.active {
-    background: var(--primary-blue);
-    color: #fff;
+    background: var(--color-primary);
+    color: #ffffff;
+}
+
+.sidebar-link.active:hover {
+    color: #ffffff;
 }
 
 .sidebar-footer {
     padding: 0.85rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid var(--color-white-08);
 }
 
 .sidebar-help {
@@ -468,8 +545,8 @@ body {
     align-items: center;
     gap: 1rem;
     padding: 0 1.5rem;
-    background: #fff;
-    border-bottom: 1px solid var(--border-color);
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-border);
     position: sticky;
     top: 0;
     z-index: 1020;
@@ -480,7 +557,7 @@ body {
     border: none;
     background: transparent;
     font-size: 1.35rem;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     padding: 0.25rem;
 }
 
@@ -488,13 +565,13 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
     border-radius: 999px;
     padding: 0.45rem 0.9rem;
     width: 100%;
     max-width: 320px;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .topbar-search input {
@@ -503,7 +580,7 @@ body {
     outline: none;
     font-size: 0.9rem;
     width: 100%;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .topbar-spacer {
@@ -513,7 +590,7 @@ body {
 .topbar-icon-btn {
     border: none;
     background: transparent;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     font-size: 1.15rem;
     width: 38px;
     height: 38px;
@@ -526,7 +603,7 @@ body {
 }
 
 .topbar-icon-btn:hover {
-    background: var(--bg-light);
+    background: var(--color-bg-light);
 }
 
 /* ---- User menu ---- */
@@ -546,15 +623,15 @@ body {
 }
 
 .user-menu-toggle:hover {
-    background: var(--bg-light);
+    background: var(--color-bg-light);
 }
 
 .avatar-circle {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: var(--primary-blue);
-    color: #fff;
+    background: var(--color-primary);
+    color: var(--color-white);
     font-size: 0.8rem;
     font-weight: 700;
     display: inline-flex;
@@ -566,12 +643,12 @@ body {
 .user-menu-name {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .user-menu-toggle .bi-chevron-down {
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .user-menu-backdrop {
@@ -586,10 +663,10 @@ body {
     top: calc(100% + 8px);
     right: 0;
     min-width: 190px;
-    background: #fff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
-    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 12px 24px var(--shadow-color-dark-12);
     padding: 0.4rem;
     z-index: 1030;
 }
@@ -600,17 +677,17 @@ body {
     padding: 0.55rem 0.7rem;
     border-radius: 8px;
     font-size: 0.9rem;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     text-decoration: none;
 }
 
 .user-menu-item:hover {
-    background: var(--bg-light);
+    background: var(--color-bg-light);
 }
 
 .user-menu-divider {
     height: 1px;
-    background: var(--border-color);
+    background: var(--color-border);
     margin: 0.3rem 0.2rem;
 }
 
@@ -621,8 +698,8 @@ body {
 }
 
 .placeholder-panel {
-    background: #ffffff;
-    border: 1px dashed var(--border-color);
+    background: var(--color-white);
+    border: 1px dashed var(--color-border);
     border-radius: 16px;
     padding: 3rem 1.5rem;
     text-align: center;
@@ -656,12 +733,12 @@ body {
 .error-page-title {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     margin-bottom: 0.5rem;
 }
 
 .error-page-text {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     margin-bottom: 1.5rem;
     max-width: 420px;
 }
@@ -680,7 +757,7 @@ body {
         display: block;
         position: fixed;
         inset: 0;
-        background: rgba(15, 23, 42, 0.45);
+        background: var(--shadow-color-dark-45);
         z-index: 1030;
     }
 
@@ -712,17 +789,17 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-light);
+    background: var(--color-bg-light);
     padding: 1.5rem;
 }
 
 .auth-card {
     max-width: 420px;
     width: 100%;
-    background: #fff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 12px 32px var(--shadow-color-dark-06);
     padding: 2.25rem 2rem;
 }
 
@@ -738,8 +815,8 @@ body {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: #eff6ff;
-    color: var(--primary-blue);
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
     font-size: 1.5rem;
     display: flex;
     align-items: center;
@@ -750,7 +827,7 @@ body {
 .auth-brand-title {
     font-size: 1.15rem;
     font-weight: 800;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     letter-spacing: 0.02em;
     line-height: 1.1;
 }
@@ -760,7 +837,7 @@ body {
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.14em;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .auth-welcome {
@@ -771,12 +848,12 @@ body {
 .auth-welcome h2 {
     font-size: 1.15rem;
     font-weight: 700;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     margin-bottom: 0.2rem;
 }
 
 .auth-welcome p {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     font-size: 0.9rem;
     margin: 0;
 }
@@ -784,14 +861,14 @@ body {
 .auth-input-group {
     display: flex;
     align-items: center;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 0 0.85rem;
 }
 
 .auth-input-group i {
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .auth-input-group input {
@@ -801,13 +878,13 @@ body {
     padding: 0.65rem 0.6rem;
     width: 100%;
     font-size: 0.95rem;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .auth-input-group:focus-within {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    background: #fff;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    background: var(--color-white);
 }
 
 /* =========================================================================
@@ -833,21 +910,21 @@ body {
     margin-top: 0.5rem;
     padding: 0.15rem 0.6rem;
     border-radius: 999px;
-    background: var(--bg-light);
-    border: 1px solid var(--border-color);
-    color: var(--text-muted);
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-muted);
     font-size: 0.72rem;
     font-weight: 600;
 }
 
 .worklog-status-panel,
 .worklog-empty {
-    background: #ffffff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 12px;
     padding: 2rem 1rem;
     text-align: center;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -856,7 +933,7 @@ body {
 
 .worklog-empty i {
     font-size: 1.5rem;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
 }
 
 .spin {
@@ -876,7 +953,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(15, 23, 42, 0.4);
+    background: var(--shadow-color-dark-40);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     display: flex;
@@ -887,24 +964,24 @@ body {
 }
 
 .custom-modal-card {
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--color-white-85);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-white-30);
     border-radius: 16px;
     padding: 1.75rem;
     width: 520px;
     max-width: 90%;
-    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 10px 40px var(--shadow-color-dark-15);
     animation: modal-slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .custom-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    border-bottom: 1px solid var(--shadow-color-dark-08);
     padding-bottom: 0.85rem;
     margin-bottom: 1.25rem;
 }
@@ -913,14 +990,14 @@ body {
     font-size: 1.25rem;
     font-weight: 700;
     margin: 0;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .btn-close-modal {
     background: none;
     border: none;
     font-size: 1.25rem;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 50%;
@@ -929,8 +1006,8 @@ body {
 }
 
 .btn-close-modal:hover {
-    background-color: rgba(15, 23, 42, 0.05);
-    color: var(--text-dark);
+    background-color: var(--shadow-color-dark);
+    color: var(--color-text-dark);
 }
 
 .custom-modal-body {
@@ -942,7 +1019,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    border-top: 1px solid var(--shadow-color-dark-08);
     padding-top: 1rem;
     margin-top: 1.5rem;
 }
@@ -962,14 +1039,14 @@ body {
    ========================================================================= */
 
 .wl-modal-card {
-    background: #fff;
+    background: var(--color-white);
     border-radius: 16px;
     width: 700px;
     max-width: 95vw;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 16px 48px rgba(15, 23, 42, 0.18);
+    box-shadow: 0 16px 48px var(--shadow-color-dark-18);
     animation: modal-slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
 }
@@ -977,8 +1054,8 @@ body {
 /* Header */
 .wl-modal-header {
     padding: 1rem 1.5rem 0.85rem;
-    border-bottom: 1px solid var(--border-color);
-    background: #fff;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-white);
 }
 
 .wl-modal-label {
@@ -986,7 +1063,7 @@ body {
     font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.1em;
-    color: var(--primary-blue);
+    color: var(--color-primary);
     margin-bottom: 0.4rem;
     text-transform: uppercase;
 }
@@ -994,13 +1071,13 @@ body {
 .wl-modal-title {
     font-size: 1.05rem;
     font-weight: 700;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
 }
 
 .wl-back-btn {
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     font-size: 1.1rem;
     cursor: pointer;
     padding: 0.2rem 0.4rem;
@@ -1010,8 +1087,8 @@ body {
 }
 
 .wl-back-btn:hover {
-    background: var(--bg-light);
-    color: var(--text-dark);
+    background: var(--color-bg-light);
+    color: var(--color-text-dark);
 }
 
 /* Body — due colonne */
@@ -1026,7 +1103,7 @@ body {
 .wl-modal-left {
     flex: 0 0 240px;
     padding: 1.25rem 1.5rem;
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid var(--color-border);
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -1045,7 +1122,7 @@ body {
     align-items: center;
     gap: 0.75rem;
     padding: 0.55rem 0;
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    border-bottom: 1px solid var(--shadow-color-dark-06);
 }
 
 .wl-field-row:last-child {
@@ -1055,49 +1132,49 @@ body {
 .wl-field-label {
     font-size: 0.82rem;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--color-text-muted);
     flex: 0 0 72px;
     white-space: nowrap;
 }
 
 .wl-field-input {
     flex: 1 1 auto;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 0.4rem 0.65rem;
     font-size: 0.88rem;
-    color: var(--text-dark);
-    background: #fafbfc;
+    color: var(--color-text-dark);
+    background: var(--color-bg-input);
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     appearance: auto;
 }
 
 .wl-field-input:focus {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    background: #fff;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    background: var(--color-white);
 }
 
 /* Area descrizione (colonna destra) */
 .wl-desc-area {
     flex: 1 1 auto;
     resize: none;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--color-border);
     border-radius: 10px;
     padding: 0.75rem;
     font-size: 0.9rem;
-    color: var(--text-dark);
-    background: #fafbfc;
+    color: var(--color-text-dark);
+    background: var(--color-bg-input);
     outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
     min-height: 180px;
 }
 
 .wl-desc-area:focus {
-    border-color: var(--primary-blue);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    background: #fff;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-focus-ring);
+    background: var(--color-white);
 }
 
 /* Toggle switch (restyle su palette app: bianco -> grigio chiaro -> grigio field -> blu primario) */
@@ -1105,26 +1182,26 @@ body {
     /* switch */
     --switch-width: 40px;
     --switch-height: 22px;
-    --switch-bg: var(--border-color);
-    --switch-checked-bg: var(--primary-blue);
+    --switch-bg: var(--color-border);
+    --switch-checked-bg: var(--color-primary);
     --switch-offset: calc((var(--switch-height) - var(--circle-diameter)) / 2);
     --switch-transition: all 0.2s cubic-bezier(0.27, 0.2, 0.25, 1.51);
     /* circle */
     --circle-diameter: 16px;
-    --circle-bg: #fff;
-    --circle-shadow: 1px 1px 2px rgba(15, 23, 42, 0.18);
-    --circle-checked-shadow: -1px 1px 2px rgba(15, 23, 42, 0.18);
+    --circle-bg: var(--color-white);
+    --circle-shadow: 1px 1px 2px var(--shadow-color-dark-18);
+    --circle-checked-shadow: -1px 1px 2px var(--shadow-color-dark-18);
     --circle-transition: var(--switch-transition);
     /* icon */
     --icon-transition: all 0.2s cubic-bezier(0.27, 0.2, 0.25, 1.51);
-    --icon-cross-color: var(--text-muted);
+    --icon-cross-color: var(--color-text-muted);
     --icon-cross-size: 6px;
-    --icon-checkmark-color: var(--primary-blue);
+    --icon-checkmark-color: var(--color-primary);
     --icon-checkmark-size: 10px;
     /* effect line */
     --effect-width: calc(var(--circle-diameter) / 2);
     --effect-height: calc(var(--effect-width) / 2 - 1px);
-    --effect-bg: var(--bg-light);
+    --effect-bg: var(--color-bg-light);
     --effect-border-radius: 1px;
     --effect-transition: all 0.2s ease-in-out;
 
@@ -1225,27 +1302,27 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 0.9rem 1.5rem;
-    border-top: 1px solid var(--border-color);
-    background: #fff;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-white);
     gap: 0.75rem;
 }
 
 /* Bottoni footer */
 .wl-btn-cancel {
-    background: #fff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 8px;
     padding: 0.45rem 1.2rem;
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-dark);
+    color: var(--color-text-dark);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
 }
 
 .wl-btn-cancel:hover {
-    background: var(--bg-light);
-    border-color: #94a3b8;
+    background: var(--color-bg-light);
+    border-color: var(--color-border-hover);
 }
 
 .wl-btn-cancel:disabled {
@@ -1254,13 +1331,13 @@ body {
 }
 
 .wl-btn-save {
-    background: var(--primary-blue);
+    background: var(--color-primary);
     border: none;
     border-radius: 8px;
     padding: 0.45rem 1.35rem;
     font-size: 0.9rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--color-white);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1269,7 +1346,7 @@ body {
 }
 
 .wl-btn-save:hover {
-    background: var(--primary-blue-hover);
+    background: var(--color-primary-hover);
 }
 
 .wl-btn-save:disabled {
@@ -1279,12 +1356,12 @@ body {
 
 .wl-btn-delete {
     background: none;
-    border: 1px solid #fca5a5;
+    border: 1px solid var(--color-danger-border-light);
     border-radius: 8px;
     padding: 0.45rem 1.1rem;
     font-size: 0.88rem;
     font-weight: 600;
-    color: #dc2626;
+    color: var(--color-danger);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1293,8 +1370,8 @@ body {
 }
 
 .wl-btn-delete:hover {
-    background: #fef2f2;
-    border-color: #f87171;
+    background: var(--color-danger-bg-hover);
+    border-color: var(--color-danger-border-hover);
 }
 
 .wl-btn-delete:disabled {
@@ -1304,14 +1381,14 @@ body {
 
 /* Variante solida del bottone elimina (nella modale di conferma) */
 .wl-btn-delete--solid {
-    background: #dc2626;
-    border-color: #dc2626;
-    color: #fff;
+    background: var(--color-danger);
+    border-color: var(--color-danger);
+    color: var(--color-white);
 }
 
 .wl-btn-delete--solid:hover {
-    background: #b91c1c;
-    border-color: #b91c1c;
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
 }
 
 /* Responsive: su mobile le due colonne si impilano */
@@ -1323,7 +1400,7 @@ body {
     .wl-modal-left {
         flex: none;
         border-right: none;
-        border-bottom: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--color-border);
     }
 
     .wl-field-row {
@@ -1352,8 +1429,8 @@ body {
 }
 
 .admin-panel {
-    background: #fff;
-    border: 1px solid var(--border-color);
+    background: var(--color-white);
+    border: 1px solid var(--color-border);
     border-radius: 14px;
     overflow: hidden;
 }
@@ -1362,6 +1439,654 @@ body {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.92rem;
+}
+
+.admin-table thead th {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    background: var(--color-bg-light);
+    color: var(--color-text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.admin-table tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-dark);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--color-bg-light);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-empty-row td {
+    text-align: center;
+    color: var(--color-text-muted);
+    padding: 2.5rem 1rem;
+}
+
+.admin-row-icon-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    transition: background 0.15s, color 0.15s;
+}
+
+.admin-row-icon-btn:hover {
+    background: var(--color-bg-light);
+    color: var(--color-primary);
+}
+
+.admin-row-icon-btn.is-danger:hover {
+    color: var(--color-danger);
+}
+
+.admin-row-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+/* Tabelle admin (Tipologie / Stati / Dipendenti / Aziende / Progetti):
+   il campo principale (Username / Nome / ecc.) è renderizzato nei .razor
+   con fw-semibold. Lo portiamo allo stesso tono "muted" degli altri
+   campi della riga, per coerenza visiva fra tutte le pagine admin. */
+.admin-table tbody td.fw-semibold {
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+/* Modali Delete (Azienda / Dipendente / Progetto / Stato / Tipologia):
+   il markup ha "Stai per eliminare..." con un box contenente <strong>Nome</strong>
+   su sfondo var(--bg-light). In dark --bg-light coincide con lo sfondo
+   pagina → il box sparisce e <strong> è scuro.
+   Da CSS-only seleziono il pattern: <strong> dentro .wl-modal-card e
+   i div con style inline che cita --bg-light */
+.wl-modal-card strong {
+    color: var(--color-text-dark);
+    font-weight: 700;
+}
+/* Box con background:var(--bg-light) nelle modali: in dark diventa
+   scuro come la pagina → uso un token che resta distinto. */
+.wl-modal-card div[style*="--bg-light"] {
+    background: var(--color-bg-input) !important;
+    border: 1px solid var(--color-border);
+}
+
+/* Tabella Logs: Messaggio colorato come gli altri campi (text-muted)
+   e troncato con "..." su una sola riga se troppo lungo. Il Path resta
+   come gli altri campi. Annulliamo gli stili inline del markup con
+   !important per restare CSS-only. */
+.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) tbody td:nth-child(5) {
+    display: table-cell !important;
+    color: var(--color-text-muted) !important;
+    max-width: 360px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) tbody td:nth-child(4) {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    color: var(--color-text-muted) !important;
+}
+
+
+/* =========================================================================
+   F4 — Dark mode (toggle nella topbar)
+   ========================================================================= */
+/* Bottone switch day/night stile "Galahhad" (Uiverse.io).
+   Markup: <label class="theme-switch"><input type="checkbox" ...>...</label>
+   Lo stato viene letto/scritto da wwwroot/js/theme.js, che applica la
+   classe "dark" al <body>. Qui sotto ridefiniamo i token CSS per il
+   tema scuro: tutte le componenti che già usano var(--color-*) si
+   aggiornano automaticamente. */
+
+.theme-switch {
+    --toggle-size: 18px;
+    --container-width: 5.625em;
+    --container-height: 2.5em;
+    --container-radius: 6.25em;
+    --container-light-bg: #3D7EAE;
+    --container-night-bg: #1D1F2C;
+    --circle-container-diameter: 3.375em;
+    --sun-moon-diameter: 2.125em;
+    --sun-bg: #ECCA2F;
+    --moon-bg: #C4C9D1;
+    --spot-color: #959DB1;
+    --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+    --stars-color: #fff;
+    --clouds-color: #F3FDFF;
+    --back-clouds-color: #AACADF;
+    --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: var(--toggle-size);
+}
+
+.theme-switch__container {
+    width: var(--container-width);
+    height: var(--container-height);
+    background-color: var(--container-light-bg);
+    border-radius: var(--container-radius);
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+    box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+    position: relative;
+}
+
+.theme-switch__container::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    -webkit-box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+    box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+    border-radius: var(--container-radius);
+}
+
+.theme-switch__checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.theme-switch__circle-container {
+    width: var(--circle-container-diameter);
+    height: var(--circle-container-diameter);
+    background-color: rgba(255, 255, 255, 0.1);
+    position: absolute;
+    left: var(--circle-container-offset);
+    top: var(--circle-container-offset);
+    border-radius: var(--container-radius);
+    -webkit-box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-transition: var(--circle-transition);
+    -o-transition: var(--circle-transition);
+    transition: var(--circle-transition);
+    pointer-events: none;
+}
+
+.theme-switch__sun-moon-container {
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    width: var(--sun-moon-diameter);
+    height: var(--sun-moon-diameter);
+    margin: auto;
+    border-radius: var(--container-radius);
+    background-color: var(--sun-bg);
+    -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+    -webkit-filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+    overflow: hidden;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+}
+
+.theme-switch__moon {
+    -webkit-transform: translateX(100%);
+    -ms-transform: translateX(100%);
+    transform: translateX(100%);
+    width: 100%;
+    height: 100%;
+    background-color: var(--moon-bg);
+    border-radius: inherit;
+    -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+    position: relative;
+}
+
+.theme-switch__spot {
+    position: absolute;
+    top: 0.75em;
+    left: 0.312em;
+    width: 0.75em;
+    height: 0.75em;
+    border-radius: var(--container-radius);
+    background-color: var(--spot-color);
+    -webkit-box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+    box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+}
+
+.theme-switch__spot:nth-of-type(2) {
+    width: 0.375em;
+    height: 0.375em;
+    top: 0.937em;
+    left: 1.375em;
+}
+
+.theme-switch__spot:nth-last-of-type(3) {
+    width: 0.25em;
+    height: 0.25em;
+    top: 0.312em;
+    left: 0.812em;
+}
+
+.theme-switch__clouds {
+    width: 1.25em;
+    height: 1.25em;
+    background-color: var(--clouds-color);
+    border-radius: var(--container-radius);
+    position: absolute;
+    bottom: -0.625em;
+    left: 0.312em;
+    -webkit-box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+    box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+    -webkit-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    -o-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+}
+
+.theme-switch__stars-container {
+    position: absolute;
+    color: var(--stars-color);
+    top: -100%;
+    left: 0.312em;
+    width: 2.75em;
+    height: auto;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+}
+
+/* actions */
+
+.theme-switch__checkbox:checked + .theme-switch__container {
+    background-color: var(--container-night-bg);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
+    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em);
+}
+
+.theme-switch__circle-container:hover {
+    left: calc(var(--circle-container-offset) + 0.187em);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
+    -webkit-transform: translate(0);
+    -ms-transform: translate(0);
+    transform: translate(0);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
+    bottom: -4.062em;
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+/* --- DARK MODE: override dei token --- *
+ * La classe .dark viene applicata a <body> da wwwroot/js/theme.js.
+ * Ridefiniamo i token di :root per il tema scuro; tutte le componenti
+ * che già usano var(--color-*) si aggiornano senza ulteriori override. */
+
+body.dark {
+    /* Sfondi */
+    --color-bg-light: #0a0f1c;
+    --color-bg-input: #111a2e;
+    --color-bg-placeholder: #0d1324;
+    --color-white: #111a2e;
+
+    /* Testi */
+    --color-text-dark: #e6ecf8;
+    /* Muted più chiaro per garantire contrasto WCAG AA sui label piccoli
+       (Periodo, Dipendente, Opzioni di raggruppamento, .text-muted, ecc.)
+       che usano questo token e stanno su sfondi scuri. */
+    --color-text-muted: #cbd5e1;
+    --color-text-loading: #9aa6c1;
+
+    /* Bordi */
+    --color-border: #2c3b5c;
+    --color-border-strong: #475569;
+    --color-border-hover: #64748b;
+
+    /* Primary (più chiaro per contrasto su sfondo scuro) */
+    --color-primary: #60a5fa;
+    --color-primary-hover: #93c5fd;
+    --color-primary-light: #93c5fd;
+    --color-primary-bg: rgba(96, 165, 250, 0.18);
+    --color-primary-bg-hover: rgba(96, 165, 250, 0.25);
+    --color-primary-bg-brand: rgba(96, 165, 250, 0.22);
+    --color-focus-ring: rgba(96, 165, 250, 0.25);
+
+    /* Sidebar (resta scura, scuriamo ancora di più) */
+    --sidebar-bg: #0d1324;
+    --sidebar-text-muted: #9aa6c1;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+
+    /* Ombre più profonde */
+    --shadow-color-dark: rgba(0, 0, 0, 0.45);
+    --shadow-color-dark-02: rgba(0, 0, 0, 0.10);
+    --shadow-color-dark-06: rgba(0, 0, 0, 0.25);
+    --shadow-color-dark-08: rgba(0, 0, 0, 0.35);
+    --shadow-color-dark-12: rgba(0, 0, 0, 0.50);
+    --shadow-color-dark-15: rgba(0, 0, 0, 0.55);
+    --shadow-color-dark-18: rgba(0, 0, 0, 0.60);
+    --shadow-color-dark-40: rgba(0, 0, 0, 0.75);
+    --shadow-color-dark-45: rgba(0, 0, 0, 0.80);
+
+    /* Stati */
+    --color-success: #4ade80;
+    --color-success-bg: rgba(74, 222, 128, 0.12);
+    --color-warning: #fbbf24;
+    --color-warning-bg: rgba(251, 191, 36, 0.12);
+    --color-danger: #f87171;
+    --color-danger-hover: #fca5a5;
+    --color-danger-bg-hover: rgba(248, 113, 113, 0.12);
+    --color-danger-border-light: #b91c1c;
+    --color-danger-border-hover: #ef4444;
+}
+
+/* --- DARK MODE: regole puntuali per componenti che hanno bisogno di
+   un trattamento specifico (icone, hover, form). Gran parte del resto
+   si aggiorna automaticamente via token. */
+
+body.dark {
+    color: var(--color-text-dark);
+}
+
+body.dark .auth-page {
+    background: var(--color-bg-light);
+}
+
+body.dark .auth-card {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .auth-input-group {
+    background: var(--color-bg-input);
+    border-color: var(--color-border);
+}
+
+body.dark .auth-input-group input {
+    color: var(--color-text-dark);
+    background: transparent;
+}
+
+body.dark .custom-input {
+    background-color: var(--color-bg-input);
+    color: var(--color-text-dark);
+    border-color: var(--color-border);
+}
+
+body.dark .custom-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+body.dark .custom-input:focus {
+    background-color: var(--color-bg-input);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem var(--color-focus-ring);
+}
+
+body.dark .filter-menu-dropdown {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .user-menu-dropdown {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .user-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .user-menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .user-menu-divider {
+    background: var(--color-border);
+}
+
+body.dark .topbar-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .placeholder-panel {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .worklog-search {
+    background: var(--color-bg-input);
+    border-color: var(--color-border);
+    color: var(--color-text-dark);
+}
+
+body.dark .worklog-search input {
+    color: var(--color-text-dark);
+}
+
+body.dark .worklog-search input::placeholder {
+    color: var(--color-text-muted);
+}
+
+body.dark .admin-row-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Testi specifici che devono restare ben leggibili sul dark.
+   Gran parte usa già --color-text-muted / --color-text-dark, ma
+   alcuni componenti usano colori fissi o token che vanno forzati. */
+
+/* Avatar utente: --color-white in dark è stato rimappato a #111a2e
+   per gli sfondi delle card, ma qui serve il bianco vero. */
+body.dark .avatar-circle {
+    color: #ffffff;
+}
+
+/* Chevron del menu utente */
+body.dark .user-menu-toggle .bi-chevron-down,
+body.dark .user-menu-name {
+    color: var(--color-text-dark);
+}
+body.dark .user-menu-toggle .bi-chevron-down {
+    color: var(--color-text-muted);
+}
+
+/* Label dei form (Periodo, Dipendente, Opzioni di raggruppamento, ecc.) */
+body.dark .wl-field-label,
+body.dark .form-label,
+body.dark .dashboard-subtitle,
+body.dark .worklog-date,
+body.dark .auth-welcome p,
+body.dark .error-page-text,
+body.dark .auth-brand-title small {
+    color: var(--color-text-muted);
+}
+
+/* .text-muted di Bootstrap (non mappato sui nostri token) */
+body.dark .text-muted {
+    color: var(--color-text-muted) !important;
+}
+
+/* Bottoni outline-secondary (es. reset filtri): bordo e testo chiari */
+body.dark .btn-outline-secondary {
+    color: var(--color-text-dark);
+    border-color: var(--color-border-strong);
+    background-color: transparent;
+}
+body.dark .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-dark);
+    border-color: var(--color-border-hover);
+}
+
+/* Cerchi icone: in dark il primary-bg diventa una tinta blu trasparente,
+   va assicurato che il colore del testo dentro sia leggibile. */
+body.dark .icon-circle.bg-light-blue {
+    color: var(--color-primary-light);
+}
+body.dark .icon-circle.bg-light-green {
+    color: var(--color-success);
+}
+body.dark .icon-circle.bg-light-orange {
+    color: var(--color-warning);
+}
+
+/* Icone piccole dentro ai cerchi (Mantieni leggibilità) */
+body.dark .text-blue {
+    color: var(--color-primary-light) !important;
+}
+body.dark .text-green {
+    color: var(--color-success) !important;
+}
+body.dark .text-orange {
+    color: var(--color-warning) !important;
+}
+
+/* Card placeholder tratteggiata (Dashboard) */
+body.dark .card-placeholder-new {
+    background: var(--color-bg-placeholder);
+    border-color: var(--color-border-strong);
+}
+body.dark .card-placeholder-new:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(96, 165, 250, 0.08);
+}
+
+/* Bottoni "Visualizza" ed "Elimina" nelle card worklog */
+body.dark .btn-visualizza,
+body.dark .btn-elimina {
+    color: var(--color-primary-light);
+}
+body.dark .btn-elimina {
+    color: var(--color-danger);
+}
+
+/* Sidebar: WORKLOG e link hover usano già #ffffff hardcoded (vedi regole
+   principali sopra) e non vanno più sovrascritti dal token --color-white,
+   che in dark è rimappato al colore delle card. */
+
+/* Icona del brand nella pagina di login */
+body.dark .auth-brand-icon {
+    background: var(--color-primary-bg);
+    color: var(--color-primary-light);
+}
+
+/* Icone pagine errore (403 / 404) */
+body.dark .error-page-icon {
+    background: var(--color-primary-bg);
+    color: var(--color-primary-light);
+}
+
+/* Worklog ID / Hours / title nelle card */
+body.dark .worklog-id,
+body.dark .worklog-hours,
+body.dark .dashboard-title,
+body.dark .report-title,
+body.dark .auth-welcome h2,
+body.dark .auth-brand-title,
+body.dark .error-page-title {
+    color: var(--color-text-dark);
+}
+
+/* Icona report (cerchio blu nella card Report) */
+body.dark .icon-report-circle {
+    background: var(--color-primary-bg);
+    color: var(--color-primary-light);
+}
+
+/* Scrollbar WebKit in dark */
+body.dark ::-webkit-scrollbar-thumb {
+    background: #2e3d56;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+}
+
+/* Bottoni icona admin (modifica/elimina nelle tabelle).
+   In light: hover con bg-light + primary.
+   In dark: bg-light coincide con lo sfondo della pagina (#0a0f1c),
+   quindi l'hover non si vede. Uso un bianco semi-trasparente. */
+body.dark .admin-row-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--color-primary-light);
+}
+
+body.dark .admin-row-icon-btn.is-danger:hover {
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--color-danger);
+}
+
+/* Hover delle righe delle tabelle admin (Dipendenti / Aziende / Logs /
+   Progetti / Tipologie / Stati). Stesso problema del bottone:
+   --color-bg-light in dark = stesso colore del body → invisibile. */
+body.dark .admin-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Intestazione tabelle admin (Utente / Livello / Metodo / Path /
+   Messaggio / Data, ecc.). In light hanno bg-light + testo muted.
+   In dark bg-light = stesso colore del body → header "schiacciato".
+   Forzo uno sfondo leggermente più chiaro del body per staccare
+   visivamente l'intestazione dal contenuto. */
+body.dark .admin-table thead th {
+    background: var(--color-bg-input);
+    color: var(--color-text-muted);
+    border-bottom-color: var(--color-border-strong);
+}
+
+/* Riga vuota delle tabelle admin */
+body.dark .admin-empty-row td {
+    color: var(--color-text-muted);
 }
 
 .admin-table thead th {
@@ -1414,6 +2139,138 @@ body {
     justify-content: center;
     color: var(--text-muted);
     transition: background 0.15s, color 0.15s;
+}
+
+.admin-row-icon-btn:hover {
+    background: var(--bg-light);
+    color: var(--primary-blue);
+}
+
+.admin-row-icon-btn.is-danger:hover {
+    color: #dc2626;
+}
+
+.admin-row-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-table thead th {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-light);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--bg-light);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-empty-row td {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2.5rem 1rem;
+}
+
+.admin-row-icon-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s;
+}
+
+.admin-row-icon-btn:hover {
+    background: var(--bg-light);
+    color: var(--primary-blue);
+}
+
+.admin-row-icon-btn.is-danger:hover {
+    color: #dc2626;
+}
+
+.admin-row-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-table thead th {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-light);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--bg-light);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-empty-row td {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2.5rem 1rem;
+}
+
+.admin-row-icon-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition:  0.15s, color 0.15s;
 }
 
 .admin-row-icon-btn:hover {

@@ -5,12 +5,6 @@ using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-
-//TODO: E' una BOZZA ancora da testare
-
-//TODO: ReportDataController valida from > to ma non un range massimo (rischio query enormi su periodi anni).
-
-
 namespace GestionaleRendicontazione.Api.Controllers
 {
     [ApiController]
@@ -19,12 +13,10 @@ namespace GestionaleRendicontazione.Api.Controllers
     public class ReportDataController : ControllerBase
     {
         private readonly IReportService _reportService;
-        private readonly ILogger<ReportDataController> _logger;
 
-        public ReportDataController(IReportService reportService, ILogger<ReportDataController> logger)
+        public ReportDataController(IReportService reportService)
         {
             _reportService = reportService;
-            _logger = logger;
         }
 
         /// <summary>Admin: report aggregato per progetto/periodo.</summary>

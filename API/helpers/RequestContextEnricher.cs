@@ -23,7 +23,10 @@ namespace GestionaleRendicontazione.Api.Helpers
             var context = _httpContextAccessor.HttpContext;
             if (context is null)
             {
-                // Log emessi fuori da una richiesta HTTP (avvio app, seeding, ecc.)
+                // Log emessi fuori da una richiesta HTTP (avvio app, seeding, background job).
+                // Li marchiamo come "system" per distinguerli dalle richieste anonime esterne
+                // (che invece ricevono "Anonymous" da ClaimsPrincipalExtensions.GetUserId).
+                logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("UserId", "system"));
                 return;
             }
 

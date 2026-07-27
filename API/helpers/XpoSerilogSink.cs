@@ -30,7 +30,12 @@ namespace GestionaleRendicontazione.Api.Helpers
                 {
                     var logDb = new LogApplicativo(uow)
                     {
-                        Data = logEvent.Timestamp.DateTime,
+                        // Serilog emette il Timestamp come DateTimeOffset in UTC.
+                        // Su SQLite (senza informazioni di Kind) il valore verrebbe
+                        // riletto come ora locale e mostrerebbe uno sfasamento di +2h
+                        // in estate. Convertiamo esplicitamente in ora locale italiana
+                        // prima di persisterlo, così la lettura torna coerente.
+                        Data = logEvent.Timestamp.LocalDateTime,
                         Livello = logEvent.Level.ToString(),
                         Messaggio = logEvent.RenderMessage(),
                         StackTrace = logEvent.Exception?.StackTrace ?? string.Empty,
