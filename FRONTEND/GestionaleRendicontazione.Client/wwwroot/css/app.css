@@ -1506,53 +1506,35 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
 }
-
-/* =========================================================================
-   Tabella Logs — colonne a larghezza fissa e messaggio troncato a 2 righe
-   ========================================================================= */
-/* La tabella Logs contiene esattamente 6 <th>: la uso come ancora per
-   applicare regole SOLO a questa tabella senza toccare il markup.
-   - table-layout: fixed → tutte le colonne rispettano la larghezza
-     dichiarata, niente celle che si "allargano" seguendo il testo
-     (causa principale dei border-bottom storti).
-   - larghezze esplicite per colonna: niente più drift.
-   - la cella Messaggio usa line-clamp per troncare a 2 righe con
-     ellissi invece di spezzare la griglia. */
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) {
-    table-layout: fixed;
-    width: 100%;
-}
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) thead th:nth-child(1) { width: 12%; }
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) thead th:nth-child(2) { width: 8%; }
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) thead th:nth-child(3) { width: 8%; }
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) thead th:nth-child(4) { width: 20%; }
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) thead th:nth-child(5) { width: 40%; }
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) thead th:nth-child(6) { width: 12%; }
-
-/* Allinea le td corrispondenti sulla stessa larghezza delle th */
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) tbody td {
-    overflow: hidden;
-    vertical-align: middle;
+/* Tabelle admin (Tipologie / Stati / Dipendenti / Aziende / Progetti):
+   il campo principale (Username / Nome / ecc.) è renderizzato nei .razor
+   con fw-semibold. Lo portiamo allo stesso tono "muted" degli altri
+   campi della riga, per coerenza visiva fra tutte le pagine admin. */
+.admin-table tbody td.fw-semibold {
+    color: var(--color-text-muted);
+    font-weight: 600;
 }
 
-/* Messaggio: troncamento a 2 righe con ellissi. Niente più testo che
-   "spinge" la cella → i border-bottom tornano dritti. */
+/* Tabella Logs: Messaggio colorato come gli altri campi (text-muted)
+   e troncato con "..." su una sola riga se troppo lungo. Il Path resta
+   come gli altri campi. Annulliamo gli stili inline del markup con
+   !important per restare CSS-only. */
 .admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) tbody td:nth-child(5) {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    word-break: break-word;
+    display: table-cell !important;
+    color: var(--color-text-muted) !important;
+    max-width: 360px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) tbody td:nth-child(4) {
+    max-width: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    color: var(--color-text-muted) !important;
 }
 
-/* Path: stessa larghezza fissa, niente deformazioni */
-.admin-table:has(thead th:first-child:nth-last-child(6)):has(thead th:nth-child(5)) tbody td:nth-child(4) {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 
 /* =========================================================================
    F4 — Dark mode (toggle nella topbar)

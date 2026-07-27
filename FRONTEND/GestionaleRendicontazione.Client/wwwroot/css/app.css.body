@@ -1,0 +1,738 @@
+
+
+/* =========================================================================
+   F4 — Dark mode (toggle nella topbar)
+   ========================================================================= */
+/* Bottone switch day/night stile "Galahhad" (Uiverse.io).
+   Markup: <label class="theme-switch"><input type="checkbox" ...>...</label>
+   Lo stato viene letto/scritto da wwwroot/js/theme.js, che applica la
+   classe "dark" al <body>. Qui sotto ridefiniamo i token CSS per il
+   tema scuro: tutte le componenti che già usano var(--color-*) si
+   aggiornano automaticamente. */
+
+.theme-switch {
+    --toggle-size: 18px;
+    --container-width: 5.625em;
+    --container-height: 2.5em;
+    --container-radius: 6.25em;
+    --container-light-bg: #3D7EAE;
+    --container-night-bg: #1D1F2C;
+    --circle-container-diameter: 3.375em;
+    --sun-moon-diameter: 2.125em;
+    --sun-bg: #ECCA2F;
+    --moon-bg: #C4C9D1;
+    --spot-color: #959DB1;
+    --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+    --stars-color: #fff;
+    --clouds-color: #F3FDFF;
+    --back-clouds-color: #AACADF;
+    --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-size: var(--toggle-size);
+}
+
+.theme-switch__container {
+    width: var(--container-width);
+    height: var(--container-height);
+    background-color: var(--container-light-bg);
+    border-radius: var(--container-radius);
+    overflow: hidden;
+    cursor: pointer;
+    -webkit-box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+    box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+    position: relative;
+}
+
+.theme-switch__container::before {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    -webkit-box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+    box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+    border-radius: var(--container-radius);
+}
+
+.theme-switch__checkbox {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.theme-switch__circle-container {
+    width: var(--circle-container-diameter);
+    height: var(--circle-container-diameter);
+    background-color: rgba(255, 255, 255, 0.1);
+    position: absolute;
+    left: var(--circle-container-offset);
+    top: var(--circle-container-offset);
+    border-radius: var(--container-radius);
+    -webkit-box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-transition: var(--circle-transition);
+    -o-transition: var(--circle-transition);
+    transition: var(--circle-transition);
+    pointer-events: none;
+}
+
+.theme-switch__sun-moon-container {
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+    width: var(--sun-moon-diameter);
+    height: var(--sun-moon-diameter);
+    margin: auto;
+    border-radius: var(--container-radius);
+    background-color: var(--sun-bg);
+    -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+    -webkit-filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+    filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+    overflow: hidden;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+}
+
+.theme-switch__moon {
+    -webkit-transform: translateX(100%);
+    -ms-transform: translateX(100%);
+    transform: translateX(100%);
+    width: 100%;
+    height: 100%;
+    background-color: var(--moon-bg);
+    border-radius: inherit;
+    -webkit-box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+    box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+    position: relative;
+}
+
+.theme-switch__spot {
+    position: absolute;
+    top: 0.75em;
+    left: 0.312em;
+    width: 0.75em;
+    height: 0.75em;
+    border-radius: var(--container-radius);
+    background-color: var(--spot-color);
+    -webkit-box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+    box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+}
+
+.theme-switch__spot:nth-of-type(2) {
+    width: 0.375em;
+    height: 0.375em;
+    top: 0.937em;
+    left: 1.375em;
+}
+
+.theme-switch__spot:nth-last-of-type(3) {
+    width: 0.25em;
+    height: 0.25em;
+    top: 0.312em;
+    left: 0.812em;
+}
+
+.theme-switch__clouds {
+    width: 1.25em;
+    height: 1.25em;
+    background-color: var(--clouds-color);
+    border-radius: var(--container-radius);
+    position: absolute;
+    bottom: -0.625em;
+    left: 0.312em;
+    -webkit-box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+    box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+    -webkit-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    -o-transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+    transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+}
+
+.theme-switch__stars-container {
+    position: absolute;
+    color: var(--stars-color);
+    top: -100%;
+    left: 0.312em;
+    width: 2.75em;
+    height: auto;
+    -webkit-transition: var(--transition);
+    -o-transition: var(--transition);
+    transition: var(--transition);
+}
+
+/* actions */
+
+.theme-switch__checkbox:checked + .theme-switch__container {
+    background-color: var(--container-night-bg);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
+    left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em);
+}
+
+.theme-switch__circle-container:hover {
+    left: calc(var(--circle-container-offset) + 0.187em);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon {
+    -webkit-transform: translate(0);
+    -ms-transform: translate(0);
+    transform: translate(0);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds {
+    bottom: -4.062em;
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+    top: 50%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+/* --- DARK MODE: override dei token --- *
+ * La classe .dark viene applicata a <body> da wwwroot/js/theme.js.
+ * Ridefiniamo i token di :root per il tema scuro; tutte le componenti
+ * che già usano var(--color-*) si aggiornano senza ulteriori override. */
+
+body.dark {
+    /* Sfondi */
+    --color-bg-light: #0a0f1c;
+    --color-bg-input: #111a2e;
+    --color-bg-placeholder: #0d1324;
+    --color-white: #111a2e;
+
+    /* Testi */
+    --color-text-dark: #e6ecf8;
+    /* Muted più chiaro per garantire contrasto WCAG AA sui label piccoli
+       (Periodo, Dipendente, Opzioni di raggruppamento, .text-muted, ecc.)
+       che usano questo token e stanno su sfondi scuri. */
+    --color-text-muted: #cbd5e1;
+    --color-text-loading: #9aa6c1;
+
+    /* Bordi */
+    --color-border: #2c3b5c;
+    --color-border-strong: #475569;
+    --color-border-hover: #64748b;
+
+    /* Primary (più chiaro per contrasto su sfondo scuro) */
+    --color-primary: #60a5fa;
+    --color-primary-hover: #93c5fd;
+    --color-primary-light: #93c5fd;
+    --color-primary-bg: rgba(96, 165, 250, 0.18);
+    --color-primary-bg-hover: rgba(96, 165, 250, 0.25);
+    --color-primary-bg-brand: rgba(96, 165, 250, 0.22);
+    --color-focus-ring: rgba(96, 165, 250, 0.25);
+
+    /* Sidebar (resta scura, scuriamo ancora di più) */
+    --sidebar-bg: #0d1324;
+    --sidebar-text-muted: #9aa6c1;
+    --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+
+    /* Ombre più profonde */
+    --shadow-color-dark: rgba(0, 0, 0, 0.45);
+    --shadow-color-dark-02: rgba(0, 0, 0, 0.10);
+    --shadow-color-dark-06: rgba(0, 0, 0, 0.25);
+    --shadow-color-dark-08: rgba(0, 0, 0, 0.35);
+    --shadow-color-dark-12: rgba(0, 0, 0, 0.50);
+    --shadow-color-dark-15: rgba(0, 0, 0, 0.55);
+    --shadow-color-dark-18: rgba(0, 0, 0, 0.60);
+    --shadow-color-dark-40: rgba(0, 0, 0, 0.75);
+    --shadow-color-dark-45: rgba(0, 0, 0, 0.80);
+
+    /* Stati */
+    --color-success: #4ade80;
+    --color-success-bg: rgba(74, 222, 128, 0.12);
+    --color-warning: #fbbf24;
+    --color-warning-bg: rgba(251, 191, 36, 0.12);
+    --color-danger: #f87171;
+    --color-danger-hover: #fca5a5;
+    --color-danger-bg-hover: rgba(248, 113, 113, 0.12);
+    --color-danger-border-light: #b91c1c;
+    --color-danger-border-hover: #ef4444;
+}
+
+/* --- DARK MODE: regole puntuali per componenti che hanno bisogno di
+   un trattamento specifico (icone, hover, form). Gran parte del resto
+   si aggiorna automaticamente via token. */
+
+body.dark {
+    color: var(--color-text-dark);
+}
+
+body.dark .auth-page {
+    background: var(--color-bg-light);
+}
+
+body.dark .auth-card {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .auth-input-group {
+    background: var(--color-bg-input);
+    border-color: var(--color-border);
+}
+
+body.dark .auth-input-group input {
+    color: var(--color-text-dark);
+    background: transparent;
+}
+
+body.dark .custom-input {
+    background-color: var(--color-bg-input);
+    color: var(--color-text-dark);
+    border-color: var(--color-border);
+}
+
+body.dark .custom-input::placeholder {
+    color: var(--color-text-muted);
+}
+
+body.dark .custom-input:focus {
+    background-color: var(--color-bg-input);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 0.2rem var(--color-focus-ring);
+}
+
+body.dark .filter-menu-dropdown {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .user-menu-dropdown {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .user-menu-toggle:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .user-menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .user-menu-divider {
+    background: var(--color-border);
+}
+
+body.dark .topbar-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark .placeholder-panel {
+    background: var(--color-white);
+    border-color: var(--color-border);
+}
+
+body.dark .worklog-search {
+    background: var(--color-bg-input);
+    border-color: var(--color-border);
+    color: var(--color-text-dark);
+}
+
+body.dark .worklog-search input {
+    color: var(--color-text-dark);
+}
+
+body.dark .worklog-search input::placeholder {
+    color: var(--color-text-muted);
+}
+
+body.dark .admin-row-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+/* Testi specifici che devono restare ben leggibili sul dark.
+   Gran parte usa già --color-text-muted / --color-text-dark, ma
+   alcuni componenti usano colori fissi o token che vanno forzati. */
+
+/* Avatar utente: --color-white in dark è stato rimappato a #111a2e
+   per gli sfondi delle card, ma qui serve il bianco vero. */
+body.dark .avatar-circle {
+    color: #ffffff;
+}
+
+/* Chevron del menu utente */
+body.dark .user-menu-toggle .bi-chevron-down,
+body.dark .user-menu-name {
+    color: var(--color-text-dark);
+}
+body.dark .user-menu-toggle .bi-chevron-down {
+    color: var(--color-text-muted);
+}
+
+/* Label dei form (Periodo, Dipendente, Opzioni di raggruppamento, ecc.) */
+body.dark .wl-field-label,
+body.dark .form-label,
+body.dark .dashboard-subtitle,
+body.dark .worklog-date,
+body.dark .auth-welcome p,
+body.dark .error-page-text,
+body.dark .auth-brand-title small {
+    color: var(--color-text-muted);
+}
+
+/* .text-muted di Bootstrap (non mappato sui nostri token) */
+body.dark .text-muted {
+    color: var(--color-text-muted) !important;
+}
+
+/* Bottoni outline-secondary (es. reset filtri): bordo e testo chiari */
+body.dark .btn-outline-secondary {
+    color: var(--color-text-dark);
+    border-color: var(--color-border-strong);
+    background-color: transparent;
+}
+body.dark .btn-outline-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-dark);
+    border-color: var(--color-border-hover);
+}
+
+/* Cerchi icone: in dark il primary-bg diventa una tinta blu trasparente,
+   va assicurato che il colore del testo dentro sia leggibile. */
+body.dark .icon-circle.bg-light-blue {
+    color: var(--color-primary-light);
+}
+body.dark .icon-circle.bg-light-green {
+    color: var(--color-success);
+}
+body.dark .icon-circle.bg-light-orange {
+    color: var(--color-warning);
+}
+
+/* Icone piccole dentro ai cerchi (Mantieni leggibilità) */
+body.dark .text-blue {
+    color: var(--color-primary-light) !important;
+}
+body.dark .text-green {
+    color: var(--color-success) !important;
+}
+body.dark .text-orange {
+    color: var(--color-warning) !important;
+}
+
+/* Card placeholder tratteggiata (Dashboard) */
+body.dark .card-placeholder-new {
+    background: var(--color-bg-placeholder);
+    border-color: var(--color-border-strong);
+}
+body.dark .card-placeholder-new:hover {
+    border-color: var(--color-primary);
+    background-color: rgba(96, 165, 250, 0.08);
+}
+
+/* Bottoni "Visualizza" ed "Elimina" nelle card worklog */
+body.dark .btn-visualizza,
+body.dark .btn-elimina {
+    color: var(--color-primary-light);
+}
+body.dark .btn-elimina {
+    color: var(--color-danger);
+}
+
+/* Sidebar: WORKLOG e link hover usano già #ffffff hardcoded (vedi regole
+   principali sopra) e non vanno più sovrascritti dal token --color-white,
+   che in dark è rimappato al colore delle card. */
+
+/* Icona del brand nella pagina di login */
+body.dark .auth-brand-icon {
+    background: var(--color-primary-bg);
+    color: var(--color-primary-light);
+}
+
+/* Icone pagine errore (403 / 404) */
+body.dark .error-page-icon {
+    background: var(--color-primary-bg);
+    color: var(--color-primary-light);
+}
+
+/* Worklog ID / Hours / title nelle card */
+body.dark .worklog-id,
+body.dark .worklog-hours,
+body.dark .dashboard-title,
+body.dark .report-title,
+body.dark .auth-welcome h2,
+body.dark .auth-brand-title,
+body.dark .error-page-title {
+    color: var(--color-text-dark);
+}
+
+/* Icona report (cerchio blu nella card Report) */
+body.dark .icon-report-circle {
+    background: var(--color-primary-bg);
+    color: var(--color-primary-light);
+}
+
+/* Scrollbar WebKit in dark */
+body.dark ::-webkit-scrollbar-thumb {
+    background: #2e3d56;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
+}
+
+/* Bottoni icona admin (modifica/elimina nelle tabelle).
+   In light: hover con bg-light + primary.
+   In dark: bg-light coincide con lo sfondo della pagina (#0a0f1c),
+   quindi l'hover non si vede. Uso un bianco semi-trasparente. */
+body.dark .admin-row-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.10);
+    color: var(--color-primary-light);
+}
+
+body.dark .admin-row-icon-btn.is-danger:hover {
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--color-danger);
+}
+
+/* Hover delle righe delle tabelle admin (Dipendenti / Aziende / Logs /
+   Progetti / Tipologie / Stati). Stesso problema del bottone:
+   --color-bg-light in dark = stesso colore del body → invisibile. */
+body.dark .admin-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* Intestazione tabelle admin (Utente / Livello / Metodo / Path /
+   Messaggio / Data, ecc.). In light hanno bg-light + testo muted.
+   In dark bg-light = stesso colore del body → header "schiacciato".
+   Forzo uno sfondo leggermente più chiaro del body per staccare
+   visivamente l'intestazione dal contenuto. */
+body.dark .admin-table thead th {
+    background: var(--color-bg-input);
+    color: var(--color-text-muted);
+    border-bottom-color: var(--color-border-strong);
+}
+
+/* Riga vuota delle tabelle admin */
+body.dark .admin-empty-row td {
+    color: var(--color-text-muted);
+}
+
+.admin-table thead th {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-light);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--bg-light);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-empty-row td {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2.5rem 1rem;
+}
+
+.admin-row-icon-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s;
+}
+
+.admin-row-icon-btn:hover {
+    background: var(--bg-light);
+    color: var(--primary-blue);
+}
+
+.admin-row-icon-btn.is-danger:hover {
+    color: #dc2626;
+}
+
+.admin-row-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+lapse: collapse;
+    font-size: 0.92rem;
+}
+
+.admin-table thead th {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-light);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--bg-light);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-empty-row td {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2.5rem 1rem;
+}
+
+.admin-row-icon-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s;
+}
+
+.admin-row-icon-btn:hover {
+    background: var(--bg-light);
+    color: var(--primary-blue);
+}
+
+.admin-row-icon-btn.is-danger:hover {
+    color: #dc2626;
+}
+
+.admin-row-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-table thead th {
+    text-align: left;
+    padding: 0.85rem 1.25rem;
+    background: var(--bg-light);
+    color: var(--text-muted);
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.admin-table tbody td {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-dark);
+    vertical-align: middle;
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-table tbody tr:hover {
+    background: var(--bg-light);
+}
+
+.admin-table-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.admin-empty-row td {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 2.5rem 1rem;
+}
+
+.admin-row-icon-btn {
+    border: none;
+    background: transparent;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    transition:  0.15s, color 0.15s;
+}
+
+.admin-row-icon-btn:hover {
+    background: var(--bg-light);
+    color: var(--primary-blue);
+}
+
+.admin-row-icon-btn.is-danger:hover {
+    color: #dc2626;
+}
+
+.admin-row-icon-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
