@@ -29,6 +29,11 @@ namespace GestionaleRendicontazione.Client.Services.Reports
         private const double DescLineHeight = 11;
         private const int MaxDescLines = 3;
 
+        // Limite di sicurezza sul numero di righe prodotte per singola cella.
+        // Evita che un input patologico (testo chilometrico, font non pronto,
+        // misure che restituiscono 0) mandi in stallo il rendering o Blazor WASM.
+        private const int MaxWrappedLinesPerCell = 20;
+
         private static readonly object _fontInitLock = new();
         private static bool _fontResolverRegistered;
 
@@ -138,35 +143,83 @@ namespace GestionaleRendicontazione.Client.Services.Reports
             void DrawRow(WorkLogResponseDto w)
             {
                 var desc = string.IsNullOrWhiteSpace(w.Description) ? "-" : w.Description!;
-                int approxCharsPerLine = Math.Max(20, (int)(colWidths[4] / 4.2));
-                int lines = Math.Min(MaxDescLines, Math.Max(1, (desc.Length + approxCharsPerLine - 1) / approxCharsPerLine));
-                double blockHeight = Math.Max(RowMinHeight, lines * DescLineHeight + 4);
+                var projectName = w.ProjectName ?? string.Empty;
+                var typeName = w.TypeName ?? string.Empty;
+                var statusName = w.StatusName ?? string.Empty;
+
+                const double cellPadding = 6; // 3pt per lato
+
+                // Spezza ogni campo sulla colonna in righe che stanno nella larghezza
+                // disponibile, misurando il testo con il font reale. Se un singolo
+                // valore è più largo della colonna, va a capo tagliando la parola.
+                var projectLines = WrapText(gfx, projectName, fontRow, colWidths[1] - cellPadding);
+                var typeLines = WrapText(gfx, typeName, fontRow, colWidths[2] - cellPadding);
+                var statusLines = WrapText(gfx, statusName, fontRow, colWidths[3] - cellPadding);
+                var descLines = WrapText(gfx, desc, fontRow, colWidths[4] - cellPadding);
+
+                // La descrizione resta limitata a MaxDescLines righe, con ellissi
+                // finale se il testo originale non ci stava tutto.
+                if (descLines.Count > MaxDescLines)
+                {
+                    var lastIdx = MaxDescLines - 1;
+                    var lastLine = descLines[lastIdx];
+                    if (lastLine.EndsWith("-")) lastLine = lastLine.Substring(0, lastLine.Length - 1);
+                    descLines = descLines.Take(MaxDescLines).ToList();
+                    descLines[lastIdx] = lastLine + "…";
+                }
+
+                int maxLines = Math.Max(1,
+                    Math.Max(projectLines.Count,
+                    Math.Max(typeLines.Count,
+                    Math.Max(statusLines.Count, descLines.Count))));
+                double blockHeight = Math.Max(RowMinHeight, maxLines * DescLineHeight + 4);
 
                 EnsureRoom(blockHeight + 1);
 
-                // Data
+                // Data (una sola riga, formato fisso)
                 gfx.DrawString(w.Date.ToString("dd/MM/yyyy"), fontRow, XBrushes.Black,
-                    new XRect(x + 3, y + 2, colWidths[0] - 6, RowMinHeight), XStringFormats.TopLeft);
+                    new XRect(x + 3, y + 2, colWidths[0] - cellPadding, RowMinHeight), XStringFormats.TopLeft);
+
+                // Progetto (multilinea)
                 double cx = x + colWidths[0];
-                // Progetto
-                gfx.DrawString(Truncate(w.ProjectName, 22), fontRow, XBrushes.Black,
-                    new XRect(cx + 3, y + 2, colWidths[1] - 6, RowMinHeight), XStringFormats.TopLeft);
+                for (int i = 0; i < projectLines.Count; i++)
+                {
+                    gfx.DrawString(projectLines[i], fontRow, XBrushes.Black,
+                        new XRect(cx + 3, y + 2 + i * DescLineHeight, colWidths[1] - cellPadding, DescLineHeight),
+                        XStringFormats.TopLeft);
+                }
                 cx += colWidths[1];
-                // Tipo
-                gfx.DrawString(Truncate(w.TypeName, 18), fontRow, XBrushes.Black,
-                    new XRect(cx + 3, y + 2, colWidths[2] - 6, RowMinHeight), XStringFormats.TopLeft);
+
+                // Tipo (multilinea)
+                for (int i = 0; i < typeLines.Count; i++)
+                {
+                    gfx.DrawString(typeLines[i], fontRow, XBrushes.Black,
+                        new XRect(cx + 3, y + 2 + i * DescLineHeight, colWidths[2] - cellPadding, DescLineHeight),
+                        XStringFormats.TopLeft);
+                }
                 cx += colWidths[2];
-                // Stato
-                gfx.DrawString(Truncate(w.StatusName, 16), fontRow, XBrushes.Black,
-                    new XRect(cx + 3, y + 2, colWidths[3] - 6, RowMinHeight), XStringFormats.TopLeft);
+
+                // Stato (multilinea)
+                for (int i = 0; i < statusLines.Count; i++)
+                {
+                    gfx.DrawString(statusLines[i], fontRow, XBrushes.Black,
+                        new XRect(cx + 3, y + 2 + i * DescLineHeight, colWidths[3] - cellPadding, DescLineHeight),
+                        XStringFormats.TopLeft);
+                }
                 cx += colWidths[3];
+
                 // Descrizione (multilinea)
-                var descRect = new XRect(cx + 3, y + 2, colWidths[4] - 6, lines * DescLineHeight);
-                gfx.DrawString(desc, fontRow, XBrushes.Black, descRect, XStringFormats.TopLeft);
+                for (int i = 0; i < descLines.Count; i++)
+                {
+                    gfx.DrawString(descLines[i], fontRow, XBrushes.Black,
+                        new XRect(cx + 3, y + 2 + i * DescLineHeight, colWidths[4] - cellPadding, DescLineHeight),
+                        XStringFormats.TopLeft);
+                }
+
                 // Ore
                 double oreLeft = x + colWidths[0] + colWidths[1] + colWidths[2] + colWidths[3] + colWidths[4];
                 gfx.DrawString(w.HoursCounter.ToString("0.##", CultureInfo.InvariantCulture), fontRow, XBrushes.Black,
-                    new XRect(oreLeft + 3, y + 2, colWidths[5] - 6, RowMinHeight), XStringFormats.TopRight);
+                    new XRect(oreLeft + 3, y + 2, colWidths[5] - cellPadding, RowMinHeight), XStringFormats.TopRight);
 
                 y += blockHeight;
                 gfx.DrawLine(XPens.WhiteSmoke, x, y, x + totalColScaled, y);
@@ -257,6 +310,186 @@ namespace GestionaleRendicontazione.Client.Services.Reports
         private static string Truncate(string? s, int max) =>
             string.IsNullOrEmpty(s) ? string.Empty :
             s.Length <= max ? s : s.Substring(0, max - 1) + "…";
+
+        /// <summary>
+        /// Spezza <paramref name="text"/> in righe che stanno nella larghezza
+        /// <paramref name="maxWidthPt"/>, misurando il rendering con il font reale.
+        /// Se una singola parola è più larga della colonna viene spezzata con un
+        /// trattino a fine riga, così il testo non sfora mai nella cella accanto.
+        /// Tutte le misurazioni sono protette da try/catch: in caso di font non
+        /// ancora pronto o altri problemi di rendering si usa una stima di
+        /// fallback basata sulla larghezza media del font.
+        /// </summary>
+        private static List<string> WrapText(XGraphics gfx, string text, XFont font, double maxWidthPt)
+        {
+            var lines = new List<string>();
+            if (string.IsNullOrEmpty(text))
+            {
+                lines.Add(string.Empty);
+                return lines;
+            }
+            if (maxWidthPt <= 0)
+            {
+                lines.Add(text);
+                return lines;
+            }
+
+            string[] paragraphs = text.Replace("\r\n", "\n").Split('\n');
+            foreach (var paragraph in paragraphs)
+            {
+                if (lines.Count >= MaxWrappedLinesPerCell) break;
+
+                if (paragraph.Length == 0)
+                {
+                    lines.Add(string.Empty);
+                    continue;
+                }
+
+                string[] words = paragraph.Split(' ');
+                var current = string.Empty;
+
+                foreach (var word in words)
+                {
+                    if (lines.Count >= MaxWrappedLinesPerCell) break;
+
+                    if (current.Length == 0)
+                    {
+                        if (MeasureWidth(gfx, word, font, maxWidthPt) > maxWidthPt)
+                        {
+                            var rest = word;
+                            while (MeasureWidth(gfx, rest, font, maxWidthPt) > maxWidthPt && rest.Length > 0)
+                            {
+                                int safeSplit = FindSplitIndex(gfx, rest, font, maxWidthPt);
+                                if (safeSplit <= 0) safeSplit = 1;
+                                if (safeSplit >= rest.Length)
+                                {
+                                    // Non c'è davvero nulla da tagliare: evita loop.
+                                    lines.Add(rest);
+                                    rest = string.Empty;
+                                    break;
+                                }
+                                string piece = rest.Substring(0, safeSplit) + "-";
+                                lines.Add(piece);
+                                rest = rest.Substring(safeSplit);
+                            }
+                            current = rest;
+                        }
+                        else
+                        {
+                            current = word;
+                        }
+                        continue;
+                    }
+
+                    string candidate = current + " " + word;
+                    if (MeasureWidth(gfx, candidate, font, maxWidthPt) <= maxWidthPt)
+                    {
+                        current = candidate;
+                    }
+                    else
+                    {
+                        if (MeasureWidth(gfx, word, font, maxWidthPt) > maxWidthPt)
+                        {
+                            lines.Add(current);
+                            current = string.Empty;
+                            var rest = word;
+                            while (MeasureWidth(gfx, rest, font, maxWidthPt) > maxWidthPt && rest.Length > 0)
+                            {
+                                int safeSplit = FindSplitIndex(gfx, rest, font, maxWidthPt);
+                                if (safeSplit <= 0) safeSplit = 1;
+                                if (safeSplit >= rest.Length)
+                                {
+                                    lines.Add(rest);
+                                    rest = string.Empty;
+                                    break;
+                                }
+                                string piece = rest.Substring(0, safeSplit) + "-";
+                                lines.Add(piece);
+                                rest = rest.Substring(safeSplit);
+                            }
+                            current = rest;
+                        }
+                        else
+                        {
+                            lines.Add(current);
+                            current = word;
+                        }
+                    }
+                }
+
+                if (current.Length > 0 && lines.Count < MaxWrappedLinesPerCell)
+                    lines.Add(current);
+            }
+
+            return lines;
+        }
+
+        private static double MeasureWidth(XGraphics gfx, string text, XFont font, double maxWidthPt)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            if (gfx == null || font == null) return EstimateWidth(text, maxWidthPt);
+
+            try
+            {
+                var size = gfx.MeasureString(text, font);
+                double w = size.Width;
+                // Se la misura ritorna 0 o un valore non positivo (font non pronto
+                // o errore interno di PDFsharp), cade sulla stima.
+                if (w <= 0 || double.IsNaN(w) || double.IsInfinity(w))
+                    return EstimateWidth(text, maxWidthPt);
+                return w;
+            }
+            catch
+            {
+                // In Blazor WASM un font non ancora inizializzato o un errore del
+                // resolver può far lanciare MeasureString: in quel caso fallback.
+                return EstimateWidth(text, maxWidthPt);
+            }
+        }
+
+        /// <summary>
+        /// Stima grossolana della larghezza di <paramref name="text"/> in punti
+        /// basata su una larghezza media di 4.5 pt per carattere a 9pt.
+        /// Usato come fallback quando la misurazione reale fallisce.
+        /// </summary>
+        private static double EstimateWidth(string text, double maxWidthPt)
+        {
+            const double avgCharWidth = 4.5;
+            double w = text.Length * avgCharWidth;
+            // Se la stima è 0 o patologica, restituisci un valore coerente
+            // con la colonna per non mandare in loop il wrapping.
+            if (w <= 0 || double.IsNaN(w) || double.IsInfinity(w))
+                return maxWidthPt > 0 ? maxWidthPt : 1;
+            return w;
+        }
+
+        /// <summary>
+        /// Trova il più grande prefisso di <paramref name="text"/> (≥ 1 carattere)
+        /// la cui larghezza misurata è ≤ <paramref name="maxWidthPt"/>.
+        /// Usato per spezzare parole singole troppo larghe per la colonna.
+        /// La ricerca è binaria, ma con un bound superiore esplicito per evitare
+        /// loop infiniti se la misura non si stabilizza.
+        /// </summary>
+        private static int FindSplitIndex(XGraphics gfx, string text, XFont font, double maxWidthPt)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            int lo = 1, hi = text.Length, best = 1;
+            int safety = 0;
+            while (lo <= hi && safety++ < 64)
+            {
+                int mid = (lo + hi) / 2;
+                if (MeasureWidth(gfx, text.Substring(0, mid), font, maxWidthPt) <= maxWidthPt)
+                {
+                    best = mid;
+                    lo = mid + 1;
+                }
+                else
+                {
+                    hi = mid - 1;
+                }
+            }
+            return best;
+        }
 
         private static void AddPageNumbers(PdfDocument document, XFont font)
         {
