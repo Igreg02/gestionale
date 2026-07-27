@@ -5,6 +5,7 @@ using GestionaleRendicontazione.Dataaccess.Services;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GestionaleRendicontazione.Api.Services
@@ -18,6 +19,9 @@ namespace GestionaleRendicontazione.Api.Services
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            // MVC controllers (necessario per MapControllers)
+            services.AddControllers();
+
             // Autorizzazione (le policy puntuali sono AddAuthorization(...) altrove se ne servono)
             services.AddAuthorization();
 

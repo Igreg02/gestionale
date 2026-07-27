@@ -26,10 +26,6 @@ namespace GestionaleRendicontazione.Api.Controllers
             _logger = logger;
         }
 
-
-
-        // TODO: AGGIUNGERE MESSAGGIO D'ERRORE PER LOGIN FALLITO
-
         [HttpPost("login")]
         [AllowAnonymous]
         [ProducesResponseType(typeof(AuthDto.LoginResponseDto), StatusCodes.Status200OK)]
