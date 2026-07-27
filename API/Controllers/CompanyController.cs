@@ -14,12 +14,10 @@ namespace GestionaleRendicontazione.Api.Controllers
     public class CompanyController : ControllerBase
     {
         private readonly ICompanyService _companyService;
-        private readonly ILogger<CompanyController> _logger;
 
-        public CompanyController(ICompanyService companyService, ILogger<CompanyController> logger)
+        public CompanyController(ICompanyService companyService)
         {
             _companyService = companyService;
-            _logger = logger;
         }
 
         [HttpGet]

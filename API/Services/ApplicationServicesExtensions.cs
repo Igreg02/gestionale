@@ -1,4 +1,5 @@
 using AutoMapper;
+using GestionaleRendicontazione.Api.Helpers.Audit;
 using GestionaleRendicontazione.Api.Services.Jwt;
 using GestionaleRendicontazione.Dataaccess.Helpers;
 using GestionaleRendicontazione.Dataaccess.Services;
@@ -48,6 +49,9 @@ namespace GestionaleRendicontazione.Api.Services
             // Report & log applicativo
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<ILogService, LogService>();
+
+            // Audit (logger di business centralizzato, delega al Serilog statico)
+            services.AddSingleton<IAuditLogger, SerilogAuditLogger>();
 
             return services;
         }

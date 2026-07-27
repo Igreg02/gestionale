@@ -13,12 +13,10 @@ namespace GestionaleRendicontazione.Api.Controllers
     public class ReportDataController : ControllerBase
     {
         private readonly IReportService _reportService;
-        private readonly ILogger<ReportDataController> _logger;
 
-        public ReportDataController(IReportService reportService, ILogger<ReportDataController> logger)
+        public ReportDataController(IReportService reportService)
         {
             _reportService = reportService;
-            _logger = logger;
         }
 
         /// <summary>Admin: report aggregato per progetto/periodo.</summary>

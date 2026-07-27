@@ -13,12 +13,10 @@ namespace GestionaleRendicontazione.Api.Controllers
     public class ProjectController : ControllerBase
     {
         private readonly IProjectService _projectService;
-        private readonly ILogger<ProjectController> _logger;
 
-        public ProjectController(IProjectService projectService, ILogger<ProjectController> logger)
+        public ProjectController(IProjectService projectService)
         {
             _projectService = projectService;
-            _logger = logger;
         }
 
         [HttpGet]

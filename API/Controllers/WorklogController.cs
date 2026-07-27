@@ -22,16 +22,13 @@ namespace GestionaleRendicontazione.Api.Controllers
     {
         private readonly IWorkLogAdminService _adminService;
         private readonly IWorkLogUserService _userService;
-        private readonly ILogger<WorklogController> _logger;
 
         public WorklogController(
             IWorkLogAdminService adminService,
-            IWorkLogUserService userService,
-            ILogger<WorklogController> logger)
+            IWorkLogUserService userService)
         {
             _adminService = adminService;
             _userService = userService;
-            _logger = logger;
         }
 
         private bool IsAdmin => User.IsInRole(RoleNames.Admin);

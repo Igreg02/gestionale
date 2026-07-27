@@ -1,3 +1,4 @@
+using GestionaleRendicontazione.Api.Helpers.Audit;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Domain.Constants;
@@ -8,17 +9,16 @@ namespace GestionaleRendicontazione.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Produces("application/json")]
     [Authorize(Roles = RoleNames.Admin)]
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
-        private readonly ILogger<EmployeeController> _logger;
+        private readonly IAuditLogger _audit;
 
-        public EmployeeController(IEmployeeService employeeService, ILogger<EmployeeController> logger)
+        public EmployeeController(IEmployeeService employeeService, IAuditLogger audit)
         {
             _employeeService = employeeService;
-            _logger = logger;
+            _audit = audit;
         }
 
         [HttpGet]
@@ -69,10 +69,10 @@ namespace GestionaleRendicontazione.Api.Controllers
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
         {
-                var ok = await _employeeService.DeleteAsync(id, ct);
-                if (!ok) return NotFound();
-                _logger.LogInformation("Dipendente {Id} licenziato", id);
-                return NoContent();
-            }
+            var ok = await _employeeService.DeleteAsync(id, ct);
+            if (!ok) return NotFound();
+            _audit.ResourceLifecycle("Deleted", "Employee", id);
+            return NoContent();
         }
     }
+}
