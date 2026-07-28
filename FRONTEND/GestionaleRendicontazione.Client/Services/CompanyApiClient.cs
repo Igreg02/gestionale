@@ -60,7 +60,7 @@ namespace GestionaleRendicontazione.Client.Services
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Devi inserire l'email dell'azienda")]
         [System.ComponentModel.DataAnnotations.EmailAddress]
-        public string email { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
     }
 
     public sealed class CompanyUpdateRequest
@@ -71,6 +71,6 @@ namespace GestionaleRendicontazione.Client.Services
 
         [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Devi inserire l'email dell'azienda")]
         [System.ComponentModel.DataAnnotations.EmailAddress]
-        public string email { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
     }
 }

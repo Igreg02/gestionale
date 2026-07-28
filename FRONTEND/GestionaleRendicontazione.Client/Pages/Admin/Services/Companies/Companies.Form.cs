@@ -49,7 +49,7 @@ public partial class Companies
         {
             if (_isEditing)
             {
-                var result = await CompanyApiClient.UpdateAsync(_editingId, new CompanyUpdateRequest { Name = _formModel.Name, email = _formModel.Email });
+                var result = await CompanyApiClient.UpdateAsync(_editingId, new CompanyUpdateRequest { Name = _formModel.Name, Email = _formModel.Email });
                 if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 var idx = _companies.FindIndex(c => c.Id == _editingId);
@@ -57,7 +57,7 @@ public partial class Companies
             }
             else
             {
-                var result = await CompanyApiClient.CreateAsync(new CompanyCreateRequest { Name = _formModel.Name, email = _formModel.Email });
+                var result = await CompanyApiClient.CreateAsync(new CompanyCreateRequest { Name = _formModel.Name, Email = _formModel.Email });
                 if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
 
                 _companies.Add(result.Data!);

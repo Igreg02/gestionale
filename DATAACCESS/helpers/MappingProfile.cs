@@ -49,12 +49,12 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
 
             // DTO -> Entity mapping (write/update)
             CreateMap<CompanyDto.Create, Company>()
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.email))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Project, opt => opt.Ignore());
 
             CreateMap<CompanyDto.Update, Company>()
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.email))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Project, opt => opt.Ignore());
 
