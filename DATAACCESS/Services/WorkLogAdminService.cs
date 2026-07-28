@@ -79,7 +79,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<WorkLogDto.Admin.Response> CreateAsync(WorkLogDto.Admin.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.Admin.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response>(async uow =>
             {
                 var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
                 var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
@@ -110,7 +110,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<WorkLogDto.Admin.Response?> UpdateAsync(Guid id, WorkLogDto.Admin.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.Admin.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
@@ -138,7 +138,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return false;

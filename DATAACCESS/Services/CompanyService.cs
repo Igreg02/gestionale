@@ -39,17 +39,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<CompanyDto.Response> CreateAsync(CompanyDto.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<CompanyDto.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<CompanyDto.Response>(async uow =>
             {
                 var entity = new Company(uow);
                 _mapper.Map(dto, entity);
                 return _mapper.Map<CompanyDto.Response>(entity);
-            });
+            }, ct);
         }
 
         public async Task<CompanyDto.Response?> UpdateAsync(Guid id, CompanyDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<CompanyDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<CompanyDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Company>(id, ct);
                 if (entity is null) return null;
@@ -60,7 +60,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Company>(id, ct);
                 if (entity is null) return false;

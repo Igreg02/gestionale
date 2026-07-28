@@ -39,7 +39,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<EmployeeDto.Response?> UpdateAsync(Guid id, EmployeeDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<EmployeeDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<EmployeeDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
                 if (entity is null) return null;
@@ -61,7 +61,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
                 if (entity is null) return false;

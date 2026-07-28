@@ -39,7 +39,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<TypeDto.Response> CreateAsync(TypeDto.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<TypeDto.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<TypeDto.Response>(async uow =>
             {
                 var entity = new Domain.Entities.Type(uow)
                 {
@@ -51,7 +51,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<TypeDto.Response?> UpdateAsync(Guid id, TypeDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<TypeDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<TypeDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
                 if (entity is null) return null;
@@ -62,7 +62,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
                 if (entity is null) return false;

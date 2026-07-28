@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using GestionaleRendicontazione.Api.Helpers;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Domain.Constants;
@@ -52,7 +52,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 
             // Un utente normale non può filtrare per employeeId/projectId/statusName altrui:
             // vede solo i propri worklog, indipendentemente da cosa passa in query.
-            var currentEmployeeId = GetCurrentEmployeeId();
+            var currentEmployeeId = User.GetEmployeeId();
             if (currentEmployeeId is null) return Unauthorized();
 
             var ownList = await _userService.GetAllAsync(currentEmployeeId.Value, dateFrom, dateTo, ct);
@@ -72,7 +72,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return Ok(item);
             }
 
-            var currentEmployeeId = GetCurrentEmployeeId();
+            var currentEmployeeId = User.GetEmployeeId();
             if (currentEmployeeId is null) return Unauthorized();
 
             var ownItem = await _userService.GetByIdAsync(id, currentEmployeeId.Value, ct);
@@ -97,7 +97,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                     return CreatedAtRoute("GetWorkLogById", new { id = created.Id }, created);
                 }
 
-                var currentEmployeeId = GetCurrentEmployeeId();
+                var currentEmployeeId = User.GetEmployeeId();
                 if (currentEmployeeId is null) return Unauthorized();
 
                 // IdEmployee dal body viene ignorato: si usa sempre quello del token.
@@ -136,7 +136,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                     return Ok(updated);
                 }
 
-                var currentEmployeeId = GetCurrentEmployeeId();
+                var currentEmployeeId = User.GetEmployeeId();
                 if (currentEmployeeId is null) return Unauthorized();
 
                 var userDto = new WorkLogDto.User.Update
@@ -167,7 +167,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return NoContent();
             }
 
-            var currentEmployeeId = GetCurrentEmployeeId();
+            var currentEmployeeId = User.GetEmployeeId();
             if (currentEmployeeId is null) return Unauthorized();
 
             var ownOk = await _userService.DeleteAsync(id, currentEmployeeId.Value, ct);
@@ -175,14 +175,5 @@ namespace GestionaleRendicontazione.Api.Controllers
             return NoContent();
         }
 
-        /// <summary>
-        /// Estrae l'Id del dipendente autenticato dal claim "NameIdentifier" (popolato da JwtTokenService).
-        /// Ritorna null se il claim manca o non è un Guid valido.
-        /// </summary>
-        private Guid? GetCurrentEmployeeId()
-        {
-            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return Guid.TryParse(raw, out var parsed) ? parsed : (Guid?)null;
         }
-    }
 }

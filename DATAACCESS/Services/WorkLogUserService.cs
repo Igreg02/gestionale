@@ -72,7 +72,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             Guid currentEmployeeId,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.User.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
             {
                 // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
                 var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeId, ct)
@@ -110,7 +110,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             Guid currentEmployeeId,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.User.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
@@ -137,7 +137,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, Guid currentEmployeeId, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return false;

@@ -39,7 +39,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<StatusDto.Response> CreateAsync(StatusDto.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<StatusDto.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<StatusDto.Response>(async uow =>
             {
                 var entity = new Status(uow)
                 {
@@ -51,7 +51,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<StatusDto.Response?> UpdateAsync(Guid id, StatusDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<StatusDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<StatusDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Status>(id, ct);
                 if (entity is null) return null;
@@ -62,7 +62,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Status>(id, ct);
                 if (entity is null) return false;

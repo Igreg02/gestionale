@@ -39,7 +39,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<ProjectDto.Response> CreateAsync(ProjectDto.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<ProjectDto.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<ProjectDto.Response>(async uow =>
             {
                 var company = await uow.GetObjectByKeyAsync<Company>(dto.IdCompany, ct)
                     ?? throw new InvalidOperationException("Azienda non trovata");
@@ -55,7 +55,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<ProjectDto.Response?> UpdateAsync(Guid id, ProjectDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<ProjectDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<ProjectDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return null;
@@ -71,7 +71,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return false;

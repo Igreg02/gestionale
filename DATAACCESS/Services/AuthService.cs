@@ -78,14 +78,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded
                 && !string.IsNullOrEmpty(newHash))
             {
-                await _dbContextService.ReadWrite(async uow =>
+                await _dbContextService.ReadWriteAsync(async uow =>
                 {
                     var reload = await uow.GetObjectByKeyAsync<Employee>(userId, cancellationToken);
                     if (reload is not null)
                     {
                         reload.PasswordHash = newHash;
                     }
-                });
+                }, cancellationToken);
             }
 
             var claims = BuildClaims(userId, userName, firstName, lastName, roles);
@@ -118,7 +118,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
             AuthDto.RegisterResponseDto? responseDto = null;
 
-            await _dbContextService.ReadWrite(async uow =>
+            await _dbContextService.ReadWriteAsync(async uow =>
             {
                 var newEmployee = new Employee(uow)
                 {

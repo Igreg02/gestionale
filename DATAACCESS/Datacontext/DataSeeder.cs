@@ -11,7 +11,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
     {
         public static async Task SeedAsync(IDbContextService DbContextService, PasswordHasher<Employee> passwordHasher)
         {
-            await DbContextService.ReadWrite(async uow =>
+            await DbContextService.ReadWriteAsync(async uow =>
             {
                 if (uow.Query<Company>().Any())
                 {

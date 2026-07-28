@@ -1,11 +1,32 @@
 using System;
+using DevExpress.Xpo;
 using Serilog.Core;
 using Serilog.Events;
-using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
 
 namespace GestionaleRendicontazione.Api.Helpers
 {
+    /// <summary>
+    /// Helper per leggere in modo tipizzato le proprietà arricchite di un <see cref="LogEvent"/>
+    /// (quelle pushate da <see cref="RequestContextEnricher"/> o da un <c>LogContext.PushProperty</c>).
+    /// Serilog incapsula i valori scalari in <see cref="ScalarValue"/>; qui estraiamo solo quelli
+    /// convertendoli in stringa con <c>ToString()</c>, così i sink (DB, file, …) non ricevono
+    /// il quoting automatico di Serilog né un null quando la proprietà manca.
+    /// </summary>
+    internal static class SerilogProperties
+    {
+        public static string? GetScalarString(LogEvent logEvent, string propertyName)
+        {
+            if (logEvent.Properties.TryGetValue(propertyName, out var value)
+                && value is ScalarValue scalar
+                && scalar.Value is not null)
+            {
+                return scalar.Value.ToString();
+            }
+            return null;
+        }
+    }
+
     public class XpoSerilogSink : ILogEventSink
     {
         private readonly IDataLayer _dataLayer;
@@ -18,7 +39,7 @@ namespace GestionaleRendicontazione.Api.Helpers
         public void Emit(LogEvent logEvent)
         {
             // Evitiamo loop infiniti ignorando i log generati da XPO stessa
-            if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContext) && 
+            if (logEvent.Properties.TryGetValue("SourceContext", out var sourceContext) &&
                 sourceContext.ToString().Contains("DevExpress.Xpo"))
             {
                 return;
@@ -39,9 +60,9 @@ namespace GestionaleRendicontazione.Api.Helpers
                         Livello = logEvent.Level.ToString(),
                         Messaggio = logEvent.RenderMessage(),
                         StackTrace = logEvent.Exception?.StackTrace ?? string.Empty,
-                        Metodo = GetPropertyValue(logEvent, "RequestMethod"),
-                        Path = GetPropertyValue(logEvent, "RequestPath"),
-                        UserId = GetPropertyValue(logEvent, "UserId")
+                        Metodo = SerilogProperties.GetScalarString(logEvent, "RequestMethod") ?? string.Empty,
+                        Path = SerilogProperties.GetScalarString(logEvent, "RequestPath") ?? string.Empty,
+                        UserId = SerilogProperties.GetScalarString(logEvent, "UserId") ?? string.Empty
                     };
                     uow.CommitChanges();
                 }
@@ -54,18 +75,6 @@ namespace GestionaleRendicontazione.Api.Helpers
                 // per questi casi: scrive su stderr, fuori dalla pipeline dei sink.
                 Serilog.Debugging.SelfLog.WriteLine("Impossibile scrivere il log su DB (XpoSerilogSink): {0}", ex);
             }
-        }
-
-        // Estrae il valore "grezzo" di una proprietà arricchita via LogContext
-        // (senza le virgolette che Serilog aggiunge di default ai ScalarValue string)
-        private static string GetPropertyValue(LogEvent logEvent, string propertyName)
-        {
-            if (logEvent.Properties.TryGetValue(propertyName, out var value) &&
-                value is ScalarValue scalarValue)
-            {
-                return scalarValue.Value?.ToString() ?? string.Empty;
-            }
-            return string.Empty;
         }
     }
 }

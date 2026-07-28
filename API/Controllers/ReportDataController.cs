@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using GestionaleRendicontazione.Api.Helpers;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Domain.Constants;
@@ -74,7 +74,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             var dateRangeError = ValidateDateRange(from, to);
             if (dateRangeError is not null) return dateRangeError;
 
-            var employeeId = GetCurrentEmployeeId();
+            var employeeId = User.GetEmployeeId();
             if (employeeId is null) return Unauthorized();
 
             var report = await _reportService.GetEmployeeReportAsync(employeeId.Value, from, to, ct);
@@ -108,14 +108,5 @@ namespace GestionaleRendicontazione.Api.Controllers
             return null;
         }
 
-        /// <summary>
-        /// Estrae l'Id del dipendente autenticato dal claim "NameIdentifier" (popolato da JwtTokenService).
-        /// Ritorna null se il claim manca o non è un Guid valido.
-        /// </summary>
-        private Guid? GetCurrentEmployeeId()
-        {
-            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return Guid.TryParse(raw, out var parsed) ? parsed : (Guid?)null;
         }
-    }
 }
