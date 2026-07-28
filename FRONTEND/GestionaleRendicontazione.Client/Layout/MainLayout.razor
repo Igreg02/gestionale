@@ -327,6 +327,11 @@
             FilterState.IsAdmin = authState.User.IsInRole(RoleNames.Admin);
         }
 
+        // Ripristina i filtri persistenti (date + selezioni dropdown) da localStorage.
+        // Va fatto DOPO aver determinato IsAdmin perché alcuni filtri sono significativi
+        // solo per admin (es. dipendente). Se nessun filtro è salvato, l'operazione è no-op.
+        await FilterState.LoadFromStorageAsync();
+
         await FilterState.LoadLookupsAsync();
         FilterState.OnFiltersChanged += StateHasChanged;
         LogFilterState.OnFiltersChanged += StateHasChanged;

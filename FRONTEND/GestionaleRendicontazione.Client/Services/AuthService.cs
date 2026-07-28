@@ -69,8 +69,9 @@ namespace GestionaleRendicontazione.Client.Services
 
             // Pulisce lo stato condiviso: senza questo reset, il prossimo login nella stessa tab
             // (senza refresh della pagina) erediterebbe IsAdmin/filtri/liste dipendenti dell'utente
-            // che si è appena disconnesso.
-            _filterState.ResetForNewSession();
+            // che si è appena disconnesso. ResetForNewSession è async perché ripulisce anche
+            // localStorage per evitare leak cross-account dei filtri.
+            await _filterState.ResetForNewSession();
         }
 
         /// <summary>
