@@ -1,0 +1,23 @@
+@namespace GestionaleRendicontazione.Client.Layout.Components
+
+<div class="worklog-search flex-fill m-0" style="position: relative;">
+    <i class="bi bi-search"></i>
+    <input type="text" placeholder="@Placeholder"
+           value="@Value" @oninput="OnInputChanged" />
+    @if (!string.IsNullOrEmpty(Value))
+    {
+        <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="OnClearClicked">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Placeholder { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = string.Empty;
+    [Parameter] public EventCallback<ChangeEventArgs> OnInput { get; set; }
+    [Parameter] public EventCallback OnClear { get; set; }
+
+    private Task OnInputChanged(ChangeEventArgs e) => OnInput.InvokeAsync(e);
+    private Task OnClearClicked() => OnClear.InvokeAsync();
+}
