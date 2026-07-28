@@ -9,13 +9,12 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
 {
     public static class DataSeeder
     {
-        public static async Task SeedAsync(IDbContextService DbContextService, PasswordHasher<Employee> passwordHasher)
+        public static async Task SeedAsync(IDbContextService DbContextService, PasswordHasher<Employee> passwordHasher, CancellationToken ct = default)
         {
             await DbContextService.ReadWriteAsync(async uow =>
             {
                 if (uow.Query<Company>().Any())
                 {
-                    await Task.CompletedTask;
                     return;
                 }
 

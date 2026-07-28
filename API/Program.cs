@@ -66,7 +66,7 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContextService = scope.ServiceProvider.GetRequiredService<IDbContextService>();
     var passwordHasher = scope.ServiceProvider.GetRequiredService<PasswordHasher<Employee>>();
-    await DataSeeder.SeedAsync(dbContextService, passwordHasher);
+    await DataSeeder.SeedAsync(dbContextService, passwordHasher, CancellationToken.None);
 }
 
 app.Run();
