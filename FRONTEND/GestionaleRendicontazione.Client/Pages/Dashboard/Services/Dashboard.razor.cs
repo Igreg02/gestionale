@@ -12,12 +12,17 @@ namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 //  - Dashboard.EditWorklog.cs    -> modale "Modifica Worklog"
 //  - Dashboard.DeleteWorklog.cs  -> modale conferma eliminazione
 //  - Dashboard.Report.cs         -> apertura/chiusura modale report
+//
+// Stato UI CRUD (IsLoading/IsSaving/ModalError/ErrorMessage) centralizzato in
+// CrudPageService — qui restano solo lo stato applicativo (worklogs, periodo,
+// lookup specifici del Dashboard, identity).
 public partial class Dashboard : IDisposable
 {
+    [Inject] private CrudPageService Crud { get; set; } = default!;
+
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
 
     private string _displayName = string.Empty;
-    private string? _errorMessage;
     private List<WorkLogResponseDto> _worklogs = new();
 
     private DateOnly _periodFrom;
@@ -27,10 +32,6 @@ public partial class Dashboard : IDisposable
     private List<TypeResponseDto> _types = new();
     private List<EmployeeResponseDto> _employees = new();
     private bool _employeesLoading;
-
-    // Stato condiviso dalle modali (create/edit): flag di salvataggio ed errore modale.
-    private bool _isSaving;
-    private string? _modalError;
 
     private CancellationTokenSource? _loadCts;
 
@@ -70,26 +71,43 @@ public partial class Dashboard : IDisposable
         return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
     }
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         if (AuthStateTask is not null)
         {
-            var authState = await AuthStateTask;
-            _displayName = authState.User.FindFirst("display_name")?.Value ?? authState.User.Identity?.Name ?? string.Empty;
+            // Eventuale prima lettura sincrona; leggi nel seguito in modo async
+            _ = ResolveDisplayNameAsync();
         }
 
         FilterState.OnFiltersChanged += HandleFiltersChanged;
         FilterState.OnLookupsChanged += HandleLookupsChanged;
+        Crud.OnChanged += OnCrudStateChanged;
 
-        // Recupera le date iniziali del mese corrente fin da subito dal service
         ParseDatesFromService();
-        await Task.WhenAll(LoadWorklogsAsync(), LoadDashboardSpecificLookupsAsync());
+        _ = LoadInitialAsync();
+    }
 
-        // Carica i dipendenti direttamente dall'API (evita la lista desincronizzata di FilterState)
-        if (FilterState.IsAdmin)
+    private async Task ResolveDisplayNameAsync()
+    {
+        try
         {
-            await LoadEmployeesAsync();
+            var authState = await AuthStateTask!;
+            _displayName = authState.User.FindFirst("display_name")?.Value ?? authState.User.Identity?.Name ?? string.Empty;
+            await InvokeAsync(StateHasChanged);
         }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Errore lettura display_name: {ex}");
+        }
+    }
+
+    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task LoadInitialAsync()
+    {
+        await Task.WhenAll(LoadWorklogsAsync(), LoadDashboardSpecificLookupsAsync());
+        if (FilterState.IsAdmin)
+            await LoadEmployeesAsync();
     }
 
     private async void HandleLookupsChanged()
@@ -160,7 +178,7 @@ public partial class Dashboard : IDisposable
         var token = cts.Token;
 
         FilterState.Loading = true;
-        _errorMessage = null;
+        Crud.SetErrorMessage(null);
 
         try
         {
@@ -176,7 +194,7 @@ public partial class Dashboard : IDisposable
 
             if (!result.IsSuccess)
             {
-                _errorMessage = result.ToUserMessage("Impossibile recuperare i worklog dal server.");
+                Crud.SetErrorMessage(result.ToUserMessage("Impossibile recuperare i worklog dal server."));
                 _worklogs = new();
                 return;
             }
@@ -192,14 +210,15 @@ public partial class Dashboard : IDisposable
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Errore nel recupero dei worklog: {ex}");
-            _errorMessage = ex.Message.Contains("HTTP", StringComparison.OrdinalIgnoreCase)
+            Crud.SetErrorMessage(ex.Message.Contains("HTTP", StringComparison.OrdinalIgnoreCase)
                 ? ex.Message
-                : "Impossibile recuperare i worklog dal server. Riprova più tardi.";
+                : "Impossibile recuperare i worklog dal server. Riprova più tardi.");
         }
         finally
         {
             if (!token.IsCancellationRequested)
                 FilterState.Loading = false;
+            Crud.NotifyStateChanged();
         }
     }
 
@@ -224,5 +243,8 @@ public partial class Dashboard : IDisposable
     public void Dispose()
     {
         FilterState.OnFiltersChanged -= HandleFiltersChanged;
+        FilterState.OnLookupsChanged -= HandleLookupsChanged;
+        Crud.OnChanged -= OnCrudStateChanged;
+        _loadCts?.Cancel();
     }
 }

@@ -5,6 +5,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 
 // Logica della modale "Modifica Worklog".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui restano solo
+// lo stato locale del form (modello, source originale, data string, flag
+// modal-open) e la chiamata API specifica di WorkLogApiClient.UpdateAsync.
 public partial class Dashboard
 {
     private bool _editModalOpen;
@@ -15,7 +18,7 @@ public partial class Dashboard
     private async Task OpenEditModal(WorkLogResponseDto worklog)
     {
         _editSource = worklog;
-        _modalError = null;
+        Crud.ResetModalError();
         if (FilterState.IsAdmin && _employees.Count == 0)
         {
             await LoadEmployeesAsync();
@@ -39,7 +42,7 @@ public partial class Dashboard
         _editModalOpen = false;
         _editSource = null;
         _editModel = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private void OnDateInput(ChangeEventArgs e)
@@ -54,44 +57,25 @@ public partial class Dashboard
     private async Task SaveEditAsync()
     {
         if (_editModel is null || _editSource is null) return;
-        if (string.IsNullOrWhiteSpace(_editModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
-        if (_editModel.HoursCounter < 1 || _editModel.HoursCounter > 24) { _modalError = "Le ore devono essere comprese tra 1 e 24."; return; }
-        if (_editModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
-        if (_editModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
-        if (_editModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
-        if (FilterState.IsAdmin && _editModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
+        if (string.IsNullOrWhiteSpace(_editModel.Description)) { Crud.SetClientModalError("La descrizione è obbligatoria."); return; }
+        if (_editModel.HoursCounter < 1 || _editModel.HoursCounter > 24) { Crud.SetClientModalError("Le ore devono essere comprese tra 1 e 24."); return; }
+        if (_editModel.IdProject == Guid.Empty) { Crud.SetClientModalError("Seleziona un progetto."); return; }
+        if (_editModel.IdType == Guid.Empty) { Crud.SetClientModalError("Seleziona una tipologia."); return; }
+        if (_editModel.IdStatus == Guid.Empty) { Crud.SetClientModalError("Seleziona uno stato."); return; }
+        if (FilterState.IsAdmin && _editModel.IdEmployee == Guid.Empty) { Crud.SetClientModalError("Seleziona un dipendente."); return; }
 
         if (!FilterState.IsAdmin)
             _editModel.IdEmployee = _editSource.IdEmployee ?? Guid.Empty;
 
-        _isSaving = true;
-        _modalError = null;
-
-        try
-        {
-            var updateResult = await WorkLogApiClient.UpdateAsync(_editSource.Id, _editModel);
-            if (!updateResult.IsSuccess)
+        var sourceId = _editSource.Id;
+        await Crud.RunCrudAsync<WorkLogResponseDto>(
+            operation: () => WorkLogApiClient.UpdateAsync(sourceId, _editModel),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: updated =>
             {
-                _modalError = updateResult.ToUserMessage("Errore durante il salvataggio. Riprova più tardi.");
-                return;
-            }
-
-            var updated = updateResult.Data;
-            if (updated is null) { _modalError = "Errore durante il salvataggio. Riprova più tardi."; return; }
-
-            var idx = _worklogs.FindIndex(w => w.Id == updated.Id);
-            if (idx >= 0) _worklogs[idx] = updated;
-
-            CloseEditModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore PUT worklog: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+                var idx = _worklogs.FindIndex(w => w.Id == updated.Id);
+                if (idx >= 0) _worklogs[idx] = updated;
+                CloseEditModal();
+            });
     }
 }

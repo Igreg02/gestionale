@@ -54,6 +54,23 @@ namespace GestionaleRendicontazione.Client.Services
             NotifyChanged();
         }
 
+        /// <summary>
+        /// Imposta direttamente <see cref="ErrorMessage"/> (utile per flussi di caricamento
+        /// con logica custom, es. cancellation token + filtro che non rientrano in
+        /// <see cref="RunLoadAsync"/>). Notifica i subscriber.
+        /// </summary>
+        public void SetErrorMessage(string? message)
+        {
+            ErrorMessage = message;
+            NotifyChanged();
+        }
+
+        /// <summary>
+        /// Notifica manualmente i subscriber (per casi in cui lo stato cambia da
+        /// fonti esterne ai flussi CRUD/Load orchestrati dal servizio).
+        /// </summary>
+        public void NotifyStateChanged() => NotifyChanged();
+
         private void SetModalError(string? message)
         {
             ModalError = message;
