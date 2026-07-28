@@ -3,6 +3,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
 // Logica della modale "Nuovo/Modifica tipologia".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del form (modello + flag modal-open) e la chiamata API
+// specifica di TypeApiClient.
 public partial class Types
 {
     private bool _formModalOpen;
@@ -15,7 +18,7 @@ public partial class Types
         _isEditing = false;
         _editingId = Guid.Empty;
         _formModel = new TypeFormModel();
-        _modalError = null;
+        Crud.ResetModalError();
         _formModalOpen = true;
     }
 
@@ -24,7 +27,7 @@ public partial class Types
         _isEditing = true;
         _editingId = item.Id;
         _formModel = new TypeFormModel { Name = item.Name };
-        _modalError = null;
+        Crud.ResetModalError();
         _formModalOpen = true;
     }
 
@@ -32,48 +35,29 @@ public partial class Types
     {
         _formModalOpen = false;
         _formModel = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private async Task SaveFormAsync()
     {
         if (_formModel is null) return;
-        if (string.IsNullOrWhiteSpace(_formModel.Name)) { _modalError = "Il nome è obbligatorio."; return; }
-
-        _isSaving = true;
-        _modalError = null;
-
-        try
+        if (string.IsNullOrWhiteSpace(_formModel.Name))
         {
-            if (_isEditing)
+            Crud.SetClientModalError("Il nome è obbligatorio.");
+            return;
+        }
+
+        await Crud.RunCrudAsync<WorkTypeResponse>(
+            operation: _isEditing
+                ? () => ApiClient.UpdateAsync(_editingId, new WorkTypeUpdateRequest { Name = _formModel.Name })
+                : () => ApiClient.CreateAsync(new WorkTypeCreateRequest { Name = _formModel.Name }),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: saved =>
             {
-                var result = await ApiClient.UpdateAsync(_editingId, new WorkTypeUpdateRequest { Name = _formModel.Name });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-                var idx = _items.FindIndex(i => i.Id == _editingId);
-                if (idx >= 0) _items[idx] = result.Data!;
-            }
-            else
-            {
-                var result = await ApiClient.CreateAsync(new WorkTypeCreateRequest { Name = _formModel.Name });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-                _items.Add(result.Data!);
-            }
-
-            _items = _items.OrderBy(i => i.Name).ToList();
-            _ = FilterState.ReloadLookupsAsync();
-            CloseFormModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nel salvataggio: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+                ApplySaved(saved);
+                _ = FilterState.ReloadLookupsAsync();
+                CloseFormModal();
+            });
     }
 }
 

@@ -1,6 +1,6 @@
 @page "/admin/tipologie"
 @attribute [Authorize(Roles = RoleNames.Admin)]
-@using GestionaleRendicontazione.Client.Pages.Admin.Components.Types
+@using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
 @inject TypeApiClient ApiClient
 @inject FilterStateService FilterState
 
@@ -18,38 +18,77 @@
         </button>
     </div>
 
-    @if (_loading)
+    @if (Crud.IsLoading)
     {
         <div class="worklog-status-panel">
             <i class="bi bi-arrow-repeat spin"></i> Caricamento...
         </div>
     }
-    else if (_errorMessage is not null)
+    else if (Crud.ErrorMessage is not null)
     {
         <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
-            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @Crud.ErrorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@Crud.IsLoading">
                 <i class="bi bi-arrow-clockwise"></i> Riprova
             </button>
         </Alert>
     }
     else
     {
-        <TypeTable Items="_items" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+        <NamedItemTable TItem="WorkTypeResponse"
+                        Items="_items"
+                        Colspan="2">
+            <HeaderContent>
+                <th>Nome</th>
+                <th></th>
+            </HeaderContent>
+            <RowContent>
+                <td class="fw-semibold">@context.Name</td>
+                <td>
+                    <div class="admin-table-actions">
+                        <button class="admin-row-icon-btn" title="Modifica" @onclick="() => OpenEditModal(context)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="admin-row-icon-btn is-danger" title="Elimina" @onclick="() => ConfirmDelete(context)">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </td>
+            </RowContent>
+        </NamedItemTable>
     }
 </div>
 
-<TypeFormModal Open="_formModalOpen"
+<NamedItemFormModal TForm="TypeFormModel"
+                    Open="_formModalOpen"
                     IsEditing="_isEditing"
                     Model="_formModel"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    HeaderLabel="@(_isEditing ? "MODIFICA" : "NUOVO ELEMENTO")"
+                    ModalTitle="@(_isEditing ? "Modifica" : "Nuovo")"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseFormModal"
-                    OnSave="SaveFormAsync" />
+                    OnSave="SaveFormAsync">
+    <ChildContent Context="form">
+        <div class="wl-field-row">
+            <label class="wl-field-label">Nome</label>
+            <input class="wl-field-input" @bind="form.Name" placeholder="Nome" />
+        </div>
+    </ChildContent>
+</NamedItemFormModal>
 
-<TypeDeleteModal Open="_deleteModalOpen"
-                    Target="_deleteTarget"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
-                    OnClose="CloseDeleteModal"
-                    OnConfirm="ExecuteDeleteAsync" />
+<NamedItemDeleteModal TItem="WorkTypeResponse"
+                      Open="_deleteModalOpen"
+                      Target="_deleteTarget"
+                      HeaderLabel="ELIMINA"
+                      ModalTitle="Conferma eliminazione"
+                      LeadingText="Stai per eliminare:"
+                      WarningText="Questa operazione non può essere annullata. Se il tipo ha worklog collegati, l'eliminazione potrebbe non essere consentita dal backend."
+                      ModalError="@Crud.ModalError"
+                      IsSaving="Crud.IsSaving"
+                      OnClose="CloseDeleteModal"
+                      OnConfirm="ExecuteDeleteAsync">
+    <TargetContent Context="item">
+        <strong>@item.Name</strong>
+    </TargetContent>
+</NamedItemDeleteModal>

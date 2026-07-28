@@ -3,6 +3,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
 // Logica della modale "Nuovo/Modifica progetto".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del form (modello + flag modal-open) e la chiamata API
+// specifica di ProjectApiClient.
 public partial class Projects
 {
     private bool _formModalOpen;
@@ -15,7 +18,7 @@ public partial class Projects
         _isEditing = false;
         _editingId = Guid.Empty;
         _formModel = new ProjectFormModel();
-        _modalError = null;
+        Crud.ResetModalError();
         _formModalOpen = true;
     }
 
@@ -24,7 +27,7 @@ public partial class Projects
         _isEditing = true;
         _editingId = project.Id;
         _formModel = new ProjectFormModel { Name = project.Name, IdCompany = project.IdCompany };
-        _modalError = null;
+        Crud.ResetModalError();
         _formModalOpen = true;
     }
 
@@ -32,49 +35,34 @@ public partial class Projects
     {
         _formModalOpen = false;
         _formModel = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private async Task SaveFormAsync()
     {
         if (_formModel is null) return;
-        if (string.IsNullOrWhiteSpace(_formModel.Name)) { _modalError = "Il nome del progetto è obbligatorio."; return; }
-        if (_formModel.IdCompany == Guid.Empty) { _modalError = "Seleziona un'azienda."; return; }
-
-        _isSaving = true;
-        _modalError = null;
-
-        try
+        if (string.IsNullOrWhiteSpace(_formModel.Name))
         {
-            if (_isEditing)
+            Crud.SetClientModalError("Il nome del progetto è obbligatorio.");
+            return;
+        }
+        if (_formModel.IdCompany == Guid.Empty)
+        {
+            Crud.SetClientModalError("Seleziona un'azienda.");
+            return;
+        }
+
+        await Crud.RunCrudAsync<ProjectResponse>(
+            operation: _isEditing
+                ? () => ProjectApiClient.UpdateAsync(_editingId, new ProjectUpdateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany })
+                : () => ProjectApiClient.CreateAsync(new ProjectCreateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany }),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: saved =>
             {
-                var result = await ProjectApiClient.UpdateAsync(_editingId, new ProjectUpdateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-                var idx = _projects.FindIndex(p => p.Id == _editingId);
-                if (idx >= 0) _projects[idx] = result.Data!;
-            }
-            else
-            {
-                var result = await ProjectApiClient.CreateAsync(new ProjectCreateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany });
-                if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-                _projects.Add(result.Data!);
-            }
-
-            _projects = _projects.OrderBy(p => p.Name).ToList();
-            _ = FilterState.ReloadLookupsAsync();
-            CloseFormModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nel salvataggio del progetto: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+                ApplySaved(saved);
+                _ = FilterState.ReloadLookupsAsync();
+                CloseFormModal();
+            });
     }
 }
 

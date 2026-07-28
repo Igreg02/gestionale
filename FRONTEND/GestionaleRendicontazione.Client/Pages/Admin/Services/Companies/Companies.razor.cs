@@ -1,4 +1,5 @@
 using GestionaleRendicontazione.Client.Services;
+using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
@@ -6,46 +7,47 @@ namespace GestionaleRendicontazione.Client.Pages.Admin;
 //  - Companies.razor.cs  -> stato condiviso, ciclo di vita, caricamento aziende
 //  - Companies.Form.cs   -> modale "Nuova/Modifica azienda"
 //  - Companies.Delete.cs -> modale conferma eliminazione
-public partial class Companies
+//
+// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
+// CrudPageService — qui rimane solo la lista _companies e il ciclo di vita Blazor.
+public partial class Companies : ComponentBase, IDisposable
 {
-    private bool _loading = true;
-    private string? _errorMessage;
+    [Inject] private CrudPageService Crud { get; set; } = default!;
+
     private List<CompanyResponse> _companies = new();
 
-    private bool _isSaving;
-    private string? _modalError;
+    protected override void OnInitialized()
+    {
+        Crud.OnChanged += OnCrudStateChanged;
+        _ = LoadAsync();
+    }
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Crud.OnChanged -= OnCrudStateChanged;
 
     private async Task LoadAsync()
     {
-        _loading = true;
-        _errorMessage = null;
-        StateHasChanged();
-
-        try
-        {
-            _companies = (await CompanyApiClient.GetAllAsync())
-                .OrderBy(c => c.Name)
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nel recupero delle aziende: {ex}");
-            _errorMessage = "Impossibile recuperare le aziende dal server. Riprova più tardi.";
-        }
-        finally
-        {
-            _loading = false;
-        }
+        await Crud.RunLoadAsync(
+            load: () => ReloadListAsync(),
+            errorMessage: "Impossibile recuperare le aziende dal server. Riprova più tardi.");
     }
 
-    private static string FormatError(Dictionary<string, string[]> validationErrors, string? errorMessage, int statusCode = 0)
+    private async Task ReloadListAsync()
     {
-        if (statusCode == 409)
-            return ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
-        if (validationErrors.Count > 0)
-            return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
-        return errorMessage ?? "Si è verificato un errore imprevisto.";
+        _companies = (await CompanyApiClient.GetAllAsync()).OrderBy(c => c.Name).ToList();
+    }
+
+    internal void ApplySaved(CompanyResponse saved)
+    {
+        var idx = _companies.FindIndex(c => c.Id == saved.Id);
+        if (idx >= 0) _companies[idx] = saved;
+        else _companies.Add(saved);
+        _companies = _companies.OrderBy(c => c.Name).ToList();
+    }
+
+    internal void ApplyRemoved(Guid id)
+    {
+        _companies.RemoveAll(c => c.Id == id);
     }
 }
