@@ -1,23 +1,22 @@
+using System;
 using System.Collections.Generic;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
     /// <summary>
-    /// Lancia <see cref="InvalidOperationException"/> se la collezione di figli ha elementi,
-    /// con un messaggio uniforme che descrive l'entità radice e il numero di figli.
-    /// Centralizzato perché tutte le Delete dei service CRUD usano la stessa frase.
+    /// Lancia <see cref="InvalidOperationException"/> con il messaggio passato dal chiamante
+    /// se la collezione di figli ha elementi. Il messaggio arriva al client tramite
+    /// ProblemDetails.Detail, quindi è già il wording user-facing.
     /// </summary>
     public static class DeleteGuard
     {
         public static void ThrowIfHasRelated<T>(
             ICollection<T>? children,
-            string entityLabel,
-            string entityName)
+            string messageWhenBlocked)
         {
             if (children is { Count: > 0 })
             {
-                throw new InvalidOperationException(
-                    $"Impossibile eliminare {entityLabel} '{entityName}': esistono {children.Count} elementi collegati.");
+                throw new InvalidOperationException(messageWhenBlocked);
             }
         }
     }

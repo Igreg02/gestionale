@@ -63,7 +63,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var entity = await uow.GetObjectByKeyAsync<Company>(id, ct);
                 if (entity is null) return false;
-                DeleteGuard.ThrowIfHasRelated(entity.Project, "l'azienda", entity.Name);
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.Project,
+                    $"Impossibile eliminare l'azienda '{entity.Name}': esistono {entity.Project.Count} progetti collegati.");
 
                 uow.Delete(entity);
                 return true;

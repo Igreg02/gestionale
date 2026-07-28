@@ -119,12 +119,31 @@ namespace GestionaleRendicontazione.Client.Services
 
             if (statusCode == 409)
             {
-                var detail = errorMessage ?? "Errore HTTP 409";
-                return $"Impossibile completare l'operazione: l'elemento è referenziato da altri dati collegati. Rimuovi prima i riferimenti e riprova. ({detail})";
+                // Se il backend ha popolato ProblemDetails.Detail con un messaggio
+                // specifico (es. "Impossibile eliminare il progetto 'X': ..."), usiamo
+                // quello: è già il wording user-facing voluto. Altrimenti ricadiamo sul
+                // fallback generico.
+                if (!string.IsNullOrWhiteSpace(errorMessage))
+                    return errorMessage;
+                return "Impossibile completare l'operazione: l'elemento è referenziato da altri dati collegati. Rimuovi prima i riferimenti e riprova.";
+            }
+
+            if (statusCode == 422)
+            {
+                if (!string.IsNullOrWhiteSpace(errorMessage))
+                    return errorMessage;
+                return "I dati inviati non sono elaborabili dal server.";
             }
 
             if (statusCode >= 500 && statusCode < 600)
+            {
+                // Anche per i 5xx mostriamo il detail del backend quando c'è (es. per
+                // InvalidOperationException non mappata): l'utente finale vede comunque
+                // il problema reale, non un generico "riprova più tardi".
+                if (!string.IsNullOrWhiteSpace(errorMessage))
+                    return errorMessage;
                 return "Il server ha risposto con un errore. Riprova più tardi.";
+            }
 
             // StatusCode == 0: la richiesta non è partita (network/down/timeout/CORS)
             if (statusCode == 0)
@@ -155,7 +174,11 @@ namespace GestionaleRendicontazione.Client.Services
                     return ApiResult<T>.WithValidationErrors(problem, (int)response.StatusCode);
             }
 
-            return ApiResult<T>.WithError($"Errore HTTP {(int)response.StatusCode}", (int)response.StatusCode);
+            // Per tutti gli altri errori (404/409/422/500/...): prova a leggere il ProblemDetails
+            // che il backend costruisce con Detail = exception.Message. Se la lettura riesce,
+            // il messaggio user-facing arriva dal server, NON da un fallback generico lato client.
+            var detail = await TryReadProblemDetailAsync(response, ct) ?? $"Errore HTTP {(int)response.StatusCode}";
+            return ApiResult<T>.WithError(detail, (int)response.StatusCode);
         }
 
         public static async Task<ApiResult> ToApiResultAsync(
@@ -172,7 +195,40 @@ namespace GestionaleRendicontazione.Client.Services
                     return ApiResult.WithValidationErrors(problem, (int)response.StatusCode);
             }
 
-            return ApiResult.WithError($"Errore HTTP {(int)response.StatusCode}", (int)response.StatusCode);
+            var detail = await TryReadProblemDetailAsync(response, ct) ?? $"Errore HTTP {(int)response.StatusCode}";
+            return ApiResult.WithError(detail, (int)response.StatusCode);
+        }
+
+        private static async Task<string?> TryReadProblemDetailAsync(
+            HttpResponseMessage response, CancellationToken ct)
+        {
+            try
+            {
+                var json = await response.Content.ReadAsStringAsync(ct);
+                using var doc = JsonDocument.Parse(json);
+
+                // RFC 7807: "detail" è il messaggio human-readable; "title" è la categoria.
+                // Preferiamo detail quando c'è (è quello che il backend ha popolato con
+                // exception.Message), altrimenti ricadiamo su title.
+                if (doc.RootElement.TryGetProperty("detail", out var detailEl)
+                    && detailEl.ValueKind == JsonValueKind.String)
+                {
+                    var detail = detailEl.GetString();
+                    if (!string.IsNullOrWhiteSpace(detail)) return detail;
+                }
+                if (doc.RootElement.TryGetProperty("title", out var titleEl)
+                    && titleEl.ValueKind == JsonValueKind.String)
+                {
+                    var title = titleEl.GetString();
+                    if (!string.IsNullOrWhiteSpace(title)) return title;
+                }
+            }
+            catch
+            {
+                // body non era JSON ProblemDetails (o era vuoto): lasciamo null
+                // e ToUserMessage userà il fallback per status code.
+            }
+            return null;
         }
 
         private static async Task<Dictionary<string, string[]>?> TryReadValidationProblemAsync(

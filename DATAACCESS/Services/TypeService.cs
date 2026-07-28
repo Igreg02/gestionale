@@ -66,7 +66,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
                 if (entity is null) return false;
 
-                DeleteGuard.ThrowIfHasRelated(entity.WorkLog, "il tipo", entity.Name);
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.WorkLog,
+                    $"Impossibile eliminare il tipo '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
 
                 uow.Delete(entity);
                 return true;

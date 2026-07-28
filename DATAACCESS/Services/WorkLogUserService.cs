@@ -64,11 +64,11 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
             {
                 // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
-                var employee = await uow.GetRequiredObjectByKeyAsync<Employee>(currentEmployeeId, "Dipendente autenticato", ct);
+                var employee = await uow.GetRequiredAsync<Employee>(currentEmployeeId, "Dipendente autenticato non trovato", ct);
 
-                var project = await uow.GetRequiredObjectByKeyAsync<Project>(dto.IdProject, "Progetto", ct);
-                var type = await uow.GetRequiredObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, "Tipo", ct);
-                var status = await uow.GetRequiredObjectByKeyAsync<Status>(dto.IdStatus, "Stato", ct);
+                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
+                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
+                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
 
                 var now = DateTime.UtcNow;
                 var entity = new WorkLog(uow)
@@ -101,9 +101,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (entity == null || entity.IsWorkLogDeleted) return null;
                 if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return null;
 
-                var project = await uow.GetRequiredObjectByKeyAsync<Project>(dto.IdProject, "Progetto", ct);
-                var type = await uow.GetRequiredObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, "Tipo", ct);
-                var status = await uow.GetRequiredObjectByKeyAsync<Status>(dto.IdStatus, "Stato", ct);
+                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
+                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
+                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
 
                 entity.Description = dto.Description;
                 entity.HoursCounter = dto.HoursCounter;

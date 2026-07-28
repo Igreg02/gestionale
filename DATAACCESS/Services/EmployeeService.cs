@@ -65,7 +65,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
                 if (entity is null) return false;
 
-                DeleteGuard.ThrowIfHasRelated(entity.WorkLogs, "il dipendente", entity.UserName ?? string.Empty);
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.WorkLogs,
+                    $"Impossibile eliminare il dipendente '{entity.UserName}': esistono {entity.WorkLogs.Count} worklog associati.");
 
                 uow.Delete(entity);
                 return true;

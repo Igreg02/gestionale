@@ -66,7 +66,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Status>(id, ct);
                 if (entity is null) return false;
 
-                DeleteGuard.ThrowIfHasRelated(entity.WorkLog, "lo stato", entity.Name);
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.WorkLog,
+                    $"Impossibile eliminare lo stato '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
 
                 uow.Delete(entity);
                 return true;

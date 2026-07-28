@@ -40,7 +40,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<ProjectDto.Response>(async uow =>
             {
-                var company = await uow.GetRequiredObjectByKeyAsync<Company>(dto.IdCompany, "Azienda", ct);
+                var company = await uow.GetRequiredAsync<Company>(dto.IdCompany, "Azienda non trovata", ct);
 
                 var entity = new Project(uow)
                 {
@@ -58,7 +58,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return null;
 
-                var company = await uow.GetRequiredObjectByKeyAsync<Company>(dto.IdCompany, "Azienda", ct);
+                var company = await uow.GetRequiredAsync<Company>(dto.IdCompany, "Azienda non trovata", ct);
 
                 entity.Name = dto.Name;
                 entity.Company = company;
@@ -73,7 +73,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return false;
 
-                DeleteGuard.ThrowIfHasRelated(entity.WorkLog, "il progetto", entity.Name);
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.WorkLog,
+                    $"Impossibile eliminare il progetto '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
 
                 uow.Delete(entity);
                 return true;
