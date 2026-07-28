@@ -37,8 +37,8 @@
     // Raddoppiati rispetto ai valori originali (500ms / 0.6s), poi raddoppiati
     // ancora: durata 2s per un reveal "cinematografico" e raggio 4x la
     // diagonale (il cerchio è grande il quadruplo dell'originale).
-    const ANIM_DURATION_MS = 2000;
-    const ANIM_FALLBACK_TIMEOUT_MS = 2600;
+    const ANIM_DURATION_MS = 1000;
+    const ANIM_FALLBACK_TIMEOUT_MS = 1000;
 
     function animateThemeSwitch(dark, x, y) {
         const cx = (typeof x === "number" && isFinite(x) && x > 0) ? x : window.innerWidth / 2;
