@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -21,9 +22,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var list = session.Query<Company>()
-                    .OrderBy(c => c.Name)
-                    .ToList();
+                var list = session.GetAllOrderedBy<Company, string>(c => c.Name);
                 return _mapper.Map<List<CompanyDto.Response>>(list);
             }));
         }
@@ -64,11 +63,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 var entity = await uow.GetObjectByKeyAsync<Company>(id, ct);
                 if (entity is null) return false;
-                if (entity.Project != null && entity.Project.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Impossibile eliminare l'azienda '{entity.Name}': esistono {entity.Project.Count} progetti collegati.");
-                }
+                DeleteGuard.ThrowIfHasRelated(entity.Project, "l'azienda", entity.Name);
 
                 uow.Delete(entity);
                 return true;

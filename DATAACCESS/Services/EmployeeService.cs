@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -21,9 +22,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var list = session.Query<Employee>()
-                    .OrderBy(e => e.UserName)
-                    .ToList();
+                var list = session.GetAllOrderedBy<Employee, string>(e => e.UserName);
                 return _mapper.Map<List<EmployeeDto.Response>>(list);
             }));
         }
@@ -66,11 +65,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
                 if (entity is null) return false;
 
-                if (entity.WorkLogs != null && entity.WorkLogs.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Impossibile eliminare il dipendente '{entity.UserName}': esistono {entity.WorkLogs.Count} worklog associati.");
-                }
+                DeleteGuard.ThrowIfHasRelated(entity.WorkLogs, "il dipendente", entity.UserName ?? string.Empty);
 
                 uow.Delete(entity);
                 return true;

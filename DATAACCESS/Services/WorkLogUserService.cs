@@ -33,19 +33,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var query = session.Query<WorkLog>()
                     .Active()
                     .Where(w => w.Employee != null
-                                && w.Employee.Id == currentEmployeeId);
-
-                if (dateFrom.HasValue)
-                {
-                    var from = dateFrom.Value;
-                    query = query.Where(w => w.Date >= from);
-                }
-
-                if (dateTo.HasValue)
-                {
-                    var to = dateTo.Value;
-                    query = query.Where(w => w.Date <= to);
-                }
+                                && w.Employee.Id == currentEmployeeId)
+                    .ApplyFilters(employeeId: null, projectId: null, dateFrom, dateTo);
 
                 var list = query
                     .OrderByDescending(w => w.Date)
@@ -75,15 +64,11 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
             {
                 // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
-                var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeId, ct)
-                    ?? throw new InvalidOperationException("Dipendente autenticato non trovato");
+                var employee = await uow.GetRequiredObjectByKeyAsync<Employee>(currentEmployeeId, "Dipendente autenticato", ct);
 
-                var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
-                var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
-                var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-
-                if (project == null || type == null || status == null)
-                    throw new InvalidOperationException("Una delle FK fornite non esiste");
+                var project = await uow.GetRequiredObjectByKeyAsync<Project>(dto.IdProject, "Progetto", ct);
+                var type = await uow.GetRequiredObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, "Tipo", ct);
+                var status = await uow.GetRequiredObjectByKeyAsync<Status>(dto.IdStatus, "Stato", ct);
 
                 var now = DateTime.UtcNow;
                 var entity = new WorkLog(uow)
@@ -116,12 +101,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (entity == null || entity.IsWorkLogDeleted) return null;
                 if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return null;
 
-                var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
-                var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
-                var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-
-                if (project == null || type == null || status == null)
-                    throw new InvalidOperationException("Una delle FK fornite non esiste");
+                var project = await uow.GetRequiredObjectByKeyAsync<Project>(dto.IdProject, "Progetto", ct);
+                var type = await uow.GetRequiredObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, "Tipo", ct);
+                var status = await uow.GetRequiredObjectByKeyAsync<Status>(dto.IdStatus, "Stato", ct);
 
                 entity.Description = dto.Description;
                 entity.HoursCounter = dto.HoursCounter;

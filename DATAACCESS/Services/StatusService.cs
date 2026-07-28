@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -21,9 +22,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var list = session.Query<Status>()
-                    .OrderBy(s => s.Name)
-                    .ToList();
+                var list = session.GetAllOrderedBy<Status, string>(s => s.Name);
                 return _mapper.Map<List<StatusDto.Response>>(list);
             }));
         }
@@ -67,11 +66,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<Status>(id, ct);
                 if (entity is null) return false;
 
-                if (entity.WorkLog != null && entity.WorkLog.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Impossibile eliminare lo stato '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
-                }
+                DeleteGuard.ThrowIfHasRelated(entity.WorkLog, "lo stato", entity.Name);
 
                 uow.Delete(entity);
                 return true;
