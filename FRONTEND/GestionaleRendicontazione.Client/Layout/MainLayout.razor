@@ -24,6 +24,7 @@
                 <Topbar ShowBurger="_isAdmin"
                         Theme="_darkMode"
                         ThemeChanged="OnDarkModeChanged"
+                        ThemeToggleMouseDown="OnThemeToggleMouseDown"
                         OnBurgerClick="ToggleSidebar"
                         OnUserMenuToggle="ToggleUserMenu"
                         OnLogoutClick="CloseUserMenu"
@@ -280,18 +281,42 @@
 
     // Handler invocato dal child <Topbar> quando l'utente toggle il checkbox.
     // Aggiorna lo stato locale (così al prossimo render il binding è coerente)
-    // e propaga al JS che salva in localStorage + applica la classe .dark.
+    // e propaga al JS che salva in localStorage + applica la classe .dark +
+    // avvia l'animazione circolare dal punto del mouse (catturato su mousedown).
     private async Task OnDarkModeChanged(bool value)
     {
         _darkMode = value;
+        // Coordinate del click salvate da OnThemeToggleMouseDown. Se l'utente
+        // ha usato la tastiera, _lastThemeClick è null e il JS cade al centro.
+        double x = 0, y = 0;
+        if (_lastThemeClick is not null)
+        {
+            x = _lastThemeClick.ClientX;
+            y = _lastThemeClick.ClientY;
+        }
         try
         {
-            await JS.InvokeVoidAsync("gestionaleTheme.set", _darkMode);
+            await JS.InvokeVoidAsync("gestionaleTheme.set", _darkMode, x, y);
         }
         catch
         {
             // ambiente non browser (test/SSR): ignora.
         }
+        finally
+        {
+            _lastThemeClick = null;
+        }
+    }
+
+    // Cattura il punto del mousedown PRIMA dell'onchange, così l'animazione
+    // circolare parte dal pixel esatto dove l'utente ha cliccato.
+    // @onmousedown su un <input type="checkbox"> viene emesso prima del
+    // toggle dello stato, quindi le coordinate sono sempre presenti quando
+    // arriva l'onchange corrispondente.
+    private MouseEventArgs? _lastThemeClick;
+    private void OnThemeToggleMouseDown(MouseEventArgs e)
+    {
+        _lastThemeClick = e;
     }
 
     private void CheckCurrentLocation()
