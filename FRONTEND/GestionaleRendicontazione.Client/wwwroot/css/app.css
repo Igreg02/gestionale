@@ -1837,6 +1837,14 @@ body.dark {
     color: var(--color-text-dark);
 }
 
+/* --border-color è alias di --color-border in :root (riga 102).
+   In dark mode --color-border diventa #2c3b5c, ma per il filtro dropdown
+   (e per gli altri elementi che usano direttamente var(--border-color))
+   vogliamo un bordo più chiaro e visibile: sovrascriviamo il token alias. */
+body.dark {
+    --border-color: #4b688f;
+}
+
 body.dark .auth-page {
     background: var(--color-bg-light);
 }
@@ -1874,7 +1882,6 @@ body.dark .custom-input:focus {
 
 body.dark .filter-menu-dropdown {
     background: var(--color-white);
-    border-color: var(--color-border);
 }
 
 body.dark .user-menu-dropdown {
