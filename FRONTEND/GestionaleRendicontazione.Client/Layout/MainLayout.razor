@@ -278,11 +278,12 @@
         }
     }
 
-    // Handler invocato dopo che il child <Topbar> ha aggiornato Theme.
-    // Propaga il nuovo stato al JS che salva in localStorage e applica
-    // la classe .dark al body.
-    private async Task OnDarkModeChanged()
+    // Handler invocato dal child <Topbar> quando l'utente toggle il checkbox.
+    // Aggiorna lo stato locale (così al prossimo render il binding è coerente)
+    // e propaga al JS che salva in localStorage + applica la classe .dark.
+    private async Task OnDarkModeChanged(bool value)
     {
+        _darkMode = value;
         try
         {
             await JS.InvokeVoidAsync("gestionaleTheme.set", _darkMode);
