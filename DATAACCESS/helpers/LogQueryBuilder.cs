@@ -4,10 +4,6 @@ using GestionaleRendicontazione.Domain.Entities;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
-    /// <summary>
-    /// Filtri opzionali e paginazione per la query dei log applicativi.
-    /// Estratto da LogService.GetAllAsync per separare "filtri" da "paginazione" da "mapping".
-    /// </summary>
     public static class LogQueryBuilder
     {
         public const int DefaultPageSize = 50;

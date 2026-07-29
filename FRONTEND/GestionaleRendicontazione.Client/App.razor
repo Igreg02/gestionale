@@ -5,12 +5,10 @@
                 <NotAuthorized>
                     @if (context.User.Identity is { IsAuthenticated: true })
                     {
-                        <!-- Utente autenticato ma senza il ruolo richiesto dalla route: 403, non login. -->
                         <Forbidden />
                     }
                     else
                     {
-                        <!-- Utente anonimo su una route protetta: redirect automatico al login. -->
                         <RedirectToLogin />
                     }
                 </NotAuthorized>
@@ -27,11 +25,9 @@
             <LayoutView Layout="@typeof(MainLayout)">
                 <AuthorizeView>
                     <Authorized>
-                        <!-- Utente autenticato su un URL inesistente: torna alla Dashboard. -->
                         <RedirectToDashboard />
                     </Authorized>
                     <NotAuthorized>
-                        <!-- Utente anonimo su un URL inesistente: non deve poter uscire dal login. -->
                         <RedirectToLogin />
                     </NotAuthorized>
                 </AuthorizeView>

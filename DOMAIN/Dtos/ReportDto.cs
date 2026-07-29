@@ -1,12 +1,7 @@
 namespace GestionaleRendicontazione.Domain.Dtos
 {
-    /// <summary>
-    /// Contenitore dei DTO relativi alla reportistica (per progetto e per dipendente).
-    /// Server -> Client
-    /// </summary>
     public class ReportDto
     {
-        /// <summary>Tipi comuni condivisi da Project.Response ed Employee.Response.</summary>
         public class Bucket
         {
             public string Name { get; set; } = string.Empty;
@@ -21,10 +16,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public int Count { get; set; }
         }
 
-        /// <summary>
-        /// Aggregazione rendicontazioni per progetto/periodo.
-        /// Include il worklog completo di tutti i dipendenti coinvolti.
-        /// </summary>
         public class Project
         {
             public class Response
@@ -49,7 +40,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public List<WorkLogDto.Admin.Response> WorkLogs { get; set; } = new();
             }
 
-            /// <summary>Specifico del report per progetto: aggregazione per dipendente coinvolto.</summary>
             public class EmployeeBucket
             {
                 public Guid EmployeeId { get; set; }
@@ -60,10 +50,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             }
         }
 
-        /// <summary>
-        /// Aggregazione rendicontazioni per dipendente/periodo.
-        /// Il frontend compone il PDF a partire da questa struttura.
-        /// </summary>
         public class Employee
         {
             public class Response
@@ -86,7 +72,7 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public List<WorkLogDto.Admin.Response> WorkLogs { get; set; } = new();
             }
 
-            /// <summary>Specifico del report per dipendente: aggregazione per progetto rendicontato.</summary>
+            
             public class ProjectBucket
             {
                 public Guid ProjectId { get; set; }

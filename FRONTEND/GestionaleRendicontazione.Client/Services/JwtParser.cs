@@ -3,12 +3,6 @@ using System.Text.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
-    /// <summary>
-    /// Decodifica il payload di un JWT per ricavarne i claim (ruoli, nome utente, scadenza) e
-    /// popolare il <see cref="ClaimsPrincipal"/> lato client. NON valida la firma: la validazione
-    /// del token resta esclusivamente responsabilità del backend (vedi TDD §2.3, JwtBearerEvents);
-    /// qui serve solo a leggere informazioni già presenti in un token di cui ci si è appena fidati.
-    /// </summary>
     internal static class JwtParser
     {
         public static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
@@ -29,7 +23,6 @@ namespace GestionaleRendicontazione.Client.Services
 
                 if (prop.Value.ValueKind == JsonValueKind.Array)
                 {
-                    // Con più ruoli, JwtSecurityToken serializza il claim "role" come array JSON.
                     foreach (var item in prop.Value.EnumerateArray())
                     {
                         claims.Add(new Claim(claimType, item.ToString()));
@@ -44,12 +37,6 @@ namespace GestionaleRendicontazione.Client.Services
             return claims;
         }
 
-        /// <summary>
-        /// Il backend costruisce i claim con i tipi standard di ClaimTypes (Name, NameIdentifier, Role):
-        /// a seconda di come JwtPayload li serializza possono comparire nel token sia in forma "corta"
-        /// (unique_name, nameid, role) sia con l'URI lungo di ClaimTypes.*. Normalizziamo entrambe le
-        /// forme verso ClaimTypes.*, così AuthorizeView/AuthorizeRouteView funzionano senza sorprese.
-        /// </summary>
         private static string MapClaimType(string jwtClaimName) => jwtClaimName switch
         {
             "role" => ClaimTypes.Role,

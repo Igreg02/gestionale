@@ -2,10 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Logica della modale "Nuovo/Modifica progetto".
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
-// lo stato locale del form (modello + flag modal-open) e la chiamata API
-// specifica di ProjectApiClient.
 public partial class Projects
 {
     private bool _formModalOpen;
@@ -66,7 +62,6 @@ public partial class Projects
     }
 }
 
-// Modello del form, esposto (non-privato) perché usato anche da ProjectFormModal.razor.
 public sealed class ProjectFormModel
 {
     public string Name { get; set; } = string.Empty;

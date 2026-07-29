@@ -2,10 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Logica della modale di conferma eliminazione azienda.
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
-// lo stato locale del modale (target + flag open) e la chiamata API specifica
-// di CompanyApiClient.DeleteAsync.
 public partial class Companies
 {
     private bool _deleteModalOpen;

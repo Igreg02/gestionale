@@ -68,7 +68,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             var expClaim = User.FindFirst("exp")?.Value;
             if (!string.IsNullOrEmpty(jti))
             {
-                var expiresAt = DateTime.UtcNow.AddHours(1); // fallback
+                var expiresAt = DateTime.UtcNow.AddHours(1); 
                 if (long.TryParse(expClaim, out var expUnix))
                 {
                     expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;

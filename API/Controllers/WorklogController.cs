@@ -7,13 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GestionaleRendicontazione.Api.Controllers
 {
-    /// <summary>
-    /// Controller unico per la gestione dei worklog, con route condivise tra Admin e utente normale.
-    /// - Ruolo "Admin": accesso completo (tutti i dipendenti, filtri avanzati, IdEmployee libero in Create).
-    /// - Utente normale: accede solo ai propri worklog. L'IdEmployee non è mai preso dal client:
-    ///   viene sempre forzato a quello del dipendente autenticato (claim NameIdentifier), anche se il body
-    ///   ne contiene uno diverso, per evitare che un utente possa impersonare un altro dipendente.
-    /// </summary>
+    
+    
+    
+    
+    
+    
+    
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]
@@ -50,8 +50,8 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return Ok(list);
             }
 
-            // Un utente normale non può filtrare per employeeId/projectId/statusName altrui:
-            // vede solo i propri worklog, indipendentemente da cosa passa in query.
+            
+            
             var currentEmployeeId = User.GetEmployeeId();
             if (currentEmployeeId is null) return Unauthorized();
 
@@ -100,7 +100,7 @@ namespace GestionaleRendicontazione.Api.Controllers
                 var currentEmployeeId = User.GetEmployeeId();
                 if (currentEmployeeId is null) return Unauthorized();
 
-                // IdEmployee dal body viene ignorato: si usa sempre quello del token.
+                
                 var userDto = new WorkLogDto.User.Create
                 {
                     Description = dto.Description,
@@ -127,7 +127,6 @@ namespace GestionaleRendicontazione.Api.Controllers
             CancellationToken ct)
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
 
                 if (IsAdmin)
                 {

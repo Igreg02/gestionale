@@ -2,19 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GestionaleRendicontazione.Domain.Dtos
 {
-    /// <summary>
-    /// Contenitore unico dei DTO relativi a WorkLog.
-    /// - <see cref="Admin"/>: vista/operazioni complete, usate da chi ha ruolo "Admin" (accede a tutti i dipendenti).
-    /// - <see cref="User"/>: vista/operazioni ridotte, usate dal dipendente autenticato sui propri worklog
-    ///   (l'IdEmployee non è mai esposto/richiesto: viene dedotto dal token).
-    /// </summary>
     public class WorkLogDto
     {
         public class Admin
         {
-            /// <summary>
-            /// Server -> Client
-            /// </summary>
             public class Response
             {
                 public Guid Id { get; set; }
@@ -42,9 +33,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 public string StatusName { get; set; } = string.Empty;
             }
 
-            /// <summary>
-            /// Client -> Server
-            /// </summary>
             public class Create
             {
                 [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]
@@ -57,7 +45,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
                 [Required(ErrorMessage = "Devi indicare il giorno in cui è stato svolto il lavoro")]
                 public DateOnly Date { get; set; }
 
-                // CreateAt / UpdateAt sono impostati dal server, il client non li manda.
 
                 [Required(ErrorMessage = "Devi indicare l'ID di quale progetto si fa riferimento")]
                 public Guid IdProject { get; set; }
@@ -100,9 +87,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
         public class User
         {
-            /// <summary>
-            /// Server -> Client
-            /// </summary>
             public class Response
             {
                 public Guid Id { get; set; }
@@ -124,9 +108,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             }
 
 
-            /// <summary>
-            /// Client -> Server
-            /// </summary>
             public class Create
             {
                 [Required(ErrorMessage = "Devi descrivere cosa è stato fatto")]

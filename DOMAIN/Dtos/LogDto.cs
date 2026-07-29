@@ -2,12 +2,6 @@ using System;
 
 namespace GestionaleRendicontazione.Domain.Dtos
 {
-    /// <summary>
-    /// DTO per i log applicativi. Solo lettura: la pagina admin di Logs non
-    /// consente creazione/modifica/eliminazione (i log sono alimentati dal
-    /// sink Serilog). I campi "StackTrace", "OptimisticLockField" e "GCRecord"
-    /// del'entità <c>LogApplicativo</c> sono esclusi volutamente dal payload.
-    /// </summary>
     public class LogDto
     {
         public class Response

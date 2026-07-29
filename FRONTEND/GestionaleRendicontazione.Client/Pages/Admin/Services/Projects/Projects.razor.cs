@@ -3,14 +3,6 @@ using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Projects.razor.cs  -> stato condiviso, ciclo di vita, caricamento progetti/aziende
-//  - Projects.Form.cs   -> modale "Nuovo/Modifica progetto"
-//  - Projects.Delete.cs -> modale conferma eliminazione
-//
-// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
-// CrudPageService — qui rimane la lista _projects, la lookup _companies e il
-// ciclo di vita Blazor.
 public partial class Projects : ComponentBase, IDisposable
 {
     [Inject] private CrudPageService Crud { get; set; } = default!;

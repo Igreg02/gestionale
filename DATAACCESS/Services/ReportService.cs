@@ -7,10 +7,6 @@ using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-    /// <summary>
-    /// Aggrega i Worklog attivi (IsWorkLogDeleted = false) in un intervallo di date.
-    /// Restituisce null quando l'FK radice (Project o Employee) non esiste.
-    /// </summary>
     public class ReportService : IReportService
     {
         private readonly IDbContextService _dbContextService;
@@ -139,10 +135,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }));
         }
 
-        /// <summary>
-        /// Recupera i WorkLog attivi che soddisfano il filtro radice (progetto/dipendente) nell'intervallo di date dato.
-        /// Centralizza la logica comune a entrambi i report, prima duplicata.
-        /// </summary>
         private static List<WorkLog> GetWorklogsInRange(
             Session session,
             System.Linq.Expressions.Expression<Func<WorkLog, bool>> rootFilter,
@@ -169,10 +161,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 .ToList();
         }
 
-        /// <summary>
-        /// Raggruppa i worklog per una chiave testuale (Type.Name, Status.Name, ...) sommando ore e conteggio.
-        /// Estratto per evitare la duplicazione della stessa logica di aggregazione nei due report.
-        /// </summary>
         private static List<(string Key, decimal Hours, int Count)> AggregateByKey(
             List<WorkLog> worklogs,
             Func<WorkLog, string> keySelector)
@@ -184,7 +172,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 .ToList();
         }
 
-        /// <summary>Raggruppa i worklog per giorno sommando ore e conteggio.</summary>
         private static List<(DateOnly Date, decimal Hours, int Count)> AggregateByDay(List<WorkLog> worklogs)
         {
             return worklogs

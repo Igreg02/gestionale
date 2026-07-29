@@ -3,13 +3,6 @@ using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Types.razor.cs  -> stato condiviso, ciclo di vita, caricamento tipologie
-//  - Types.Form.cs   -> modale "Nuovo/Modifica tipologia"
-//  - Types.Delete.cs -> modale conferma eliminazione
-//
-// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
-// CrudPageService — qui rimane solo la lista _items e il ciclo di vita Blazor.
 public partial class Types : ComponentBase, IDisposable
 {
     [Inject] private CrudPageService Crud { get; set; } = default!;

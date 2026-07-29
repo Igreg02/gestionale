@@ -2,11 +2,6 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
-    /// <summary>
-    /// Client tipizzato per l'endpoint <c>api/company</c>.
-    /// Tutti i metodi di scrittura richiedono ruolo Admin (il token viene allegato
-    /// automaticamente da <see cref="AuthenticatedHttpMessageHandler"/>).
-    /// </summary>
     public sealed class CompanyApiClient
     {
         private readonly HttpClient _http;
@@ -43,7 +38,6 @@ namespace GestionaleRendicontazione.Client.Services
         }
     }
 
-    // ── DTO client-side (speculari a CompanyDto del domain) ─────────────────
 
     public sealed class CompanyResponse
     {

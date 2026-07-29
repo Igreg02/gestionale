@@ -2,10 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Logica della modale di conferma eliminazione dipendente.
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
-// lo stato locale del modale (target + flag open) e la chiamata API specifica
-// di EmployeeApiClient.DeleteAsync.
 public partial class Employees
 {
     private bool _deleteModalOpen;

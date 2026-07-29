@@ -2,10 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Logica della modale "Nuovo/Modifica stato".
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
-// lo stato locale del form (modello + flag modal-open) e la chiamata API
-// specifica di StatusApiClient.
 public partial class Statuses
 {
     private bool _formModalOpen;
@@ -61,7 +57,6 @@ public partial class Statuses
     }
 }
 
-// Modello del form, esposto (non-privato) perché usato anche da StatusFormModal.razor.
 public sealed class StatusFormModel
 {
     public string Name { get; set; } = string.Empty;

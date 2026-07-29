@@ -31,16 +31,7 @@
 @code {
     [Parameter, EditorRequired] public IList<TItem>? Items { get; set; }
     [Parameter, EditorRequired] public RenderFragment? HeaderContent { get; set; }
-    /// <summary>
-    /// Fragment eseguito con il codice del componente chiamante: ha accesso ai
-    /// metodi (es. OpenEditModal/ConfirmDelete) definiti nella pagina padre.
-    /// Riceve l'item corrente come parametro implicito <c>context</c>.
-    /// </summary>
     [Parameter, EditorRequired] public RenderFragment<TItem>? RowContent { get; set; }
     [Parameter] public string EmptyMessage { get; set; } = "Nessun elemento registrato.";
-    /// <summary>
-    /// Numero totale di colonne nella tabella (incluse le colonne dati + la colonna "azioni").
-    /// Viene usato come colspan della riga vuota.
-    /// </summary>
     [Parameter] public int Colspan { get; set; } = 2;
 }

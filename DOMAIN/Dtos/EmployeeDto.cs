@@ -2,9 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GestionaleRendicontazione.Domain.Dtos
 {
-    /// <summary>
-    /// Server -> Client
-    /// </summary>
     public class EmployeeDto
     {
         public class Response
@@ -15,9 +12,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public string LastName { get; set; } = string.Empty;
         }
 
-        /// <summary>
-        /// Client -> Server
-        /// </summary>
         public class Update
         {
             [Required(ErrorMessage = "Devi inserire un username")]

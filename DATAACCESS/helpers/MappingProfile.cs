@@ -8,27 +8,20 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
     {
         public MappingProfile()
         {
-            // Company
             CreateMap<Company, CompanyDto.Response>();
 
-            // Employee
             CreateMap<Employee, EmployeeDto.Response>();
 
-            // Project
             CreateMap<Project, ProjectDto.Response>()
                 .ForMember(dest => dest.IdCompany, opt => opt.MapFrom(src => src.Company != null ? src.Company.Id : Guid.Empty))
                 .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : string.Empty));
 
-            // Status
             CreateMap<Status, StatusDto.Response>();
 
-            // Type
             CreateMap<Domain.Entities.Type, TypeDto.Response>();
 
-            // LogApplicativo: mappato solo in lettura, escludendo StackTrace dal payload
             CreateMap<LogApplicativo, LogDto.Response>();
 
-            // WorkLog
             CreateMap<WorkLog, WorkLogDto.Admin.Response>()
                 .ForMember(dest => dest.IdProject, opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : Guid.Empty))
                 .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : string.Empty))
@@ -47,7 +40,6 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                 .ForMember(dest => dest.IdStatus, opt => opt.MapFrom(src => src.Status != null ? src.Status.Id : Guid.Empty))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status != null ? src.Status.Name : string.Empty));
 
-            // DTO -> Entity mapping (write/update)
             CreateMap<CompanyDto.Create, Company>()
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Id, opt => opt.Ignore())

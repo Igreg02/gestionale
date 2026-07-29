@@ -2,13 +2,6 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
-    /// <summary>
-    /// Client per gli endpoint di report aggregato <c>api/report-data/project/{id}</c> e
-    /// <c>api/report-data/employee/{id}</c> (vedi backend, Domain.Dtos.ReportDto). Entrambi richiedono
-    /// il ruolo Admin e restituiscono, tra le altre cose, l'elenco worklog già filtrato lato server
-    /// per il progetto/dipendente e il periodo richiesti — riusabile così com'è dal generatore PDF
-    /// client-side (stessa forma di WorkLogResponseDto).
-    /// </summary>
     public sealed class ReportDataApiClient
     {
         private readonly HttpClient _http;
@@ -48,7 +41,6 @@ namespace GestionaleRendicontazione.Client.Services
         }
     }
 
-    // ── DTO client-side (sottoinsieme di Domain.Dtos.ReportDto utile al PDF) ──
 
     public sealed class ProjectReportResponseDto
     {

@@ -3,11 +3,10 @@ using DevExpress.Xpo;
 namespace GestionaleRendicontazione.Domain.Entities
 {
     [Persistent("LogApplicativo")]
-    public class LogApplicativo : XPCustomObject // <--- Cambiato qui
+    public class LogApplicativo : XPCustomObject 
     {
         public LogApplicativo(Session session) : base(session) { }
 
-        // Definizione esplicita della chiave primaria autoincrementante
         private int _id;
         [Key(true)] 
         public int Id

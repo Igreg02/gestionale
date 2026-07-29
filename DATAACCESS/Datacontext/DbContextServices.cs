@@ -4,7 +4,6 @@ using GestionaleRendicontazione.Domain.Interfaces;
 namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
 {
 
-
     public class DbContextService : IDbContextService
     {
         private readonly IDataLayer _dataLayer;
@@ -18,7 +17,7 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         {
             using (var session = new Session(_dataLayer))
             {
-                session.TrackPropertiesModifications = false; // Risparmio risorse è in readonly
+                session.TrackPropertiesModifications = false;
 
                 return query(session);
             }
@@ -28,12 +27,11 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         {
             using (var session = new Session(_dataLayer))
             {
-                session.TrackPropertiesModifications = false; // Risparmio risorse è in readonly
+                session.TrackPropertiesModifications = false;
 
                 query(session);
             }
         }
-
 
         public async Task ReadWriteAsync(Func<UnitOfWork, Task> operation, CancellationToken cancellationToken = default)
         {

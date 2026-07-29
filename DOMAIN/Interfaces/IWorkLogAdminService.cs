@@ -4,10 +4,6 @@ namespace GestionaleRendicontazione.Domain.Interfaces
 {
     public interface IWorkLogAdminService
     {
-        /// <summary>
-        /// Filtri supportati: EmployeeId, ProjectId, DateFrom, DateTo, StatusId, StatusName.
-        /// I parametri nullable indicano "filtro non applicato".
-        /// </summary>
         Task<List<WorkLogDto.Admin.Response>> GetAllAsync(
             Guid? employeeId = null,
             Guid? projectId = null,
@@ -22,7 +18,6 @@ namespace GestionaleRendicontazione.Domain.Interfaces
 
         Task<WorkLogDto.Admin.Response?> UpdateAsync(Guid id, WorkLogDto.Admin.Update dto, CancellationToken ct = default);
 
-        /// <summary>Soft delete: imposta IsWorkLogDeleted (campo custom di WorkLog).</summary>
         Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
     }
 }

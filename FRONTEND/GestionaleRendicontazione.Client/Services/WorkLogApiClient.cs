@@ -2,15 +2,6 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
-    /// <summary>
-    /// Wrapper su HttpClient per l'endpoint unico <c>api/worklog</c> (vedi Curl.md): il comportamento
-    /// lato server dipende dal ruolo codificato nel token già allegato da
-    /// <see cref="AuthenticatedHttpMessageHandler"/> — con un token User restituisce/filtra solo i
-    /// worklog del dipendente autenticato, con un token Admin quelli di tutti (eventualmente filtrati).
-    /// I metodi CRUD ritornano <see cref="ApiResult{T}"/> per esporre in modo tipizzato errori di
-    /// validazione (400) e distinguere 401/403/404/5xx; i metodi di lookup tornano direttamente
-    /// <see cref="List{T}"/> perché trattati come best-effort.
-    /// </summary>
     public sealed class WorkLogApiClient
     {
         private readonly HttpClient _httpClient;
@@ -44,13 +35,10 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                // Il chiamante ha cancellato: non è un errore dell'utente, lascialo propagare
                 throw;
             }
             catch (Exception ex)
             {
-                // Network error / DNS / TLS / CORS / body non-JSON: arriva qui invece che a
-                // ToApiResultAsync perché GetAsync lancia prima di avere una HttpResponseMessage.
                 Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
                 return ApiResult<List<WorkLogResponseDto>>.WithError(
                     $"Errore di rete: {ex.Message}",

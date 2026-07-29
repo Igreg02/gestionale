@@ -3,8 +3,6 @@
 @code {
     protected override void OnInitialized()
     {
-        // Utente autenticato su un URL che non corrisponde a nessuna route: invece di mostrare
-        // una pagina di "non trovato", lo riportiamo direttamente alla Dashboard.
         NavigationManager.NavigateTo("/", replace: true);
     }
 }

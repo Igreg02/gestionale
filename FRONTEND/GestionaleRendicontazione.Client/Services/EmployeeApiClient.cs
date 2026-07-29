@@ -2,11 +2,6 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
-    /// <summary>
-    /// Client tipizzato per l'endpoint <c>api/employee</c>.
-    /// Solo Admin può accedere. Non esiste Create perché la creazione avviene
-    /// tramite la registrazione (AuthController).
-    /// </summary>
     public sealed class EmployeeApiClient
     {
         private readonly HttpClient _http;
@@ -36,7 +31,6 @@ namespace GestionaleRendicontazione.Client.Services
         }
     }
 
-    // ── DTO client-side ──────────────────────────────────────────────────────
 
     public sealed class EmployeeResponse
     {

@@ -194,10 +194,6 @@
     {
         if (Visible && !_initialized)
         {
-            // Inizializza le date e il dipendente riprendendo esattamente i filtri
-            // attualmente selezionati nella topbar (FilterState), così l'anteprima
-            // e il PDF partono già coerenti con quello che l'utente sta vedendo
-            // nella dashboard. Da qui in poi le modifiche vivono solo nella modale.
             if (!DateOnly.TryParseExact(FilterState.FilterFromString, "yyyy-MM-dd", null, DateTimeStyles.None, out _periodFrom))
             {
                 var today = DateOnly.FromDateTime(DateTime.Today);
@@ -215,8 +211,6 @@
         }
         if (!Visible && _initialized)
         {
-            // Reset alla chiusura, così la prossima apertura riparte pulita
-            // (e riprende di nuovo i filtri correnti della topbar).
             _initialized = false;
             _previewWorklogs = new();
             _modalError = null;
@@ -231,8 +225,6 @@
     {
         if (Visible && _initialized && !_loadingPreview && _previewWorklogs.Count == 0 && _previewCts is null)
         {
-            // Carica in automatico l'anteprima appena la modale si apre
-            // (senza bloccare il render: il refresh arriva in un OnAfterRender successivo).
             _ = LoadPreviewAsync();
         }
     }
@@ -269,8 +261,6 @@
 
     private Task OnReportModeChanged()
     {
-        // Cambiando modalità i selettori precedenti non hanno più senso: si riparte puliti
-        // così l'anteprima non mescola un dipendente/progetto ormai non più visibile.
         _selectedEmployeeId = Guid.Empty;
         _selectedProjectId = Guid.Empty;
         return LoadPreviewAsync();
@@ -285,8 +275,6 @@
 
         if (_reportByProject && _selectedProjectId == Guid.Empty)
         {
-            // Nessun progetto selezionato: niente da caricare, l'anteprima resta vuota
-            // finché l'utente non sceglie un progetto.
             _previewWorklogs = new();
             _loadingPreview = false;
             StateHasChanged();
@@ -317,7 +305,7 @@
                     : new List<WorkLogResponseDto>();
             }
         }
-        catch (OperationCanceledException) { /* cambio filtri: scarto il risultato */ }
+        catch (OperationCanceledException) {  }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Errore caricamento worklog per anteprima report: {ex}");
@@ -371,8 +359,6 @@
         _statusIcon = "bi-arrow-repeat spin";
         StateHasChanged();
 
-        // Ricarico dati freschi con i filtri correnti, così il PDF corrisponde
-        // esattamente a ciò che vede l'utente nei filtri della modale.
         List<WorkLogResponseDto> worklogs;
         try
         {

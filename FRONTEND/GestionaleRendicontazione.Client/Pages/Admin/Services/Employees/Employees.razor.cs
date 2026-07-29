@@ -3,16 +3,6 @@ using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Employees.razor.cs     -> stato condiviso, ciclo di vita, caricamento dipendenti
-//  - Employees.Register.cs  -> modale "Nuovo dipendente" (POST /api/auth/register)
-//  - Employees.Edit.cs      -> modale "Modifica dipendente"
-//  - Employees.Delete.cs    -> modale conferma eliminazione
-//
-// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
-// CrudPageService — qui rimane solo la lista _employees e il ciclo di vita Blazor.
-// L'unica eccezione è la modale di Register, che usa il proprio _registerError /
-// _isRegistering perché non passa dal flow CRUD standard (usa AuthService.RegisterAsync).
 public partial class Employees : ComponentBase, IDisposable
 {
     [Inject] private CrudPageService Crud { get; set; } = default!;

@@ -2,10 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Logica della modale "Nuovo/Modifica tipologia".
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
-// lo stato locale del form (modello + flag modal-open) e la chiamata API
-// specifica di TypeApiClient.
 public partial class Types
 {
     private bool _formModalOpen;
@@ -61,7 +57,6 @@ public partial class Types
     }
 }
 
-// Modello del form, esposto (non-privato) perché usato anche da TypeFormModal.razor.
 public sealed class TypeFormModel
 {
     public string Name { get; set; } = string.Empty;

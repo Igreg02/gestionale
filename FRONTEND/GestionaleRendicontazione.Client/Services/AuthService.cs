@@ -43,10 +43,6 @@ namespace GestionaleRendicontazione.Client.Services
 
             await _authenticationStateProvider.MarkUserAsAuthenticatedAsync(loginResponse);
 
-            // Sincronizza subito FilterStateService (IsAdmin + liste di lookup, inclusi i dipendenti)
-            // con l'utente appena autenticato. Il servizio è Scoped ma in Blazor WASM la scope dura
-            // quanto la tab del browser: senza questo passaggio, Dashboard troverebbe ancora
-            // IsAdmin/Employees della sessione precedente finché la pagina non viene ricaricata.
             var authState = await _authenticationStateProvider.GetAuthenticationStateAsync();
             _filterState.IsAdmin = authState.User.IsInRole(RoleNames.Admin);
             await _filterState.LoadLookupsAsync();
@@ -62,23 +58,13 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch
             {
-                // Ignoriamo eventuali errori di logout perché il client deve comunque pulire lo stato locale.
             }
 
             await _authenticationStateProvider.MarkUserAsLoggedOutAsync();
 
-            // Pulisce lo stato condiviso: senza questo reset, il prossimo login nella stessa tab
-            // (senza refresh della pagina) erediterebbe IsAdmin/filtri/liste dipendenti dell'utente
-            // che si è appena disconnesso. ResetForNewSession è async perché ripulisce anche
-            // localStorage per evitare leak cross-account dei filtri.
             await _filterState.ResetForNewSession();
         }
 
-        /// <summary>
-        /// Crea un nuovo Employee (solo Admin) tramite POST /api/auth/register.
-        /// Il backend restituisce 400 per errori di validazione (es. password troppo corta) e
-        /// 422 se lo userName è già in uso.
-        /// </summary>
         public async Task<ApiResult<RegisterResponseDto>> RegisterAsync(RegisterRequestDto request)
         {
             HttpResponseMessage response;
@@ -120,7 +106,6 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch
             {
-                // ignora: se il body non è un ProblemDetails valido usiamo il messaggio di default del chiamante
             }
 
             return null;

@@ -2,7 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Logica della modale "Nuovo dipendente" (crea nuovo Employee via POST /api/auth/register).
 public partial class Employees
 {
     private bool _registerModalOpen;
@@ -77,7 +76,6 @@ public partial class Employees
     }
 }
 
-// Modello del form, esposto (non-privato) perché usato anche da EmployeeRegisterModal.razor.
 public sealed class RegisterFormModel
 {
     public string UserName { get; set; } = string.Empty;

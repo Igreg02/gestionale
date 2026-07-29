@@ -4,10 +4,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 
-// Logica della modale "Modifica Worklog".
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui restano solo
-// lo stato locale del form (modello, source originale, data string, flag
-// modal-open) e la chiamata API specifica di WorkLogApiClient.UpdateAsync.
 public partial class Dashboard
 {
     private bool _editModalOpen;

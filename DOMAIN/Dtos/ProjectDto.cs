@@ -1,10 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 namespace GestionaleRendicontazione.Domain.Dtos
 {
-    /// <summary>
-    /// Contenitore dei DTO relativi a Project.
-    /// Server -> Client
-    /// </summary>
     public class ProjectDto
     {
         public class Response
@@ -17,10 +13,6 @@ namespace GestionaleRendicontazione.Domain.Dtos
             public string CompanyName { get; set; } = string.Empty;
         }
 
-
-        /// <summary>
-        /// Client -> Server
-        /// </summary>
         public class Create
         {
             [Required(ErrorMessage = "Il nome del progetto è obbligatorio.")]

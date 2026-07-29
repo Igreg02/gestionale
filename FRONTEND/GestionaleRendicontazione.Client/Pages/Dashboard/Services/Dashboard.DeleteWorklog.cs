@@ -2,10 +2,6 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 
-// Logica della modale di conferma eliminazione worklog.
-// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui restano solo
-// lo stato locale del modale (target + flag open) e la chiamata API specifica
-// di WorkLogApiClient.DeleteAsync.
 public partial class Dashboard
 {
     private bool _deleteModalOpen;
