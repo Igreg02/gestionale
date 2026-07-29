@@ -1,50 +1,56 @@
 using GestionaleRendicontazione.Client.Services;
+using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
 // Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Employees.razor.cs  -> stato condiviso, ciclo di vita, caricamento dipendenti
-//  - Employees.Register.cs -> modale "Nuovo dipendente" (POST /api/auth/register)
-//  - Employees.Edit.cs   -> modale "Modifica dipendente"
-//  - Employees.Delete.cs -> modale conferma eliminazione
-public partial class Employees
+//  - Employees.razor.cs     -> stato condiviso, ciclo di vita, caricamento dipendenti
+//  - Employees.Register.cs  -> modale "Nuovo dipendente" (POST /api/auth/register)
+//  - Employees.Edit.cs      -> modale "Modifica dipendente"
+//  - Employees.Delete.cs    -> modale conferma eliminazione
+//
+// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
+// CrudPageService — qui rimane solo la lista _employees e il ciclo di vita Blazor.
+// L'unica eccezione è la modale di Register, che usa il proprio _registerError /
+// _isRegistering perché non passa dal flow CRUD standard (usa AuthService.RegisterAsync).
+public partial class Employees : ComponentBase, IDisposable
 {
-    private bool _loading = true;
-    private string? _errorMessage;
+    [Inject] private CrudPageService Crud { get; set; } = default!;
+
     private List<EmployeeResponse> _employees = new();
 
-    private bool _isSaving;
-    private string? _modalError;
+    protected override void OnInitialized()
+    {
+        Crud.OnChanged += OnCrudStateChanged;
+        _ = LoadAsync();
+    }
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Crud.OnChanged -= OnCrudStateChanged;
 
     private async Task LoadAsync()
     {
-        _loading = true;
-        _errorMessage = null;
-        StateHasChanged();
-
-        try
-        {
-            _employees = (await EmployeeApiClient.GetAllAsync()).OrderBy(e => e.Username).ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nel recupero dei dipendenti: {ex}");
-            _errorMessage = "Impossibile recuperare i dipendenti dal server. Riprova più tardi.";
-        }
-        finally
-        {
-            _loading = false;
-        }
+        await Crud.RunLoadAsync(
+            load: () => ReloadListAsync(),
+            errorMessage: "Impossibile recuperare i dipendenti dal server. Riprova più tardi.");
     }
 
-    private static string FormatError(Dictionary<string, string[]> validationErrors, string? errorMessage, int statusCode = 0)
+    private async Task ReloadListAsync()
     {
-        if (statusCode == 409)
-            return ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
-        if (validationErrors.Count > 0)
-            return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
-        return errorMessage ?? "Si è verificato un errore imprevisto.";
+        _employees = (await EmployeeApiClient.GetAllAsync()).OrderBy(e => e.Username).ToList();
+    }
+
+    internal void ApplySaved(EmployeeResponse saved)
+    {
+        var idx = _employees.FindIndex(e => e.Id == saved.Id);
+        if (idx >= 0) _employees[idx] = saved;
+        else _employees.Add(saved);
+        _employees = _employees.OrderBy(e => e.Username).ToList();
+    }
+
+    internal void ApplyRemoved(Guid id)
+    {
+        _employees.RemoveAll(e => e.Id == id);
     }
 }

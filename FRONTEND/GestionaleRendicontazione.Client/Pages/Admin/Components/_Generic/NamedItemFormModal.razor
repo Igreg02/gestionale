@@ -1,17 +1,17 @@
-@using GestionaleRendicontazione.Client.Pages.Admin
+@typeparam TForm where TForm : class
 
 @if (Open && Model is not null)
 {
     <div class="custom-modal-backdrop" @onclick="() => OnClose.InvokeAsync()">
-        <div class="wl-modal-card" style="width:480px;" @onclick:stopPropagation="true">
+        <div class="wl-modal-card" style="width:@Width;" @onclick:stopPropagation="true">
 
             <div class="wl-modal-header">
-                <span class="wl-modal-label">@(IsEditing ? "MODIFICA AZIENDA" : "NUOVA AZIENDA")</span>
+                <span class="wl-modal-label">@HeaderLabel</span>
                 <div class="d-flex align-items-center gap-3">
                     <button class="wl-back-btn" @onclick="() => OnClose.InvokeAsync()" aria-label="Chiudi">
                         <i class="bi bi-arrow-left"></i>
                     </button>
-                    <span class="wl-modal-title">@(IsEditing ? "Modifica azienda" : "Nuova azienda")</span>
+                    <span class="wl-modal-title">@ModalTitle</span>
                 </div>
             </div>
 
@@ -23,14 +23,10 @@
             }
 
             <div class="wl-modal-body" style="display:block; padding:1.5rem;">
-                <div class="wl-field-row">
-                    <label class="wl-field-label">Nome</label>
-                    <input class="wl-field-input" @bind="Model.Name" placeholder="Ragione sociale" />
-                </div>
-                <div class="wl-field-row">
-                    <label class="wl-field-label">Email</label>
-                    <input class="wl-field-input" type="email" @bind="Model.Email" placeholder="email@azienda.it" />
-                </div>
+                @if (ChildContent is not null)
+                {
+                    @ChildContent(Model)
+                }
             </div>
 
             <div class="wl-modal-footer">
@@ -40,11 +36,11 @@
                     <button class="wl-btn-save" @onclick="() => OnSave.InvokeAsync()" disabled="@IsSaving">
                         @if (IsSaving)
                         {
-                            <i class="bi bi-arrow-repeat spin"></i> <span>Salvataggio...</span>
+                            <i class="bi bi-arrow-repeat spin"></i> <span>@SavingLabel</span>
                         }
                         else
                         {
-                            <i class="bi bi-check2"></i> <span>Salva</span>
+                            <i class="bi bi-check2"></i> <span>@SaveLabel</span>
                         }
                     </button>
                 </div>
@@ -55,11 +51,18 @@
 }
 
 @code {
-    [Parameter] public bool Open { get; set; }
+    [Parameter, EditorRequired] public bool Open { get; set; }
     [Parameter] public bool IsEditing { get; set; }
-    [Parameter] public CompanyFormModel? Model { get; set; }
+    [Parameter, EditorRequired] public TForm? Model { get; set; }
     [Parameter] public string? ModalError { get; set; }
     [Parameter] public bool IsSaving { get; set; }
-    [Parameter] public EventCallback OnClose { get; set; }
-    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnClose { get; set; }
+    [Parameter, EditorRequired] public EventCallback OnSave { get; set; }
+
+    [Parameter, EditorRequired] public string HeaderLabel { get; set; } = "MODIFICA";
+    [Parameter, EditorRequired] public string ModalTitle { get; set; } = string.Empty;
+    [Parameter] public string Width { get; set; } = "420px";
+    [Parameter] public string SaveLabel { get; set; } = "Salva";
+    [Parameter] public string SavingLabel { get; set; } = "Salvataggio...";
+    [Parameter, EditorRequired] public RenderFragment<TForm>? ChildContent { get; set; }
 }

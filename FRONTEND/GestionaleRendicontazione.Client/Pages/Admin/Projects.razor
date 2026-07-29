@@ -1,6 +1,6 @@
 @page "/admin/progetti"
 @attribute [Authorize(Roles = RoleNames.Admin)]
-@using GestionaleRendicontazione.Client.Pages.Admin.Components.Projects
+@using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
 @inject ProjectApiClient ProjectApiClient
 @inject CompanyApiClient CompanyApiClient
 @inject FilterStateService FilterState
@@ -19,17 +19,17 @@
         </button>
     </div>
 
-    @if (_loading)
+    @if (Crud.IsLoading)
     {
         <div class="worklog-status-panel">
             <i class="bi bi-arrow-repeat spin"></i> Caricamento progetti...
         </div>
     }
-    else if (_errorMessage is not null)
+    else if (Crud.ErrorMessage is not null)
     {
         <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
-            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @Crud.ErrorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@Crud.IsLoading">
                 <i class="bi bi-arrow-clockwise"></i> Riprova
             </button>
         </Alert>
@@ -43,22 +43,75 @@
             </Alert>
         }
 
-        <ProjectTable Projects="_projects" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+        <NamedItemTable TItem="ProjectResponse"
+                        Items="_projects"
+                        Colspan="3"
+                        EmptyMessage="Nessun progetto registrato.">
+            <HeaderContent>
+                <th>Nome progetto</th>
+                <th>Azienda</th>
+                <th></th>
+            </HeaderContent>
+            <RowContent>
+                <td class="fw-semibold">@context.Name</td>
+                <td class="text-muted">@context.CompanyName</td>
+                <td>
+                    <div class="admin-table-actions">
+                        <button class="admin-row-icon-btn" title="Modifica" @onclick="() => OpenEditModal(context)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="admin-row-icon-btn is-danger" title="Elimina" @onclick="() => ConfirmDelete(context)">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </td>
+            </RowContent>
+        </NamedItemTable>
     }
 </div>
 
-<ProjectFormModal Open="_formModalOpen"
+<NamedItemFormModal TForm="ProjectFormModel"
+                    Open="_formModalOpen"
                     IsEditing="_isEditing"
                     Model="_formModel"
-                    Companies="_companies"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    Width="480px"
+                    HeaderLabel="@(_isEditing ? "MODIFICA PROGETTO" : "NUOVO PROGETTO")"
+                    ModalTitle="@(_isEditing ? "Modifica progetto" : "Nuovo progetto")"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseFormModal"
-                    OnSave="SaveFormAsync" />
+                    OnSave="SaveFormAsync">
+    <ChildContent Context="form">
+        <div class="wl-field-row">
+            <label class="wl-field-label">Nome</label>
+            <input class="wl-field-input" @bind="form.Name" placeholder="Nome progetto" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Azienda</label>
+            <select class="wl-field-input" @bind="form.IdCompany">
+                <option value="@Guid.Empty">-- Seleziona --</option>
+                @foreach (var company in _companies)
+                {
+                    <option value="@company.Id">@company.Name</option>
+                }
+            </select>
+        </div>
+    </ChildContent>
+</NamedItemFormModal>
 
-<ProjectDeleteModal Open="_deleteModalOpen"
-                    Target="_deleteTarget"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
-                    OnClose="CloseDeleteModal"
-                    OnConfirm="ExecuteDeleteAsync" />
+<NamedItemDeleteModal TItem="ProjectResponse"
+                      Open="_deleteModalOpen"
+                      Target="_deleteTarget"
+                      HeaderLabel="ELIMINA PROGETTO"
+                      ModalTitle="Conferma eliminazione"
+                      LeadingText="Stai per eliminare il progetto:"
+                      WarningText="Questa operazione non può essere annullata. Se il progetto ha worklog collegati, l'eliminazione potrebbe non essere consentita dal backend."
+                      ModalError="@Crud.ModalError"
+                      IsSaving="Crud.IsSaving"
+                      OnClose="CloseDeleteModal"
+                      OnConfirm="ExecuteDeleteAsync">
+    <TargetContent Context="item">
+        <strong>@item.Name</strong>
+        <span class="ms-2 text-muted" style="font-size:0.85rem;">@item.CompanyName</span>
+    </TargetContent>
+</NamedItemDeleteModal>

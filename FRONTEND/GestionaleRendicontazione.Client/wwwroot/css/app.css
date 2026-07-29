@@ -1772,6 +1772,53 @@ body {
  * Ridefiniamo i token di :root per il tema scuro; tutte le componenti
  * che già usano var(--color-*) si aggiornano senza ulteriori override. */
 
+/* --- REVEAL CIRCOLARE DARK MODE ---
+ * Animazione "cerchio che si espande" al toggle del tema. Il punto di
+ * origine (--clip-x / --clip-y) è impostato da wwwroot/js/theme.js in
+ * base alla posizione del click sul toggle.
+ *  - Nei browser con View Transitions API: il JS anima ::view-transition-new(root)
+ *    con clipPath circolare (vedi theme.js). Le regole ::view-transition-*
+ *    qui sotto servono solo a disabilitare il default blend/flash per
+ *    evitare il doppio effetto.
+ *  - Negli altri browser: il body::before viene scalato da 0 a 1 con una
+ *    transition CSS, e la classe .animating-theme gestisce il trigger. */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    top: var(--clip-y, 50%);
+    left: var(--clip-x, 50%);
+    /* Dimensione portata a 1000vmax (raddoppio del precedente 500vmax):
+       il cerchio è grande il quadruplo dell'originale, garantendo che
+       anche viewport molto estese vengano coperte durante l'animazione. */
+    width: 1000vmax;
+    height: 1000vmax;
+    background: var(--color-bg-light);
+    border-radius: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    z-index: 9999;
+    pointer-events: none;
+    /* Durata raddoppiata (2.4s) rispetto al precedente 1.2s. */
+    transition: transform 2.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.animating-theme::before {
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Rispetta utenti con prefers-reduced-motion: salta l'animazione del
+   cerchio. Il toggle rimane funzionante, cambia solo istantaneamente. */
+@media (prefers-reduced-motion: reduce) {
+    body::before {
+        transition: none;
+    }
+}
+
 body.dark {
     /* Sfondi */
     --color-bg-light: #0a0f1c;
@@ -1837,6 +1884,14 @@ body.dark {
     color: var(--color-text-dark);
 }
 
+/* --border-color è alias di --color-border in :root (riga 102).
+   In dark mode --color-border diventa #2c3b5c, ma per il filtro dropdown
+   (e per gli altri elementi che usano direttamente var(--border-color))
+   vogliamo un bordo più chiaro e visibile: sovrascriviamo il token alias. */
+body.dark {
+    --border-color: #4b688f;
+}
+
 body.dark .auth-page {
     background: var(--color-bg-light);
 }
@@ -1874,7 +1929,6 @@ body.dark .custom-input:focus {
 
 body.dark .filter-menu-dropdown {
     background: var(--color-white);
-    border-color: var(--color-border);
 }
 
 body.dark .user-menu-dropdown {

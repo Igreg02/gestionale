@@ -5,6 +5,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 
 // Logica della modale "Nuovo Worklog".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui restano solo
+// lo stato locale del form (modello, data string, flag modal-open) e la chiamata
+// API specifica di WorkLogApiClient.CreateAsync.
 public partial class Dashboard
 {
     private bool _createModalOpen;
@@ -13,7 +16,7 @@ public partial class Dashboard
 
     private async Task OpenCreateModal()
     {
-        _modalError = null;
+        Crud.ResetModalError();
         if (FilterState.IsAdmin && _employees.Count == 0)
         {
             await LoadEmployeesAsync();
@@ -41,7 +44,7 @@ public partial class Dashboard
     {
         _createModalOpen = false;
         _createModel = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private void OnCreateDateInput(ChangeEventArgs e)
@@ -56,37 +59,20 @@ public partial class Dashboard
     private async Task SaveCreateAsync()
     {
         if (_createModel is null) return;
-        if (string.IsNullOrWhiteSpace(_createModel.Description)) { _modalError = "La descrizione è obbligatoria."; return; }
-        if (_createModel.HoursCounter < 1 || _createModel.HoursCounter > 24) { _modalError = "Le ore devono essere comprese tra 1 e 24."; return; }
-        if (_createModel.IdProject == Guid.Empty) { _modalError = "Seleziona un progetto."; return; }
-        if (_createModel.IdType == Guid.Empty) { _modalError = "Seleziona una tipologia."; return; }
-        if (_createModel.IdStatus == Guid.Empty) { _modalError = "Seleziona uno stato."; return; }
-        if (FilterState.IsAdmin && _createModel.IdEmployee == Guid.Empty) { _modalError = "Seleziona un dipendente."; return; }
+        if (string.IsNullOrWhiteSpace(_createModel.Description)) { Crud.SetClientModalError("La descrizione è obbligatoria."); return; }
+        if (_createModel.HoursCounter < 1 || _createModel.HoursCounter > 24) { Crud.SetClientModalError("Le ore devono essere comprese tra 1 e 24."); return; }
+        if (_createModel.IdProject == Guid.Empty) { Crud.SetClientModalError("Seleziona un progetto."); return; }
+        if (_createModel.IdType == Guid.Empty) { Crud.SetClientModalError("Seleziona una tipologia."); return; }
+        if (_createModel.IdStatus == Guid.Empty) { Crud.SetClientModalError("Seleziona uno stato."); return; }
+        if (FilterState.IsAdmin && _createModel.IdEmployee == Guid.Empty) { Crud.SetClientModalError("Seleziona un dipendente."); return; }
 
-        _isSaving = true;
-        _modalError = null;
-
-        try
-        {
-            var result = await WorkLogApiClient.CreateAsync(_createModel);
-            if (!result.IsSuccess)
+        await Crud.RunCrudAsync<WorkLogResponseDto>(
+            operation: () => WorkLogApiClient.CreateAsync(_createModel),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: created =>
             {
-                _modalError = result.ToUserMessage("Errore durante la creazione del worklog.");
-                return;
-            }
-
-            if (result.Data is not null)
-                _worklogs.Insert(0, result.Data);
-            CloseCreateModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore POST worklog: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+                _worklogs.Insert(0, created);
+                CloseCreateModal();
+            });
     }
 }

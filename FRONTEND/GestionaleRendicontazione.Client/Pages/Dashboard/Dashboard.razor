@@ -20,11 +20,11 @@
     </Row>
 
     <WorklogGrid Loading="FilterState.Loading"
-                ErrorMessage="@_errorMessage"
+                ErrorMessage="@Crud.ErrorMessage"
                 Worklogs="FilteredWorklogs"
                 SearchQuery="@FilterState.SearchQuery"
                 PeriodLabel="@_periodLabel"
-                IsSaving="_isSaving"
+                IsSaving="Crud.IsSaving"
                 OnRetry="() => LoadWorklogsAsync()"
                 OnEdit="OpenEditModal"
                 OnDelete="ConfirmDelete"
@@ -39,8 +39,8 @@
                     Employees="_employees"
                     EmployeesLoading="_employeesLoading"
                     Types="_types"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseCreateModal"
                     OnDateInput="OnCreateDateInput"
                     OnSave="SaveCreateAsync" />
@@ -52,8 +52,8 @@
                     Employees="_employees"
                     EmployeesLoading="_employeesLoading"
                     Types="_types"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseEditModal"
                     OnDateInput="OnDateInput"
                     OnSave="SaveEditAsync"
@@ -61,8 +61,8 @@
 
 <WorklogDeleteModal Open="_deleteModalOpen"
                     Target="_deleteTarget"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseDeleteModal"
                     OnConfirm="ExecuteDeleteAsync" />
 

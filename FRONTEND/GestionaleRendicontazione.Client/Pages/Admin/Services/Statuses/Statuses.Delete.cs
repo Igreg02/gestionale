@@ -3,6 +3,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
 // Logica della modale di conferma eliminazione stato.
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del modale (target + flag open) e la chiamata API specifica
+// di StatusApiClient.DeleteAsync.
 public partial class Statuses
 {
     private bool _deleteModalOpen;
@@ -11,7 +14,7 @@ public partial class Statuses
     private void ConfirmDelete(StatusResponse item)
     {
         _deleteTarget = item;
-        _modalError = null;
+        Crud.ResetModalError();
         _deleteModalOpen = true;
     }
 
@@ -19,33 +22,22 @@ public partial class Statuses
     {
         _deleteModalOpen = false;
         _deleteTarget = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private async Task ExecuteDeleteAsync()
     {
         if (_deleteTarget is null) return;
 
-        _isSaving = true;
-        _modalError = null;
-
-        try
-        {
-            var result = await ApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-            _items.RemoveAll(i => i.Id == _deleteTarget.Id);
-            _ = FilterState.ReloadLookupsAsync();
-            CloseDeleteModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nell'eliminazione: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+        var id = _deleteTarget.Id;
+        await Crud.RunCrudAsync(
+            operation: () => ApiClient.DeleteAsync(id),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: () =>
+            {
+                ApplyRemoved(id);
+                _ = FilterState.ReloadLookupsAsync();
+                CloseDeleteModal();
+            });
     }
 }

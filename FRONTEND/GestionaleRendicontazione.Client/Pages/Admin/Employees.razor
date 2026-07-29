@@ -1,6 +1,6 @@
 @page "/admin/dipendenti"
 @attribute [Authorize(Roles = RoleNames.Admin)]
-@using GestionaleRendicontazione.Client.Pages.Admin.Components.Employees
+@using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
 @inject EmployeeApiClient EmployeeApiClient
 @inject AuthService AuthService
 @inject FilterStateService FilterState
@@ -19,44 +19,123 @@
         </button>
     </div>
 
-    @if (_loading)
+    @if (Crud.IsLoading)
     {
         <div class="worklog-status-panel">
             <i class="bi bi-arrow-repeat spin"></i> Caricamento dipendenti...
         </div>
     }
-    else if (_errorMessage is not null)
+    else if (Crud.ErrorMessage is not null)
     {
         <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
-            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @Crud.ErrorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@Crud.IsLoading">
                 <i class="bi bi-arrow-clockwise"></i> Riprova
             </button>
         </Alert>
     }
     else
     {
-        <EmployeeTable Employees="_employees" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+        <NamedItemTable TItem="EmployeeResponse"
+                        Items="_employees"
+                        Colspan="4"
+                        EmptyMessage="Nessun dipendente registrato.">
+            <HeaderContent>
+                <th>Username</th>
+                <th>Nome</th>
+                <th>Cognome</th>
+                <th></th>
+            </HeaderContent>
+            <RowContent>
+                <td class="fw-semibold">@context.Username</td>
+                <td class="text-muted">@context.FirstName</td>
+                <td class="text-muted">@context.LastName</td>
+                <td>
+                    <div class="admin-table-actions">
+                        <button class="admin-row-icon-btn" title="Modifica" @onclick="() => OpenEditModal(context)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="admin-row-icon-btn is-danger" title="Elimina" @onclick="() => ConfirmDelete(context)">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </td>
+            </RowContent>
+        </NamedItemTable>
     }
 </div>
 
-<EmployeeRegisterModal Open="_registerModalOpen"
+<NamedItemFormModal TForm="RegisterFormModel"
+                    Open="_registerModalOpen"
                     Model="_registerModel"
+                    Width="480px"
+                    HeaderLabel="NUOVO DIPENDENTE"
+                    ModalTitle="Registra dipendente"
+                    SaveLabel="Crea dipendente"
+                    SavingLabel="Creazione..."
                     ModalError="@_registerError"
                     IsSaving="_isRegistering"
                     OnClose="CloseRegisterModal"
-                    OnSave="SaveRegisterAsync" />
+                    OnSave="SaveRegisterAsync">
+    <ChildContent Context="form">
+        <div class="wl-field-row">
+            <label class="wl-field-label">Username</label>
+            <input class="wl-field-input" @bind="form.UserName" placeholder="Username di accesso" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Password</label>
+            <input class="wl-field-input" type="password" @bind="form.Password" placeholder="Almeno 6 caratteri" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Nome</label>
+            <input class="wl-field-input" @bind="form.FirstName" placeholder="Nome" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Cognome</label>
+            <input class="wl-field-input" @bind="form.LastName" placeholder="Cognome" />
+        </div>
+    </ChildContent>
+</NamedItemFormModal>
 
-<EmployeeEditModal Open="_formModalOpen"
+<NamedItemFormModal TForm="EmployeeFormModel"
+                    Open="_formModalOpen"
                     Model="_formModel"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    Width="480px"
+                    HeaderLabel="MODIFICA DIPENDENTE"
+                    ModalTitle="Modifica dipendente"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseFormModal"
-                    OnSave="SaveFormAsync" />
+                    OnSave="SaveFormAsync">
+    <ChildContent Context="form">
+        <div class="wl-field-row">
+            <label class="wl-field-label">Username</label>
+            <input class="wl-field-input" @bind="form.Username" placeholder="Username" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Nome</label>
+            <input class="wl-field-input" @bind="form.FirstName" placeholder="Nome" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Cognome</label>
+            <input class="wl-field-input" @bind="form.LastName" placeholder="Cognome" />
+        </div>
+    </ChildContent>
+</NamedItemFormModal>
 
-<EmployeeDeleteModal Open="_deleteModalOpen"
-                    Target="_deleteTarget"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
-                    OnClose="CloseDeleteModal"
-                    OnConfirm="ExecuteDeleteAsync" />
+<NamedItemDeleteModal TItem="EmployeeResponse"
+                      Open="_deleteModalOpen"
+                      Target="_deleteTarget"
+                      HeaderLabel="ELIMINA DIPENDENTE"
+                      ModalTitle="Conferma eliminazione"
+                      LeadingText="Stai per eliminare il dipendente:"
+                      WarningText="Questa operazione non può essere annullata. Se il dipendente ha worklog collegati, l'eliminazione potrebbe non essere consentita dal backend."
+                      ModalError="@Crud.ModalError"
+                      IsSaving="Crud.IsSaving"
+                      OnClose="CloseDeleteModal"
+                      OnConfirm="ExecuteDeleteAsync">
+    <TargetContent Context="item">
+        <strong>@item.Username</strong>
+        <span class="ms-2 text-muted" style="font-size:0.85rem;">@item.FullName</span>
+    </TargetContent>
+</NamedItemDeleteModal>

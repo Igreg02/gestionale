@@ -3,6 +3,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
 // Logica della modale di conferma eliminazione azienda.
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del modale (target + flag open) e la chiamata API specifica
+// di CompanyApiClient.DeleteAsync.
 public partial class Companies
 {
     private bool _deleteModalOpen;
@@ -11,7 +14,7 @@ public partial class Companies
     private void ConfirmDelete(CompanyResponse company)
     {
         _deleteTarget = company;
-        _modalError = null;
+        Crud.ResetModalError();
         _deleteModalOpen = true;
     }
 
@@ -19,33 +22,22 @@ public partial class Companies
     {
         _deleteModalOpen = false;
         _deleteTarget = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private async Task ExecuteDeleteAsync()
     {
         if (_deleteTarget is null) return;
 
-        _isSaving = true;
-        _modalError = null;
-
-        try
-        {
-            var result = await CompanyApiClient.DeleteAsync(_deleteTarget.Id);
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-            _companies.RemoveAll(c => c.Id == _deleteTarget.Id);
-            _ = FilterState.ReloadLookupsAsync();
-            CloseDeleteModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nell'eliminazione dell'azienda: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
+        var id = _deleteTarget.Id;
+        await Crud.RunCrudAsync(
+            operation: () => CompanyApiClient.DeleteAsync(id),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: () =>
+            {
+                ApplyRemoved(id);
+                _ = FilterState.ReloadLookupsAsync();
+                CloseDeleteModal();
+            });
     }
 }

@@ -1,6 +1,6 @@
 @page "/admin/aziende"
 @attribute [Authorize(Roles = RoleNames.Admin)]
-@using GestionaleRendicontazione.Client.Pages.Admin.Components.Companies
+@using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
 @inject CompanyApiClient CompanyApiClient
 @inject FilterStateService FilterState
 
@@ -18,38 +18,86 @@
         </button>
     </div>
 
-    @if (_loading)
+    @if (Crud.IsLoading)
     {
         <div class="worklog-status-panel">
             <i class="bi bi-arrow-repeat spin"></i> Caricamento aziende...
         </div>
     }
-    else if (_errorMessage is not null)
+    else if (Crud.ErrorMessage is not null)
     {
         <Alert Color="Color.Danger" Visible="true" class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-            <span><i class="bi bi-exclamation-triangle me-1"></i> @_errorMessage</span>
-            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@_loading">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> @Crud.ErrorMessage</span>
+            <button type="button" class="btn btn-sm btn-outline-light" @onclick="() => LoadAsync()" disabled="@Crud.IsLoading">
                 <i class="bi bi-arrow-clockwise"></i> Riprova
             </button>
         </Alert>
     }
     else
     {
-        <CompanyTable Companies="_companies" OnEdit="OpenEditModal" OnDelete="ConfirmDelete" />
+        <NamedItemTable TItem="CompanyResponse"
+                        Items="_companies"
+                        Colspan="3"
+                        EmptyMessage="Nessuna azienda registrata.">
+            <HeaderContent>
+                <th>Nome</th>
+                <th>Email</th>
+                <th></th>
+            </HeaderContent>
+            <RowContent>
+                <td class="fw-semibold">@context.Name</td>
+                <td class="text-muted">@context.Email</td>
+                <td>
+                    <div class="admin-table-actions">
+                        <button class="admin-row-icon-btn" title="Modifica" @onclick="() => OpenEditModal(context)">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button class="admin-row-icon-btn is-danger" title="Elimina" @onclick="() => ConfirmDelete(context)">
+                            <i class="bi bi-trash3"></i>
+                        </button>
+                    </div>
+                </td>
+            </RowContent>
+        </NamedItemTable>
     }
 </div>
 
-<CompanyFormModal Open="_formModalOpen"
+<NamedItemFormModal TForm="CompanyFormModel"
+                    Open="_formModalOpen"
                     IsEditing="_isEditing"
                     Model="_formModel"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
+                    Width="480px"
+                    HeaderLabel="@(_isEditing ? "MODIFICA AZIENDA" : "NUOVA AZIENDA")"
+                    ModalTitle="@(_isEditing ? "Modifica azienda" : "Nuova azienda")"
+                    ModalError="@Crud.ModalError"
+                    IsSaving="Crud.IsSaving"
                     OnClose="CloseFormModal"
-                    OnSave="SaveFormAsync" />
+                    OnSave="SaveFormAsync">
+    <ChildContent Context="form">
+        <div class="wl-field-row">
+            <label class="wl-field-label">Nome</label>
+            <input class="wl-field-input" @bind="form.Name" placeholder="Ragione sociale" />
+        </div>
+        <div class="wl-field-row">
+            <label class="wl-field-label">Email</label>
+            <input class="wl-field-input" type="email" @bind="form.Email" placeholder="email@azienda.it" />
+        </div>
+    </ChildContent>
+</NamedItemFormModal>
 
-<CompanyDeleteModal Open="_deleteModalOpen"
-                    Target="_deleteTarget"
-                    ModalError="@_modalError"
-                    IsSaving="_isSaving"
-                    OnClose="CloseDeleteModal"
-                    OnConfirm="ExecuteDeleteAsync" />
+<NamedItemDeleteModal TItem="CompanyResponse"
+                      Open="_deleteModalOpen"
+                      Target="_deleteTarget"
+                      HeaderLabel="ELIMINA AZIENDA"
+                      ModalTitle="Conferma eliminazione"
+                      LeadingText="Stai per eliminare l'azienda:"
+                      WarningText="Questa operazione non può essere annullata. Se l'azienda ha progetti collegati, l'eliminazione potrebbe non essere consentita dal backend."
+                      ModalError="@Crud.ModalError"
+                      IsSaving="Crud.IsSaving"
+                      OnClose="CloseDeleteModal"
+                      OnConfirm="ExecuteDeleteAsync">
+    <TargetContent Context="item">
+        <strong>@item.Name</strong>
+        <span class="ms-2 text-muted" style="font-size:0.85rem;">@item.Email</span>
+    </TargetContent>
+</NamedItemDeleteModal>

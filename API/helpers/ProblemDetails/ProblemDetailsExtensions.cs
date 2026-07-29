@@ -36,9 +36,13 @@ namespace GestionaleRendicontazione.Api.Helpers.ProblemDetails
 
                     var (status, title) = exception switch
                     {
-                        InvalidOperationException => (StatusCodes.Status409Conflict, "Operazione non valida"),
-                        UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Non autorizzato"),
                         ArgumentException => (StatusCodes.Status400BadRequest, "Richiesta non valida"),
+                        UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Non autorizzato"),
+                        KeyNotFoundException => (StatusCodes.Status404NotFound, "Risorsa non trovata"),
+                        InvalidOperationException => (StatusCodes.Status409Conflict, "Operazione non valida"),
+                        NotImplementedException => (StatusCodes.Status501NotImplemented, "Funzionalità non implementata"),
+                        TimeoutException => (StatusCodes.Status504GatewayTimeout, "Timeout del server"),
+                        OperationCanceledException => (499 /* Client Closed Request, conventione nginx */, "Richiesta annullata dal client"),
                         _ => (StatusCodes.Status500InternalServerError, "Errore interno del server")
                     };
 

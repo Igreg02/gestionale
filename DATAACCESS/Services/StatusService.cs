@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -21,9 +22,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var list = session.Query<Status>()
-                    .OrderBy(s => s.Name)
-                    .ToList();
+                var list = session.GetAllOrderedBy<Status, string>(s => s.Name);
                 return _mapper.Map<List<StatusDto.Response>>(list);
             }));
         }
@@ -39,7 +38,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<StatusDto.Response> CreateAsync(StatusDto.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<StatusDto.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<StatusDto.Response>(async uow =>
             {
                 var entity = new Status(uow)
                 {
@@ -51,7 +50,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<StatusDto.Response?> UpdateAsync(Guid id, StatusDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<StatusDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<StatusDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Status>(id, ct);
                 if (entity is null) return null;
@@ -62,16 +61,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Status>(id, ct);
                 if (entity is null) return false;
 
-                if (entity.WorkLog != null && entity.WorkLog.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Impossibile eliminare lo stato '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
-                }
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.WorkLog,
+                    $"Impossibile eliminare lo stato '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
 
                 uow.Delete(entity);
                 return true;

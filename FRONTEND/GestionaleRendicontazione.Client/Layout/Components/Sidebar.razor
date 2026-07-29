@@ -1,0 +1,50 @@
+@namespace GestionaleRendicontazione.Client.Layout.Components
+
+<aside class="app-sidebar">
+    <div class="sidebar-brand">
+        <a href="/" class="sidebar-brand-link" @onclick="OnLinkClicked">
+            <span class="sidebar-brand-icon"><i class="bi bi-clock-history"></i></span>
+            <span class="sidebar-brand-text">
+                <strong>WORKLOG</strong>
+                <small>MANAGER</small>
+            </span>
+        </a>
+    </div>
+
+    <nav class="sidebar-nav">
+        <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All" @onclick="OnLinkClicked">
+            <i class="bi bi-house"></i><span>Dashboard</span>
+        </NavLink>
+        <NavLink class="sidebar-link" href="/admin/dipendenti" @onclick="OnLinkClicked">
+            <i class="bi bi-people"></i><span>Dipendenti</span>
+        </NavLink>
+        <NavLink class="sidebar-link" href="/admin/aziende" @onclick="OnLinkClicked">
+            <i class="bi bi-building"></i><span>Aziende</span>
+        </NavLink>
+        <NavLink class="sidebar-link" href="/admin/progetti" @onclick="OnLinkClicked">
+            <i class="bi bi-folder2"></i><span>Progetti</span>
+        </NavLink>
+        <NavLink class="sidebar-link" href="/admin/tipologie" @onclick="OnLinkClicked">
+            <i class="bi bi-tags"></i><span>Tipologie</span>
+        </NavLink>
+        <NavLink class="sidebar-link" href="/admin/stati" @onclick="OnLinkClicked">
+            <i class="bi bi-list-check"></i><span>Stati</span>
+        </NavLink>
+        <NavLink class="sidebar-link" href="/admin/logs" @onclick="OnLinkClicked">
+            <i class="bi bi-journal-text"></i><span>Logs</span>
+        </NavLink>
+    </nav>
+
+    <div class="sidebar-footer">
+        <a href="https://github.com/Igreg02" target="_blank" rel="noopener"
+           class="sidebar-link sidebar-help">
+            <i class="bi bi-question-circle"></i><span>Aiuto</span>
+        </a>
+    </div>
+</aside>
+
+@code {
+    [Parameter] public EventCallback OnNavigate { get; set; }
+
+    private Task OnLinkClicked() => OnNavigate.InvokeAsync();
+}

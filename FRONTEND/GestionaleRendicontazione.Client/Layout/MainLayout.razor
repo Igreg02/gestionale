@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @using System.Globalization
 @using GestionaleRendicontazione.Client.Services
+@using GestionaleRendicontazione.Client.Layout.Components
 @implements IDisposable
 @inject NavigationManager NavigationManager
 @inject FilterStateService FilterState
@@ -11,296 +12,197 @@
 
     <AuthorizeView Roles="@RoleNames.Admin">
         <Authorized>
-            <aside class="app-sidebar">
-                <div class="sidebar-brand">
-                    <a href="/" class="sidebar-brand-link">
-                        <span class="sidebar-brand-icon"><i class="bi bi-clock-history"></i></span>
-                        <span class="sidebar-brand-text">
-                            <strong>WORKLOG</strong>
-                            <small>MANAGER</small>
-                        </span>
-                    </a>
-                </div>
+            <Sidebar OnNavigate="CloseSidebar" />
+        </Authorized>
+    </AuthorizeView>
 
-                <nav class="sidebar-nav">
-                    <NavLink class="sidebar-link" href="/" Match="NavLinkMatch.All"><i
-                        class="bi bi-house"></i><span>Dashboard</span></NavLink>
-                        <NavLink class="sidebar-link" href="/admin/dipendenti"><i
-                            class="bi bi-people"></i><span>Dipendenti</span></NavLink>
-                            <NavLink class="sidebar-link" href="/admin/aziende"><i
-                                class="bi bi-building"></i><span>Aziende</span></NavLink>
-                                <NavLink class="sidebar-link" href="/admin/progetti"><i
-                                    class="bi bi-folder2"></i><span>Progetti</span></NavLink>
-                                    <NavLink class="sidebar-link" href="/admin/tipologie"><i
-                                        class="bi bi-tags"></i><span>Tipologie</span></NavLink>
-                                        <NavLink class="sidebar-link" href="/admin/stati"><i class="bi bi-list-check"></i><span>Stati</span>
-                                        </NavLink>
-                                        <NavLink class="sidebar-link" href="/admin/logs"><i class="bi bi-journal-text"></i><span>Logs</span>
-                                        </NavLink>
-                </nav>
+    <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
 
-                                        <div class="sidebar-footer">
-                                            <a href="https://github.com/Igreg02" target="_blank" rel="noopener" class="sidebar-link sidebar-help">
-                                                <i class="bi bi-question-circle"></i><span>Aiuto</span>
-                                            </a>
-                                        </div>
-                                    </aside>
-                                </Authorized>
-                            </AuthorizeView>
+    <div class="app-main">
+        <AuthorizeView>
+            <Authorized Context="outerAuth">
+                <Topbar ShowBurger="_isAdmin"
+                        Theme="_darkMode"
+                        ThemeChanged="OnDarkModeChanged"
+                        ThemeToggleMouseDown="OnThemeToggleMouseDown"
+                        OnBurgerClick="ToggleSidebar"
+                        OnUserMenuToggle="ToggleUserMenu"
+                        OnLogoutClick="CloseUserMenu"
+                        UserDisplayName="@GetDisplayName(outerAuth.User)"
+                        UserInitials="@GetInitials(outerAuth.User)"
+                        UserMenuOpen="_userMenuOpen">
+                    @if (_isDashboard)
+                    {
+                        <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
+                            <SearchBar Placeholder="Cerca nei worklog..."
+                                       Value="@FilterState.SearchQuery"
+                                       OnInput="OnSearchInput"
+                                       OnClear="ClearSearch" />
 
-                            <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
-
-                            <div class="app-main">
-                                <AuthorizeView>
-                                <Authorized Context="outerAuth">
-                                <header class="app-topbar d-flex align-items-center justify-content-between px-3">
-
-                                    <div class="d-flex align-items-center gap-2">
-                                        <AuthorizeView Roles="@RoleNames.Admin">
-                                            <Authorized>
-                                                <button class="topbar-burger me-2" @onclick="ToggleSidebar" aria-label="Apri menu">
-                                                    <i class="bi bi-list"></i>
-                                                </button>
-                                            </Authorized>
-                                        </AuthorizeView>
-                                    </div>
-
-                                    @if (_isDashboard)
+                            <div class="filter-menu" style="position: relative;">
+                                <button type="button"
+                                        class="btn btn-primary filter-toggle-btn d-inline-flex align-items-center gap-1 py-2 px-3"
+                                        @onclick="ToggleFilterPanel"
+                                        style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;"
+                                        onmouseover="this.style.backgroundColor='var(--primary-blue-hover)'"
+                                        onmouseout="this.style.backgroundColor='var(--primary-blue)'">
+                                    <i class="bi bi-funnel@(FilterState.HasActiveFilters ? "-fill" : "")"></i>
+                                    <span>Filtro</span>
+                                    @if (FilterState.HasActiveFilters)
                                     {
-                                        <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
-                                            <div class="worklog-search flex-fill m-0" style="position: relative;">
-                                                <i class="bi bi-search"></i>
-                                                <input type="text" placeholder="Cerca nei worklog..." value="@FilterState.SearchQuery"
-                                                       @oninput="OnSearchInput" />
-                                                @if (!string.IsNullOrEmpty(FilterState.SearchQuery))
-                                                {
-                                                    <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearSearch">
-                                                        <i class="bi bi-x-circle-fill"></i>
-                                                    </button>
-                                                }
-                                            </div>
-
-                                            <div class="filter-menu" style="position: relative;">
-                                                <button type="button"
-                                                        class="btn btn-primary filter-toggle-btn d-inline-flex align-items-center gap-1 py-2 px-3"
-                                                        @onclick="ToggleFilterPanel"
-                                                        style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;"
-                                                        [cite: 2] onmouseover="this.style.backgroundColor='var(--primary-blue-hover)'"
-                                                        onmouseout="this.style.backgroundColor='var(--primary-blue)'">
-                                                    <i class="bi bi-funnel@(FilterState.HasActiveFilters ? "-fill" : "")"></i>
-                                                    <span>Filtro</span>
-                                                    @if (FilterState.HasActiveFilters)
-                                                    {
-                                                        <span class="filter-badge" style="background-color: #fff;"></span>
-                                                    }
-                                                </button>
-
-                                                @if (FilterState.FilterPanelOpen)
-                                                {
-                                                    <div class="filter-menu-dropdown" @onclick:stopPropagation="true"
-                                                         style="position: absolute; right: 0; top: 54px; z-index: 1050; width: 320px; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12); padding: 1rem;">
-                                                        <div class="row g-3">
-                                                            <div class="col-6">
-                                                                <label class="form-label text-muted fw-bold small">Dal</label>
-                                                                <input type="date" class="form-control custom-input"
-                                                                       value="@FilterState.FilterFromString" @oninput="OnFilterFromInput" />
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <label class="form-label text-muted fw-bold small">Al</label>
-                                                                <input type="date" class="form-control custom-input" value="@FilterState.FilterToString"
-                                                                       @oninput="OnFilterToInput" />
-                                                            </div>
-                                                            <AuthorizeView Roles="@RoleNames.Admin">
-                                                                <div class="col-12">
-                                                                    <label class="form-label text-muted fw-bold small">Dipendente</label>
-                                                                    <select class="form-select custom-input" @bind="FilterState.FilterEmployeeId">
-                                                                        <option value="@Guid.Empty">Tutti</option>
-                                                                        @foreach (var emp in FilterState.Employees)
-                                                                        {
-                                                                            <option value="@emp.Id">@emp.Username</option>
-                                                                        }
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-12">
-                                                                    <label class="form-label text-muted fw-bold small">Progetto</label>
-                                                                    <select class="form-select custom-input" @bind="FilterState.FilterProjectId">
-                                                                        <option value="@Guid.Empty">Tutti</option>
-                                                                        @foreach (var proj in FilterState.Projects)
-                                                                        {
-                                                                            <option value="@proj.Id">@proj.Name</option>
-                                                                        }
-                                                                    </select>
-                                                                </div>
-                                                                <div class="col-12">
-                                                                    <label class="form-label text-muted fw-bold small">Stato</label>
-                                                                    <select class="form-select custom-input" @bind="FilterState.FilterStatusName">
-                                                                        <option value="">Tutti</option>
-                                                                        @foreach (var s in FilterState.Statuses)
-                                                                        {
-                                                                            <option value="@s.Name">@s.Name</option>
-                                                                        }
-                                                                    </select>
-                                                                </div>
-                                                            </AuthorizeView>
-                                                        </div>
-                                                        <div class="d-flex gap-2 mt-3">
-                                                            <button
-                                                                class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
-                                                                @onclick="ApplyFiltersAsync"
-                                                                style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
-                                                                <i class="bi bi-funnel"></i> Filtra
-                                                            </button>
-                                                            <button class="btn btn-outline-secondary" title="Reimposta filtri"
-                                                                    @onclick="ResetFiltersAsync" style="height: 40px; border-radius: 8px;">
-                                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
+                                        <span class="filter-badge" style="background-color: #fff;"></span>
                                     }
-                                    else if (_isLogs)
-                                    {
-                                        <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
-                                            <div class="worklog-search flex-fill m-0" style="position: relative;">
-                                                <i class="bi bi-search"></i>
-                                                <input type="text" placeholder="Messaggio, path, utente..." value="@LogFilterState.SearchQuery"
-                                                       @oninput="OnLogSearchInput" />
-                                                @if (!string.IsNullOrEmpty(LogFilterState.SearchQuery))
-                                                {
-                                                    <button type="button" class="worklog-search-clear" title="Cancella ricerca" @onclick="ClearLogSearch">
-                                                        <i class="bi bi-x-circle-fill"></i>
-                                                    </button>
-                                                }
-                                            </div>
+                                </button>
 
-                                            <div class="filter-menu" style="position: relative;">
-                                                <button type="button"
-                                                        class="btn btn-primary filter-toggle-btn d-inline-flex align-items-center gap-1 py-2 px-3"
-                                                        @onclick="ToggleLogFilterPanel"
-                                                        style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;"
-                                                        onmouseover="this.style.backgroundColor='var(--primary-blue-hover)'"
-                                                        onmouseout="this.style.backgroundColor='var(--primary-blue)'">
-                                                    <i class="bi bi-funnel@(LogFilterState.HasActiveFilters ? "-fill" : "")"></i>
-                                                    <span>Filtro</span>
-                                                    @if (LogFilterState.HasActiveFilters)
-                                                    {
-                                                        <span class="filter-badge" style="background-color: #fff;"></span>
-                                                    }
-                                                </button>
-
-                                                @if (LogFilterState.FilterPanelOpen)
-                                                {
-                                                    <div class="filter-menu-dropdown" @onclick:stopPropagation="true"
-                                                         style="position: absolute; right: 0; top: 54px; z-index: 1050; width: 320px; background: white; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12); padding: 1rem;">
-                                                        <div class="row g-3">
-                                                            <div class="col-6">
-                                                                <label class="form-label text-muted fw-bold small">Dal</label>
-                                                                <input type="date" class="form-control custom-input"
-                                                                       value="@LogFilterState.FilterFromString" @onchange="OnLogFilterFromChanged" />
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <label class="form-label text-muted fw-bold small">Al</label>
-                                                                <input type="date" class="form-control custom-input"
-                                                                       value="@LogFilterState.FilterToString" @onchange="OnLogFilterToChanged" />
-                                                            </div>
-                                                            <div class="col-12">
-                                                                <label class="form-label text-muted fw-bold small">Livello</label>
-                                                                <select class="form-select custom-input" @bind="LogFilterState.FilterLevel">
-                                                                    <option value="">Tutti</option>
-                                                                    <option value="Information">Information</option>
-                                                                    <option value="Warning">Warning</option>
-                                                                    <option value="Error">Error</option>
-                                                                    <option value="Fatal">Fatal</option>
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-12">
-                                                                <label class="form-label text-muted fw-bold small">Metodo</label>
-                                                                <select class="form-select custom-input" @bind="LogFilterState.FilterMethod">
-                                                                    <option value="">Tutti</option>
-                                                                    <option value="GET">GET</option>
-                                                                    <option value="POST">POST</option>
-                                                                    <option value="PUT">PUT</option>
-                                                                    <option value="DELETE">DELETE</option>
-                                                                    <option value="PATCH">PATCH</option>
-                                                                </select>
-                                                            </div>
-                                                        </div>
-                                                        <div class="d-flex gap-2 mt-3">
-                                                            <button class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
-                                                                    @onclick="ApplyLogFiltersAsync"
-                                                                    style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
-                                                                <i class="bi bi-funnel"></i> Filtra
-                                                            </button>
-                                                            <button class="btn btn-outline-secondary" title="Reimposta filtri"
-                                                                    @onclick="ResetLogFiltersAsync" style="height: 40px; border-radius: 8px;">
-                                                                <i class="bi bi-arrow-counterclockwise"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                }
+                                @if (FilterState.FilterPanelOpen)
+                                {
+                                    <div class="filter-menu-dropdown" @onclick:stopPropagation="true"
+                                         style="position: absolute; right: 0; top: 54px; z-index: 1050; width: 320px; background: var(--color-white); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 24px var(--shadow-color-dark-12); padding: 1rem;">
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <label class="form-label text-muted fw-bold small">Dal</label>
+                                                <input type="date" class="form-control custom-input"
+                                                       value="@FilterState.FilterFromString" @oninput="OnFilterFromInput" />
                                             </div>
+                                            <div class="col-6">
+                                                <label class="form-label text-muted fw-bold small">Al</label>
+                                                <input type="date" class="form-control custom-input" value="@FilterState.FilterToString"
+                                                       @oninput="OnFilterToInput" />
+                                            </div>
+                                            <AuthorizeView Roles="@RoleNames.Admin">
+                                                <div class="col-12">
+                                                    <label class="form-label text-muted fw-bold small">Dipendente</label>
+                                                    <select class="form-select custom-input" @bind="FilterState.FilterEmployeeId">
+                                                        <option value="@Guid.Empty">Tutti</option>
+                                                        @foreach (var emp in FilterState.Employees)
+                                                        {
+                                                            <option value="@emp.Id">@emp.Username</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label text-muted fw-bold small">Progetto</label>
+                                                    <select class="form-select custom-input" @bind="FilterState.FilterProjectId">
+                                                        <option value="@Guid.Empty">Tutti</option>
+                                                        @foreach (var proj in FilterState.Projects)
+                                                        {
+                                                            <option value="@proj.Id">@proj.Name</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label text-muted fw-bold small">Stato</label>
+                                                    <select class="form-select custom-input" @bind="FilterState.FilterStatusName">
+                                                        <option value="">Tutti</option>
+                                                        @foreach (var s in FilterState.Statuses)
+                                                        {
+                                                            <option value="@s.Name">@s.Name</option>
+                                                        }
+                                                    </select>
+                                                </div>
+                                            </AuthorizeView>
                                         </div>
-                                    }
-
-                                    <div class="d-flex align-items-center gap-3">
-                                        <!-- Toggle dark/light (Uiverse Galahhad).
-                                             Stato persistito in localStorage da wwwroot/js/theme.js.
-                                             La classe .dark sul <body> è già stata applicata al boot
-                                             dallo stesso script, quindi questo è solo il binding UI. -->
-                                        <label class="theme-switch" title="Tema scuro / chiaro" aria-label="Cambia tema">
-                                            <input type="checkbox" class="theme-switch__checkbox" @bind="_darkMode" @bind:after="OnDarkModeChanged" />
-                                            <div class="theme-switch__container">
-                                                <div class="theme-switch__clouds"></div>
-                                                <div class="theme-switch__stars-container">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 144 55" fill="none">
-                                                        <path fill-rule="evenodd" clip-rule="evenodd" d="M135.831 3.00688C135.055 3.85027 134.111 4.29946 133 4.35447C134.111 4.40947 135.055 4.85867 135.831 5.71123C136.607 6.55462 136.996 7.56303 136.996 8.72727C136.996 7.95722 137.172 7.25134 137.525 6.59129C137.886 5.93124 138.372 5.39954 138.98 5.00535C139.598 4.60199 140.268 4.39114 141 4.35447C139.88 4.2903 138.936 3.85027 138.16 3.00688C137.384 2.16348 136.996 1.16425 136.996 0C136.996 1.16425 136.607 2.16348 135.831 3.00688ZM31 23.3545C32.1114 23.2995 33.0551 22.8503 33.8313 22.0069C34.6075 21.1635 34.9956 20.1642 34.9956 19C34.9956 20.1642 35.3837 21.1635 36.1599 22.0069C36.9361 22.8503 37.8798 23.2903 39 23.3545C38.2679 23.3911 37.5976 23.602 36.9802 24.0053C36.3716 24.3995 35.8864 24.9312 35.5248 25.5913C35.172 26.2513 34.9956 26.9572 34.9956 27.7273C34.9956 26.563 34.6075 25.5546 33.8313 24.7112C33.0551 23.8587 32.1114 23.4095 31 23.3545ZM0 36.3545C1.11136 36.2995 2.05513 35.8503 2.83131 35.0069C3.6075 34.1635 3.99559 33.1642 3.99559 32C3.99559 33.1642 4.38368 34.1635 5.15987 35.0069C5.93605 35.8503 6.87982 36.2903 8 36.3545C7.26792 36.3911 6.59757 36.602 5.98015 37.0053C5.37155 37.3995 4.88644 37.9312 4.52481 38.5913C4.172 39.2513 3.99559 39.9572 3.99559 40.7273C3.99559 39.563 3.6075 38.5546 2.83131 37.7112C2.05513 36.8587 1.11136 36.4095 0 36.3545ZM56.8313 24.0069C56.0551 24.8503 55.1114 25.2995 54 25.3545C55.1114 25.4095 56.0551 25.8587 56.8313 26.7112C57.6075 27.5546 57.9956 28.563 57.9956 29.7273C57.9956 28.9572 58.172 28.2513 58.5248 27.5913C58.8864 26.9312 59.3716 26.3995 59.9802 26.0053C60.5976 25.602 61.2679 25.3911 62 25.3545C60.8798 25.2903 59.9361 24.8503 59.1599 24.0069C58.3837 23.1635 57.9956 22.1642 57.9956 21C57.9956 22.1642 57.6075 23.1635 56.8313 24.0069ZM81 25.3545C82.1114 25.2995 83.0551 24.8503 83.8313 24.0069C84.6075 23.1635 84.9956 22.1642 84.9956 21C84.9956 22.1642 85.3837 23.1635 86.1599 24.0069C86.9361 24.8503 87.8798 25.2903 89 25.3545C88.2679 25.3911 87.5976 25.602 86.9802 26.0053C86.3716 26.3995 85.8864 26.9312 85.5248 27.5913C85.172 28.2513 84.9956 28.9572 84.9956 29.7273C84.9956 28.563 84.6075 27.5546 83.8313 26.7112C83.0551 25.8587 82.1114 25.4095 81 25.3545ZM136 36.3545C137.111 36.2995 138.055 35.8503 138.831 35.0069C139.607 34.1635 139.996 33.1642 139.996 32C139.996 33.1642 140.384 34.1635 141.16 35.0069C141.936 35.8503 142.88 36.2903 144 36.3545C143.268 36.3911 142.598 36.602 141.98 37.0053C141.372 37.3995 140.886 37.9312 140.525 38.5913C140.172 39.2513 139.996 39.9572 139.996 40.7273C139.996 39.563 139.607 38.5546 138.831 37.7112C138.055 36.8587 137.111 36.4095 136 36.3545ZM101.831 49.0069C101.055 49.8503 100.111 50.2995 99 50.3545C100.111 50.4095 101.055 50.8587 101.831 51.7112C102.607 52.5546 102.996 53.563 102.996 54.7273C102.996 53.9572 103.172 53.2513 103.525 52.5913C103.886 51.9312 104.372 51.3995 104.98 51.0053C105.598 50.602 106.268 50.3911 107 50.3545C105.88 50.2903 104.936 49.8503 104.16 49.0069C103.384 48.1635 102.996 47.1642 102.996 46C102.996 47.1642 102.607 48.1635 101.831 49.0069Z" fill="currentColor"></path>
-                                                    </svg>
-                                                </div>
-                                                <div class="theme-switch__circle-container">
-                                                    <div class="theme-switch__sun-moon-container">
-                                                        <div class="theme-switch__moon">
-                                                            <div class="theme-switch__spot"></div>
-                                                            <div class="theme-switch__spot"></div>
-                                                            <div class="theme-switch__spot"></div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </label>
-
-                                        <AuthorizeView Context="topbarAuth">
-                                            <Authorized>
-                                                <div class="user-menu">
-                                                    <button class="user-menu-toggle" @onclick="ToggleUserMenu">
-                                                        <span class="avatar-circle">@GetInitials(topbarAuth.User)</span>
-                                                        <span class="user-menu-name">@GetDisplayName(topbarAuth.User)</span>
-                                                        <i class="bi bi-chevron-down"></i>
-                                                    </button>
-
-                                                    @if (_userMenuOpen)
-                                                    {
-                                                        <div class="user-menu-backdrop" @onclick="CloseUserMenu"></div>
-                                                        <div class="user-menu-dropdown">
-                                                            <NavLink class="user-menu-item" href="/logout" @onclick="CloseUserMenu">
-                                                                <i class="bi bi-box-arrow-right me-2"></i>Logout
-                                                            </NavLink>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            </Authorized>
-                                        </AuthorizeView>
+                                        <div class="d-flex gap-2 mt-3">
+                                            <button class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
+                                                    @onclick="ApplyFiltersAsync"
+                                                    style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
+                                                <i class="bi bi-funnel"></i> Filtra
+                                            </button>
+                                            <button class="btn btn-outline-secondary" title="Reimposta filtri"
+                                                    @onclick="ResetFiltersAsync" style="height: 40px; border-radius: 8px;">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                </header>
-                                            </Authorized>
-                                        </AuthorizeView>
-
-                                <main class="app-content">
-                                    @Body
-                                </main>
+                                }
                             </div>
                         </div>
+                    }
+                    else if (_isLogs)
+                    {
+                        <div class="d-flex align-items-center gap-2 flex-fill mx-3" style="max-width: 700px;">
+                            <SearchBar Placeholder="Messaggio, path, utente..."
+                                       Value="@LogFilterState.SearchQuery"
+                                       OnInput="OnLogSearchInput"
+                                       OnClear="ClearLogSearch" />
+
+                            <div class="filter-menu" style="position: relative;">
+                                <button type="button"
+                                        class="btn btn-primary filter-toggle-btn d-inline-flex align-items-center gap-1 py-2 px-3"
+                                        @onclick="ToggleLogFilterPanel"
+                                        style="height: 46px; background-color: var(--primary-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; transition: background 0.2s;"
+                                        onmouseover="this.style.backgroundColor='var(--primary-blue-hover)'"
+                                        onmouseout="this.style.backgroundColor='var(--primary-blue)'">
+                                    <i class="bi bi-funnel@(LogFilterState.HasActiveFilters ? "-fill" : "")"></i>
+                                    <span>Filtro</span>
+                                    @if (LogFilterState.HasActiveFilters)
+                                    {
+                                        <span class="filter-badge" style="background-color: #fff;"></span>
+                                    }
+                                </button>
+
+                                @if (LogFilterState.FilterPanelOpen)
+                                {
+                                    <div class="filter-menu-dropdown" @onclick:stopPropagation="true"
+                                         style="position: absolute; right: 0; top: 54px; z-index: 1050; width: 320px; background: var(--color-white); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 12px 24px var(--shadow-color-dark-12); padding: 1rem;">
+                                        <div class="row g-3">
+                                            <div class="col-6">
+                                                <label class="form-label text-muted fw-bold small">Dal</label>
+                                                <input type="date" class="form-control custom-input"
+                                                       value="@LogFilterState.FilterFromString" @onchange="OnLogFilterFromChanged" />
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label text-muted fw-bold small">Al</label>
+                                                <input type="date" class="form-control custom-input"
+                                                       value="@LogFilterState.FilterToString" @onchange="OnLogFilterToChanged" />
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label text-muted fw-bold small">Livello</label>
+                                                <select class="form-select custom-input" @bind="LogFilterState.FilterLevel">
+                                                    <option value="">Tutti</option>
+                                                    <option value="Information">Information</option>
+                                                    <option value="Warning">Warning</option>
+                                                    <option value="Error">Error</option>
+                                                    <option value="Fatal">Fatal</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label text-muted fw-bold small">Metodo</label>
+                                                <select class="form-select custom-input" @bind="LogFilterState.FilterMethod">
+                                                    <option value="">Tutti</option>
+                                                    <option value="GET">GET</option>
+                                                    <option value="POST">POST</option>
+                                                    <option value="PUT">PUT</option>
+                                                    <option value="DELETE">DELETE</option>
+                                                    <option value="PATCH">PATCH</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-3">
+                                            <button class="btn btn-primary flex-fill d-flex align-items-center justify-content-center gap-1"
+                                                    @onclick="ApplyLogFiltersAsync"
+                                                    style="background-color: var(--primary-blue); border: none; height: 40px; border-radius: 8px;">
+                                                <i class="bi bi-funnel"></i> Filtra
+                                            </button>
+                                            <button class="btn btn-outline-secondary" title="Reimposta filtri"
+                                                    @onclick="ResetLogFiltersAsync" style="height: 40px; border-radius: 8px;">
+                                                <i class="bi bi-arrow-counterclockwise"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </Topbar>
+            </Authorized>
+        </AuthorizeView>
+
+        <main class="app-content">
+            @Body
+        </main>
+    </div>
+</div>
 
 @code {
     [CascadingParameter] private Task<AuthenticationState>? AuthStateTask { get; set; }
@@ -309,6 +211,7 @@
     private bool _userMenuOpen;
     private bool _isDashboard;
     private bool _isLogs;
+    private bool _isAdmin;
     // Stato del toggle dark/light. Sincronizzato con localStorage via
     // wwwroot/js/theme.js (window.gestionaleTheme). Lo script JS applica
     // già la classe .dark al <body> al boot prima di Blazor, quindi qui
@@ -324,8 +227,14 @@
         if (AuthStateTask is not null)
         {
             var authState = await AuthStateTask;
-            FilterState.IsAdmin = authState.User.IsInRole(RoleNames.Admin);
+            _isAdmin = authState.User.IsInRole(RoleNames.Admin);
+            FilterState.IsAdmin = _isAdmin;
         }
+
+        // Ripristina i filtri persistenti (date + selezioni dropdown) da localStorage.
+        // Va fatto DOPO aver determinato IsAdmin perché alcuni filtri sono significativi
+        // solo per admin (es. dipendente). Se nessun filtro è salvato, l'operazione è no-op.
+        await FilterState.LoadFromStorageAsync();
 
         await FilterState.LoadLookupsAsync();
         FilterState.OnFiltersChanged += StateHasChanged;
@@ -370,19 +279,44 @@
         }
     }
 
-    // Handler invocato dopo che @bind ha aggiornato _darkMode.
-    // Propaga il nuovo stato al JS che salva in localStorage e applica
-    // la classe .dark al body.
-    private async Task OnDarkModeChanged()
+    // Handler invocato dal child <Topbar> quando l'utente toggle il checkbox.
+    // Aggiorna lo stato locale (così al prossimo render il binding è coerente)
+    // e propaga al JS che salva in localStorage + applica la classe .dark +
+    // avvia l'animazione circolare dal punto del mouse (catturato su mousedown).
+    private async Task OnDarkModeChanged(bool value)
     {
+        _darkMode = value;
+        // Coordinate del click salvate da OnThemeToggleMouseDown. Se l'utente
+        // ha usato la tastiera, _lastThemeClick è null e il JS cade al centro.
+        double x = 0, y = 0;
+        if (_lastThemeClick is not null)
+        {
+            x = _lastThemeClick.ClientX;
+            y = _lastThemeClick.ClientY;
+        }
         try
         {
-            await JS.InvokeVoidAsync("gestionaleTheme.set", _darkMode);
+            await JS.InvokeVoidAsync("gestionaleTheme.set", _darkMode, x, y);
         }
         catch
         {
             // ambiente non browser (test/SSR): ignora.
         }
+        finally
+        {
+            _lastThemeClick = null;
+        }
+    }
+
+    // Cattura il punto del mousedown PRIMA dell'onchange, così l'animazione
+    // circolare parte dal pixel esatto dove l'utente ha cliccato.
+    // @onmousedown su un <input type="checkbox"> viene emesso prima del
+    // toggle dello stato, quindi le coordinate sono sempre presenti quando
+    // arriva l'onchange corrispondente.
+    private MouseEventArgs? _lastThemeClick;
+    private void OnThemeToggleMouseDown(MouseEventArgs e)
+    {
+        _lastThemeClick = e;
     }
 
     private void CheckCurrentLocation()

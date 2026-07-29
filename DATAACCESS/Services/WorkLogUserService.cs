@@ -33,19 +33,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var query = session.Query<WorkLog>()
                     .Active()
                     .Where(w => w.Employee != null
-                                && w.Employee.Id == currentEmployeeId);
-
-                if (dateFrom.HasValue)
-                {
-                    var from = dateFrom.Value;
-                    query = query.Where(w => w.Date >= from);
-                }
-
-                if (dateTo.HasValue)
-                {
-                    var to = dateTo.Value;
-                    query = query.Where(w => w.Date <= to);
-                }
+                                && w.Employee.Id == currentEmployeeId)
+                    .ApplyFilters(employeeId: null, projectId: null, dateFrom, dateTo);
 
                 var list = query
                     .OrderByDescending(w => w.Date)
@@ -72,18 +61,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             Guid currentEmployeeId,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.User.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
             {
                 // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
-                var employee = await uow.GetObjectByKeyAsync<Employee>(currentEmployeeId, ct)
-                    ?? throw new InvalidOperationException("Dipendente autenticato non trovato");
+                var employee = await uow.GetRequiredAsync<Employee>(currentEmployeeId, "Dipendente autenticato non trovato", ct);
 
-                var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
-                var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
-                var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-
-                if (project == null || type == null || status == null)
-                    throw new InvalidOperationException("Una delle FK fornite non esiste");
+                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
+                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
+                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
 
                 var now = DateTime.UtcNow;
                 var entity = new WorkLog(uow)
@@ -110,18 +95,15 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             Guid currentEmployeeId,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.User.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
                 if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return null;
 
-                var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
-                var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
-                var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-
-                if (project == null || type == null || status == null)
-                    throw new InvalidOperationException("Una delle FK fornite non esiste");
+                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
+                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
+                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
 
                 entity.Description = dto.Description;
                 entity.HoursCounter = dto.HoursCounter;
@@ -137,7 +119,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, Guid currentEmployeeId, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return false;

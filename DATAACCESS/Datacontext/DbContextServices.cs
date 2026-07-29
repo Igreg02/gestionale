@@ -35,24 +35,6 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext.DbContextService
         }
 
 
-        public async Task ReadWrite(Func<UnitOfWork, Task> operation)
-        {
-            using (var uow = new UnitOfWork(_dataLayer))
-            {
-                await operation(uow);
-                await uow.CommitChangesAsync();
-            }
-        }
-        public async Task<T> ReadWrite<T>(Func<UnitOfWork, Task<T>> operation)
-        {
-            using (var uow = new UnitOfWork(_dataLayer))
-            {
-                var result = await operation(uow);
-                await uow.CommitChangesAsync();
-                return result;
-            }
-        }
-
         public async Task ReadWriteAsync(Func<UnitOfWork, Task> operation, CancellationToken cancellationToken = default)
         {
             using (var uow = new UnitOfWork(_dataLayer))

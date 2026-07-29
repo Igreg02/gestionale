@@ -3,6 +3,7 @@ using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
@@ -21,9 +22,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var list = session.Query<Project>()
-                    .OrderBy(p => p.Name)
-                    .ToList();
+                var list = session.GetAllOrderedBy<Project, string>(p => p.Name);
                 return _mapper.Map<List<ProjectDto.Response>>(list);
             }));
         }
@@ -39,10 +38,9 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<ProjectDto.Response> CreateAsync(ProjectDto.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<ProjectDto.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<ProjectDto.Response>(async uow =>
             {
-                var company = await uow.GetObjectByKeyAsync<Company>(dto.IdCompany, ct)
-                    ?? throw new InvalidOperationException("Azienda non trovata");
+                var company = await uow.GetRequiredAsync<Company>(dto.IdCompany, "Azienda non trovata", ct);
 
                 var entity = new Project(uow)
                 {
@@ -55,13 +53,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<ProjectDto.Response?> UpdateAsync(Guid id, ProjectDto.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<ProjectDto.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<ProjectDto.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return null;
 
-                var company = await uow.GetObjectByKeyAsync<Company>(dto.IdCompany, ct)
-                    ?? throw new InvalidOperationException("Azienda non trovata");
+                var company = await uow.GetRequiredAsync<Company>(dto.IdCompany, "Azienda non trovata", ct);
 
                 entity.Name = dto.Name;
                 entity.Company = company;
@@ -71,16 +68,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
                 if (entity is null) return false;
 
-                if (entity.WorkLog != null && entity.WorkLog.Any())
-                {
-                    throw new InvalidOperationException(
-                        $"Impossibile eliminare il progetto '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
-                }
+                DeleteGuard.ThrowIfHasRelated(
+                    entity.WorkLog,
+                    $"Impossibile eliminare il progetto '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
 
                 uow.Delete(entity);
                 return true;

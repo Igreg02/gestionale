@@ -1,22 +1,27 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.JSInterop;
 
 namespace GestionaleRendicontazione.Client.Services
 {
     public class FilterStateService
     {
         private readonly WorkLogApiClient _apiClient;
+        private readonly IJSRuntime _js;
 
-        public FilterStateService(WorkLogApiClient apiClient)
+        public FilterStateService(WorkLogApiClient apiClient, IJSRuntime js)
         {
             _apiClient = apiClient;
-            
-            // Inizializzazione IMMEDIATA delle date al mese corrente per evitare lo stato 01/01/0001
+            _js = js;
+
+            // Inizializzazione IMMEDIATA delle date al mese corrente per evitare lo stato 01/01/0001.
+            // Se in localStorage c'è uno stato precedente, verrà sovrascritto da LoadFromStorageAsync()
+            // (chiamato dal MainLayout al boot); qui impostiamo i default per il primo render.
             var today = DateOnly.FromDateTime(DateTime.Today);
             var periodFrom = new DateOnly(today.Year, today.Month, 1);
             var periodTo = periodFrom.AddMonths(1).AddDays(-1);
-            
+
             FilterFromString = periodFrom.ToString("yyyy-MM-dd");
             FilterToString = periodTo.ToString("yyyy-MM-dd");
         }
@@ -37,7 +42,7 @@ namespace GestionaleRendicontazione.Client.Services
         public Guid FilterEmployeeId { get; set; } = Guid.Empty;
         public Guid FilterProjectId { get; set; } = Guid.Empty;
         public string FilterStatusName { get; set; } = string.Empty;
-        
+
         // Stati di UI e permessi
         public bool FilterPanelOpen { get; set; }
         public bool IsAdmin { get; set; }
@@ -51,7 +56,74 @@ namespace GestionaleRendicontazione.Client.Services
         public bool HasActiveFilters =>
             FilterEmployeeId != Guid.Empty || FilterProjectId != Guid.Empty || !string.IsNullOrWhiteSpace(FilterStatusName);
 
-        public void NotifyFiltersChanged() => OnFiltersChanged?.Invoke();
+        public void NotifyFiltersChanged()
+        {
+            // Persisti i filtri "di sessione lunga" (date + selezioni dropdown)
+            // ogni volta che cambiano. Le operazioni sono asincrone fire-and-forget:
+            // localStorage è veloce (<1ms) e non blocca il render di Blazor.
+            _ = SavePersistentFiltersAsync();
+            OnFiltersChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Ripristina i filtri persistenti salvati in localStorage (date + selezioni dropdown).
+        /// Chiamato dal MainLayout al boot. Se uno dei valori admin-only era salvato ma l'utente
+        /// corrente non è più admin, viene scartato per evitare filtri "invisibili" all'utente.
+        /// </summary>
+        public async Task LoadFromStorageAsync()
+        {
+            try
+            {
+                var data = await _js.InvokeAsync<PersistentFilters?>("gestionaleFilters.load");
+                if (data is null) return;
+
+                if (!string.IsNullOrWhiteSpace(data.FilterFrom))
+                    FilterFromString = data.FilterFrom;
+                if (!string.IsNullOrWhiteSpace(data.FilterTo))
+                    FilterToString = data.FilterTo;
+
+                // I filtri admin-only sono significativi solo se l'utente è admin.
+                // Senza questo check, un non-admin che condivide il browser vedrebbe
+                // lavorlog filtrati per un altro dipendente senza poter rimuovere
+                // il filtro (il select dipendente è nascosto).
+                if (IsAdmin)
+                {
+                    if (Guid.TryParse(data.EmployeeId, out var empId) && empId != Guid.Empty)
+                        FilterEmployeeId = empId;
+                    if (Guid.TryParse(data.ProjectId, out var projId) && projId != Guid.Empty)
+                        FilterProjectId = projId;
+                    if (!string.IsNullOrWhiteSpace(data.StatusName))
+                        FilterStatusName = data.StatusName;
+                }
+            }
+            catch (Exception ex)
+            {
+                // JS non ancora disponibile o localStorage corrotto: ignora,
+                // i default del costruttore restano in vigore.
+                Console.Error.WriteLine($"Errore caricamento filtri da localStorage: {ex}");
+            }
+        }
+
+        private async Task SavePersistentFiltersAsync()
+        {
+            try
+            {
+                var data = new PersistentFilters
+                {
+                    FilterFrom = FilterFromString,
+                    FilterTo = FilterToString,
+                    EmployeeId = FilterEmployeeId == Guid.Empty ? string.Empty : FilterEmployeeId.ToString(),
+                    ProjectId = FilterProjectId == Guid.Empty ? string.Empty : FilterProjectId.ToString(),
+                    StatusName = FilterStatusName ?? string.Empty
+                };
+                await _js.InvokeVoidAsync("gestionaleFilters.save", data);
+            }
+            catch
+            {
+                // Ambiente non browser (test/SSR) o localStorage pieno: ignora.
+                // Lo stato in memoria resta valido per la sessione corrente.
+            }
+        }
 
         /// <summary>
         /// Riporta il servizio allo stato "pulito" quando cambia l'utente autenticato (login/logout)
@@ -60,7 +132,7 @@ namespace GestionaleRendicontazione.Client.Services
         /// logout/login rapido farebbe "ereditare" al nuovo utente IsAdmin, i filtri e le liste di
         /// lookup (es. Employees) della sessione precedente.
         /// </summary>
-        public void ResetForNewSession()
+        public async Task ResetForNewSession()
         {
             IsAdmin = false;
             Employees = new();
@@ -72,6 +144,18 @@ namespace GestionaleRendicontazione.Client.Services
             FilterProjectId = Guid.Empty;
             FilterStatusName = string.Empty;
             FilterPanelOpen = false;
+
+            // Le date (FilterFromString/FilterToString) NON vengono resettate —
+            // anche dopo un logout/login ha senso mantenere il "periodo di
+            // osservazione" preferito dall'utente. Il filtro dipendente/progetto/stato
+            // viene azzerato per evitare leak cross-account.
+
+            // Pulisce anche lo storage per evitare che i filtri admin-only del
+            // precedente utente "resistano" sul nuovo account non-admin.
+            try { await _js.InvokeVoidAsync("gestionaleFilters.clear"); }
+            catch { /* ignora — ambiente non browser */ }
+
+            OnFiltersChanged?.Invoke();
         }
 
         public async Task LoadLookupsAsync()
@@ -133,6 +217,19 @@ namespace GestionaleRendicontazione.Client.Services
             {
                 Console.Error.WriteLine($"Errore durante ReloadLookupsAsync: {ex}");
             }
+        }
+
+        /// <summary>
+        /// DTO serializzato in localStorage per ricordare i filtri Dashboard tra
+        /// refresh/navigazione. Campi nullable/empty-string-safe.
+        /// </summary>
+        private sealed class PersistentFilters
+        {
+            public string FilterFrom { get; set; } = string.Empty;
+            public string FilterTo { get; set; } = string.Empty;
+            public string EmployeeId { get; set; } = string.Empty;
+            public string ProjectId { get; set; } = string.Empty;
+            public string StatusName { get; set; } = string.Empty;
         }
     }
 }

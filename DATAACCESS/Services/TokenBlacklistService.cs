@@ -21,7 +21,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             if (string.IsNullOrWhiteSpace(jti)) return;
 
             // Inseriamo il token in blacklist nel DB
-            await _dbContextService.ReadWrite(async uow =>
+            await _dbContextService.ReadWriteAsync(async uow =>
             {
                 var existing = await uow.GetObjectByKeyAsync<BlacklistedToken>(jti);
                 if (existing is null)
@@ -60,7 +60,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             try
             {
-                await _dbContextService.ReadWrite(async uow =>
+                await _dbContextService.ReadWriteAsync(async uow =>
                 {
                     var now = DateTime.UtcNow;
                     var expiredTokens = uow.Query<BlacklistedToken>()

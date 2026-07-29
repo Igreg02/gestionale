@@ -38,35 +38,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var query = session.Query<WorkLog>().Active();
-
-                if (employeeId.HasValue)
-                {
-                    query = query.Where(w => w.Employee != null && w.Employee.Id == employeeId.Value);
-                }
-
-                if (projectId.HasValue)
-                {
-                    query = query.Where(w => w.Project != null && w.Project.Id == projectId.Value);
-                }
-
-                if (dateFrom.HasValue)
-                {
-                    var from = dateFrom.Value;
-                    query = query.Where(w => w.Date >= from);
-                }
-
-                if (dateTo.HasValue)
-                {
-                    var to = dateTo.Value;
-                    query = query.Where(w => w.Date <= to);
-                }
-
-                if (!string.IsNullOrWhiteSpace(statusName))
-                {
-                    var trimmed = statusName.Trim();
-                    query = query.Where(w => w.Status != null && w.Status.Name == trimmed);
-                }
+                var query = session.Query<WorkLog>().Active()
+                    .ApplyFilters(employeeId, projectId, dateFrom, dateTo, statusName);
 
                 var list = query
                     .OrderByDescending(w => w.Date)
@@ -79,15 +52,12 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<WorkLogDto.Admin.Response> CreateAsync(WorkLogDto.Admin.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.Admin.Response>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response>(async uow =>
             {
-                var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
-                var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
-                var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-                var employee = await uow.GetObjectByKeyAsync<Employee>(dto.IdEmployee, ct);
-
-                if (project == null || type == null || status == null || employee == null)
-                    throw new InvalidOperationException("Una delle FK fornite non esiste");
+                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
+                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
+                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
+                var employee = await uow.GetRequiredAsync<Employee>(dto.IdEmployee, "Una delle FK fornite non esiste", ct);
 
                 var now = DateTime.UtcNow;
                 var entity = new WorkLog(uow)
@@ -110,18 +80,15 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<WorkLogDto.Admin.Response?> UpdateAsync(Guid id, WorkLogDto.Admin.Update dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<WorkLogDto.Admin.Response?>(async uow =>
+            return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response?>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
 
-                var project = await uow.GetObjectByKeyAsync<Project>(dto.IdProject, ct);
-                var type = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(dto.IdType, ct);
-                var status = await uow.GetObjectByKeyAsync<Status>(dto.IdStatus, ct);
-                var employee = await uow.GetObjectByKeyAsync<Employee>(dto.IdEmployee, ct);
-
-                if (project == null || type == null || status == null || employee == null)
-                    throw new InvalidOperationException("Una delle FK fornite non esiste");
+                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
+                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
+                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
+                var employee = await uow.GetRequiredAsync<Employee>(dto.IdEmployee, "Una delle FK fornite non esiste", ct);
 
                 entity.Description = dto.Description;
                 entity.HoursCounter = dto.HoursCounter;
@@ -138,7 +105,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWrite<bool>(async uow =>
+            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return false;

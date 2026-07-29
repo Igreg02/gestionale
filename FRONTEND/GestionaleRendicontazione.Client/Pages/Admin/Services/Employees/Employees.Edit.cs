@@ -3,6 +3,9 @@ using GestionaleRendicontazione.Client.Services;
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
 // Logica della modale "Modifica dipendente".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del form (modello + flag modal-open) e la chiamata API
+// specifica di EmployeeApiClient.UpdateAsync.
 public partial class Employees
 {
     private bool _formModalOpen;
@@ -18,7 +21,7 @@ public partial class Employees
             FirstName = employee.FirstName,
             LastName = employee.LastName,
         };
-        _modalError = null;
+        Crud.ResetModalError();
         _formModalOpen = true;
     }
 
@@ -26,45 +29,42 @@ public partial class Employees
     {
         _formModalOpen = false;
         _formModel = null;
-        _modalError = null;
+        Crud.ResetModalError();
     }
 
     private async Task SaveFormAsync()
     {
         if (_formModel is null) return;
-        if (string.IsNullOrWhiteSpace(_formModel.Username)) { _modalError = "Lo username è obbligatorio."; return; }
-        if (string.IsNullOrWhiteSpace(_formModel.FirstName)) { _modalError = "Il nome è obbligatorio."; return; }
-        if (string.IsNullOrWhiteSpace(_formModel.LastName)) { _modalError = "Il cognome è obbligatorio."; return; }
-
-        _isSaving = true;
-        _modalError = null;
-
-        try
+        if (string.IsNullOrWhiteSpace(_formModel.Username))
         {
-            var result = await EmployeeApiClient.UpdateAsync(_editingId, new EmployeeUpdateRequest
+            Crud.SetClientModalError("Lo username è obbligatorio.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_formModel.FirstName))
+        {
+            Crud.SetClientModalError("Il nome è obbligatorio.");
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_formModel.LastName))
+        {
+            Crud.SetClientModalError("Il cognome è obbligatorio.");
+            return;
+        }
+
+        await Crud.RunCrudAsync<EmployeeResponse>(
+            operation: () => EmployeeApiClient.UpdateAsync(_editingId, new EmployeeUpdateRequest
             {
                 Username = _formModel.Username,
                 FirstName = _formModel.FirstName,
                 LastName = _formModel.LastName,
+            }),
+            networkErrorMessage: "Errore di rete. Riprova più tardi.",
+            onSuccess: saved =>
+            {
+                ApplySaved(saved);
+                _ = FilterState.ReloadLookupsAsync();
+                CloseFormModal();
             });
-            if (!result.IsSuccess) { _modalError = FormatError(result.ValidationErrors, result.ErrorMessage, result.StatusCode); return; }
-
-            var idx = _employees.FindIndex(e => e.Id == _editingId);
-            if (idx >= 0) _employees[idx] = result.Data!;
-
-            _employees = _employees.OrderBy(e => e.Username).ToList();
-            _ = FilterState.ReloadLookupsAsync();
-            CloseFormModal();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nel salvataggio del dipendente: {ex}");
-            _modalError = "Errore di rete. Riprova più tardi.";
-        }
-        finally
-        {
-            _isSaving = false;
-        }
     }
 }
 

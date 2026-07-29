@@ -1,4 +1,5 @@
 using GestionaleRendicontazione.Client.Services;
+using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
@@ -6,50 +7,54 @@ namespace GestionaleRendicontazione.Client.Pages.Admin;
 //  - Projects.razor.cs  -> stato condiviso, ciclo di vita, caricamento progetti/aziende
 //  - Projects.Form.cs   -> modale "Nuovo/Modifica progetto"
 //  - Projects.Delete.cs -> modale conferma eliminazione
-public partial class Projects
+//
+// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
+// CrudPageService — qui rimane la lista _projects, la lookup _companies e il
+// ciclo di vita Blazor.
+public partial class Projects : ComponentBase, IDisposable
 {
-    private bool _loading = true;
-    private string? _errorMessage;
+    [Inject] private CrudPageService Crud { get; set; } = default!;
+
     private List<ProjectResponse> _projects = new();
     private List<CompanyResponse> _companies = new();
 
-    private bool _isSaving;
-    private string? _modalError;
+    protected override void OnInitialized()
+    {
+        Crud.OnChanged += OnCrudStateChanged;
+        _ = LoadAsync();
+    }
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Crud.OnChanged -= OnCrudStateChanged;
 
     private async Task LoadAsync()
     {
-        _loading = true;
-        _errorMessage = null;
-        StateHasChanged();
-
-        try
-        {
-            var projectsTask = ProjectApiClient.GetAllAsync();
-            var companiesTask = CompanyApiClient.GetAllAsync();
-            await Task.WhenAll(projectsTask, companiesTask);
-
-            _projects = (await projectsTask).OrderBy(p => p.Name).ToList();
-            _companies = (await companiesTask).OrderBy(c => c.Name).ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Errore nel recupero dei progetti: {ex}");
-            _errorMessage = "Impossibile recuperare i progetti dal server. Riprova più tardi.";
-        }
-        finally
-        {
-            _loading = false;
-        }
+        await Crud.RunLoadAsync(
+            load: () => ReloadListsAsync(),
+            errorMessage: "Impossibile recuperare i progetti dal server. Riprova più tardi.");
     }
 
-    private static string FormatError(Dictionary<string, string[]> validationErrors, string? errorMessage, int statusCode = 0)
+    private async Task ReloadListsAsync()
     {
-        if (statusCode == 409)
-            return ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
-        if (validationErrors.Count > 0)
-            return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
-        return errorMessage ?? "Si è verificato un errore imprevisto.";
+        var projectsTask = ProjectApiClient.GetAllAsync();
+        var companiesTask = CompanyApiClient.GetAllAsync();
+        await Task.WhenAll(projectsTask, companiesTask);
+
+        _projects = (await projectsTask).OrderBy(p => p.Name).ToList();
+        _companies = (await companiesTask).OrderBy(c => c.Name).ToList();
+    }
+
+    internal void ApplySaved(ProjectResponse saved)
+    {
+        var idx = _projects.FindIndex(p => p.Id == saved.Id);
+        if (idx >= 0) _projects[idx] = saved;
+        else _projects.Add(saved);
+        _projects = _projects.OrderBy(p => p.Name).ToList();
+    }
+
+    internal void ApplyRemoved(Guid id)
+    {
+        _projects.RemoveAll(p => p.Id == id);
     }
 }
