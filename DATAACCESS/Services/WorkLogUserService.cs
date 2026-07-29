@@ -7,6 +7,10 @@ using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
+    /// <summary>
+    /// Implementazione di <see cref="IWorkLogUserService"/>: tutte le operazioni
+    /// sono filtrate sull'Oid del dipendente autenticato.
+    /// </summary>
     public class WorkLogUserService : IWorkLogUserService
     {
         private readonly IDbContextService _dbContextService;
@@ -59,6 +63,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
             {
+                // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
                 var employee = await uow.GetRequiredAsync<Employee>(currentEmployeeId, "Dipendente autenticato non trovato", ct);
 
                 var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);

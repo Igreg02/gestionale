@@ -2,6 +2,11 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
+    /// <summary>
+    /// Client tipizzato per l'endpoint <c>api/Log</c>. Solo lettura (GET paginata con filtri):
+    /// i log sono scritti esclusivamente dal sink Serilog lato server. Riservato al ruolo Admin
+    /// (il token viene allegato automaticamente da <see cref="AuthenticatedHttpMessageHandler"/>).
+    /// </summary>
     public sealed class LogApiClient
     {
         private readonly HttpClient _httpClient;
@@ -39,10 +44,14 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                // Il chiamante ha cancellato (es. nuova ricerca che sostituisce quella precedente):
+                // non è un errore dell'utente, lascialo propagare.
                 throw;
             }
             catch (Exception ex)
             {
+                // Network error / DNS / TLS / CORS: arriva qui invece che a ToApiResultAsync
+                // perché GetAsync lancia prima di avere una HttpResponseMessage.
                 Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
                 return ApiResult<LogPageResponse>.WithError(
                     $"Errore di rete: {ex.Message}",
@@ -51,6 +60,7 @@ namespace GestionaleRendicontazione.Client.Services
         }
     }
 
+    // ── DTO client-side (speculari a LogDto/LogPage del domain) ─────────────
 
     public sealed class LogPageResponse
     {

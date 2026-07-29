@@ -6,6 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GestionaleRendicontazione.Api.Controllers
 {
+    /// <summary>
+    /// Controller per la consultazione dei log applicativi.
+    /// I log sono scritti esclusivamente dal sink Serilog; questo controller
+    /// espone solo la GET per la pagina admin. Riservato al ruolo Admin.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Produces("application/json")]

@@ -9,6 +9,13 @@ using Microsoft.Extensions.Logging;
 
 namespace GestionaleRendicontazione.Api.Helpers.ProblemDetails
 {
+    /// <summary>
+    /// Middleware globale per la gestione delle eccezioni non gestite.
+    /// Le eccezioni note vengono mappate a uno status HTTP sensato
+    /// (InvalidOperationException → 409, UnauthorizedAccessException → 401, …)
+    /// e il payload segue il formato RFC 7807 (application/problem+json).
+    /// In Development aggiunge traceId + stackTrace.
+    /// </summary>
     public static class ProblemDetailsExtensions
     {
         public static IApplicationBuilder UseGlobalProblemDetails(this IApplicationBuilder app)
@@ -35,7 +42,7 @@ namespace GestionaleRendicontazione.Api.Helpers.ProblemDetails
                         InvalidOperationException => (StatusCodes.Status409Conflict, "Operazione non valida"),
                         NotImplementedException => (StatusCodes.Status501NotImplemented, "Funzionalità non implementata"),
                         TimeoutException => (StatusCodes.Status504GatewayTimeout, "Timeout del server"),
-                        OperationCanceledException => (499 , "Richiesta annullata dal client"),
+                        OperationCanceledException => (499 /* Client Closed Request, conventione nginx */, "Richiesta annullata dal client"),
                         _ => (StatusCodes.Status500InternalServerError, "Errore interno del server")
                     };
 

@@ -72,6 +72,8 @@ namespace GestionaleRendicontazione.Dataaccess.Datacontext
                     Name = "REJECTED"
                 };
 
+                // 3) Worklog dimostrativo: Employee = admin, non più orfano.
+                //    La FK verrà materializzata al commit finale centralizzato.
                 var worklog = new WorkLog(uow)
                 {
                     Description = "Descrizione",

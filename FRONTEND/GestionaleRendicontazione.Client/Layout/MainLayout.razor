@@ -212,6 +212,10 @@
     private bool _isDashboard;
     private bool _isLogs;
     private bool _isAdmin;
+    // Stato del toggle dark/light. Sincronizzato con localStorage via
+    // wwwroot/js/theme.js (window.gestionaleTheme). Lo script JS applica
+    // già la classe .dark al <body> al boot prima di Blazor, quindi qui
+    // limitiamoci a leggere lo stato per allineare il checkbox.
     private bool _darkMode;
     private bool _darkModeInitialized;
     private const int SearchDebounceMs = 300;
@@ -227,14 +231,19 @@
             FilterState.IsAdmin = _isAdmin;
         }
 
+        // Ripristina i filtri persistenti (date + selezioni dropdown) da localStorage.
+        // Va fatto DOPO aver determinato IsAdmin perché alcuni filtri sono significativi
+        // solo per admin (es. dipendente). Se nessun filtro è salvato, l'operazione è no-op.
         await FilterState.LoadFromStorageAsync();
 
         await FilterState.LoadLookupsAsync();
         FilterState.OnFiltersChanged += StateHasChanged;
         LogFilterState.OnFiltersChanged += StateHasChanged;
 
+        // Verifica l'URL iniziale all'avvio
         CheckCurrentLocation();
 
+        // Registra l'evento che intercetta i cambi di pagina/URL
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 
@@ -244,6 +253,11 @@
         StateHasChanged();
     }
 
+    // Al primo render sincronizza il checkbox con lo stato persistito.
+    // Lo script theme.js ha già applicato la classe .dark al <body>
+    // prima del primo render di Blazor, quindi qui ci limitiamo a leggere
+    // il valore e ad allineare il binding per evitare che il toggle
+    // "scatti" se l'utente clicca subito.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_darkModeInitialized)
@@ -259,14 +273,21 @@
             }
             catch
             {
+                // JS non ancora pronto / ambiente non browser: ignora.
             }
             _darkModeInitialized = true;
         }
     }
 
+    // Handler invocato dal child <Topbar> quando l'utente toggle il checkbox.
+    // Aggiorna lo stato locale (così al prossimo render il binding è coerente)
+    // e propaga al JS che salva in localStorage + applica la classe .dark +
+    // avvia l'animazione circolare dal punto del mouse (catturato su mousedown).
     private async Task OnDarkModeChanged(bool value)
     {
         _darkMode = value;
+        // Coordinate del click salvate da OnThemeToggleMouseDown. Se l'utente
+        // ha usato la tastiera, _lastThemeClick è null e il JS cade al centro.
         double x = 0, y = 0;
         if (_lastThemeClick is not null)
         {
@@ -279,6 +300,7 @@
         }
         catch
         {
+            // ambiente non browser (test/SSR): ignora.
         }
         finally
         {
@@ -286,6 +308,11 @@
         }
     }
 
+    // Cattura il punto del mousedown PRIMA dell'onchange, così l'animazione
+    // circolare parte dal pixel esatto dove l'utente ha cliccato.
+    // @onmousedown su un <input type="checkbox"> viene emesso prima del
+    // toggle dello stato, quindi le coordinate sono sempre presenti quando
+    // arriva l'onchange corrispondente.
     private MouseEventArgs? _lastThemeClick;
     private void OnThemeToggleMouseDown(MouseEventArgs e)
     {
@@ -294,10 +321,13 @@
 
     private void CheckCurrentLocation()
     {
+        // Ricava il percorso relativo dell'app (es. "/" oppure "/admin/progetti")
         var relativeUri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
 
+        // Se la stringa è vuota o equivale a un singolo slash, l'utente è nella dashboard principale
         _isDashboard = string.IsNullOrEmpty(relativeUri) || relativeUri == "/";
 
+        // Pagina Logs admin
         _isLogs = relativeUri.StartsWith("admin/logs", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -353,6 +383,7 @@
         FilterState.NotifyFiltersChanged();
     }
 
+    // ────────────────── Log filter (topbar) ──────────────────
 
     private void OnLogSearchInput(ChangeEventArgs e)
     {

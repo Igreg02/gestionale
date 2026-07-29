@@ -64,6 +64,11 @@
         NavigationManager.NavigateTo(GetSafeReturnUrl());
     }
 
+    /// <summary>
+    /// Se si arriva al login da un redirect automatico (vedi RedirectToLogin), riporta l'utente sulla
+    /// pagina che stava cercando di raggiungere invece di atterrare sempre sulla Dashboard.
+    /// Solo percorsi relativi interni sono accettati, per evitare open-redirect verso domini esterni.
+    /// </summary>
     private string GetSafeReturnUrl()
     {
         var uri = new Uri(NavigationManager.Uri);

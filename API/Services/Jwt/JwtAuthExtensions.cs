@@ -11,6 +11,14 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GestionaleRendicontazione.Api.Services.Jwt
 {
+    /// <summary>
+    /// Configura l'autenticazione JWT:
+    /// - validazione issuer/audience/lifetime/signing key
+    /// - clock skew a zero (i token scaduti sono rifiutati subito)
+    /// - claim NameIdentifier come NameClaimType (per User.GetUserId())
+    /// - hook OnTokenValidated: scarta i token presenti nella blacklist
+    ///   usando l'jti come chiave, in modo che il logout funzioni davvero.
+    /// </summary>
     public static class JwtAuthExtensions
     {
         public static IServiceCollection AddJwtAuthenticationWithBlacklist(

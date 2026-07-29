@@ -58,6 +58,8 @@
     [Parameter] public EventCallback OnSave { get; set; }
     [Parameter] public EventCallback<WorkLogResponseDto> OnDeleteRequest { get; set; }
 
+    // Riproduce esattamente il comportamento originale: chiude prima la modale
+    // di modifica, poi apre la conferma di eliminazione sullo stesso worklog.
     private async Task HandleDeleteClick()
     {
         var source = EditSource;

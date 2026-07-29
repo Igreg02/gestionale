@@ -35,6 +35,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 return null;
             }
 
+
             var (verifyResult, newHash, userId, userName, firstName, lastName, roles) =
                 _dbContextService.ExecuteReadOnly(session =>
             {
@@ -129,7 +130,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
                 newEmployee.PasswordHash = _passwordHasher.HashPassword(newEmployee, request.Password);
 
-
+                // Assegnazione del ruolo di default sul database
                 var userRole = uow.Query<PermissionPolicyRole>().FirstOrDefault(r => r.Name == RoleNames.User);
 
                 if (userRole != null)
@@ -144,6 +145,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     };
                     newEmployee.Roles.Add(defaultRole);
                 }
+
 
                 responseDto = new AuthDto.RegisterResponseDto(
                     newEmployee.Id,
@@ -171,7 +173,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             {
                 new Claim("sub", oid.ToString()),
                 new Claim("jti", Guid.NewGuid().ToString()),
-
+                // ClaimTypes.Name contiene lo UserName (vedi commento su NameClaimType in Program.cs).
                 new Claim(ClaimTypes.Name, userName),
                 new Claim(ClaimTypes.NameIdentifier, oid.ToString())
             };

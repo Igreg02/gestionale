@@ -2,6 +2,10 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
+    /// <summary>
+    /// Client tipizzato per l'endpoint <c>api/status</c>.
+    /// GET è accessibile a tutti gli autenticati; scritture richiedono Admin.
+    /// </summary>
     public sealed class StatusApiClient
     {
         private readonly HttpClient _http;
@@ -38,6 +42,7 @@ namespace GestionaleRendicontazione.Client.Services
         }
     }
 
+    // ── DTO client-side ──────────────────────────────────────────────────────
 
     public sealed class StatusResponse
     {

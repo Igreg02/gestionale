@@ -3,6 +3,11 @@ using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
+// Pagina di sola consultazione: nessuna modale di creazione/modifica/eliminazione,
+// a differenza delle altre pagine Admin — i log sono alimentati esclusivamente dal
+// sink Serilog lato server (vedi LogController).
+// I filtri (search + date/level/method) vivono nella topbar, gestiti da
+// LogFilterStateService. Questa pagina reagisce a OnFiltersChanged e ricarica.
 public partial class Logs
 {
     [Inject] private LogApiClient LogApi { get; set; } = default!;
@@ -34,6 +39,8 @@ public partial class Logs
 
     private void OnFilterStateChanged()
     {
+        // Trigger scatenato dalla topbar (ricerca o Filtra/Reset). Debounce già
+        // applicato lato topbar: qui resettiamo la pagina e ricarichiamo.
         _ = InvokeAsync(async () =>
         {
             _page = 1;
@@ -78,6 +85,7 @@ public partial class Logs
         }
         catch (OperationCanceledException)
         {
+            // Superata da una ricerca/filtro più recente: nessun errore da mostrare.
         }
         catch (Exception ex)
         {

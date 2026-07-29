@@ -6,6 +6,16 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 
+// Questa classe è suddivisa in più file (partial) per responsabilità:
+//  - Dashboard.razor.cs          -> stato condiviso, ciclo di vita, caricamento worklog/lookup
+//  - Dashboard.CreateWorklog.cs  -> modale "Nuovo Worklog"
+//  - Dashboard.EditWorklog.cs    -> modale "Modifica Worklog"
+//  - Dashboard.DeleteWorklog.cs  -> modale conferma eliminazione
+//  - Dashboard.Report.cs         -> apertura/chiusura modale report
+//
+// Stato UI CRUD (IsLoading/IsSaving/ModalError/ErrorMessage) centralizzato in
+// CrudPageService — qui restano solo lo stato applicativo (worklogs, periodo,
+// lookup specifici del Dashboard, identity).
 public partial class Dashboard : IDisposable
 {
     [Inject] private CrudPageService Crud { get; set; } = default!;
@@ -47,12 +57,12 @@ public partial class Dashboard : IDisposable
     private static bool Matches(string? source, string query) =>
         !string.IsNullOrEmpty(source) && source.Contains(query, StringComparison.OrdinalIgnoreCase);
 
-    
-    
-    
-    
-    
-    
+    /// <summary>
+    /// Restituisce l'ID (Guid) dell'utente attualmente autenticato leggendo il claim
+    /// <see cref="ClaimTypes.NameIdentifier"/>. Ritorna <see cref="Guid.Empty"/> se il claim
+    /// non è presente o non è un Guid valido. Usato per pre-popolare IdEmployee sui worklog
+    /// creati da utenti non-admin (per loro il dipendente è sempre sé stessi).
+    /// </summary>
     private Guid GetCurrentUserId()
     {
         if (AuthStateTask is null) return Guid.Empty;
@@ -65,7 +75,7 @@ public partial class Dashboard : IDisposable
     {
         if (AuthStateTask is not null)
         {
-            
+            // Eventuale prima lettura sincrona; leggi nel seguito in modo async
             _ = ResolveDisplayNameAsync();
         }
 
@@ -151,7 +161,7 @@ public partial class Dashboard : IDisposable
         }
         catch (OperationCanceledException)
         {
-            
+            // Richiesta precedente cancellata da una nuova richiesta: ignoriamo
         }
         catch (Exception ex)
         {

@@ -4,6 +4,10 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
 
+// Logica della modale "Nuovo Worklog".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui restano solo
+// lo stato locale del form (modello, data string, flag modal-open) e la chiamata
+// API specifica di WorkLogApiClient.CreateAsync.
 public partial class Dashboard
 {
     private bool _createModalOpen;
@@ -18,6 +22,8 @@ public partial class Dashboard
             await LoadEmployeesAsync();
         }
         var today = DateOnly.FromDateTime(DateTime.Today);
+        // Per l'utente non-admin il dipendente è sé stesso: lo pre-popoliamo con il proprio ID
+        // ricavato dai claim (NameIdentifier = id utente). L'admin invece sceglie liberamente.
         var defaultEmployeeId = FilterState.IsAdmin
             ? Guid.Empty
             : GetCurrentUserId();

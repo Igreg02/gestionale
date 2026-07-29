@@ -46,6 +46,9 @@ builder.Services.AddScoped(sp =>
     };
 });
 
+// ---------------------------------------------------------------------
+// Blazorise — provider Bootstrap 5 + set di icone FontAwesome
+// ---------------------------------------------------------------------
 builder.Services
     .AddBlazorise(options =>
     {

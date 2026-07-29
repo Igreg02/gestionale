@@ -15,6 +15,9 @@ namespace GestionaleRendicontazione.Client.Services
             _apiClient = apiClient;
             _js = js;
 
+            // Inizializzazione IMMEDIATA delle date al mese corrente per evitare lo stato 01/01/0001.
+            // Se in localStorage c'è uno stato precedente, verrà sovrascritto da LoadFromStorageAsync()
+            // (chiamato dal MainLayout al boot); qui impostiamo i default per il primo render.
             var today = DateOnly.FromDateTime(DateTime.Today);
             var periodFrom = new DateOnly(today.Year, today.Month, 1);
             var periodTo = periodFrom.AddMonths(1).AddDays(-1);
@@ -25,8 +28,14 @@ namespace GestionaleRendicontazione.Client.Services
 
         public event Action? OnFiltersChanged;
 
+        /// <summary>
+        /// Scatta quando le liste di lookup (Projects, Statuses, Employees) sono state ricaricate
+        /// dal server — ad esempio dopo un Create/Update/Delete da una pagina admin. Le pagine
+        /// interessate (es. Dashboard) possono sottoscriversi per aggiornare le proprie select.
+        /// </summary>
         public event Action? OnLookupsChanged;
 
+        // Stato dei Filtri applicati
         public string SearchQuery { get; set; } = string.Empty;
         public string FilterFromString { get; set; }
         public string FilterToString { get; set; }
@@ -34,10 +43,12 @@ namespace GestionaleRendicontazione.Client.Services
         public Guid FilterProjectId { get; set; } = Guid.Empty;
         public string FilterStatusName { get; set; } = string.Empty;
 
+        // Stati di UI e permessi
         public bool FilterPanelOpen { get; set; }
         public bool IsAdmin { get; set; }
         public bool Loading { get; set; }
 
+        // Liste di lookup centralizzate
         public List<EmployeeResponseDto> Employees { get; private set; } = new();
         public List<ProjectResponseDto> Projects { get; private set; } = new();
         public List<StatusResponseDto> Statuses { get; private set; } = new();
@@ -47,10 +58,18 @@ namespace GestionaleRendicontazione.Client.Services
 
         public void NotifyFiltersChanged()
         {
+            // Persisti i filtri "di sessione lunga" (date + selezioni dropdown)
+            // ogni volta che cambiano. Le operazioni sono asincrone fire-and-forget:
+            // localStorage è veloce (<1ms) e non blocca il render di Blazor.
             _ = SavePersistentFiltersAsync();
             OnFiltersChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Ripristina i filtri persistenti salvati in localStorage (date + selezioni dropdown).
+        /// Chiamato dal MainLayout al boot. Se uno dei valori admin-only era salvato ma l'utente
+        /// corrente non è più admin, viene scartato per evitare filtri "invisibili" all'utente.
+        /// </summary>
         public async Task LoadFromStorageAsync()
         {
             try
@@ -63,6 +82,10 @@ namespace GestionaleRendicontazione.Client.Services
                 if (!string.IsNullOrWhiteSpace(data.FilterTo))
                     FilterToString = data.FilterTo;
 
+                // I filtri admin-only sono significativi solo se l'utente è admin.
+                // Senza questo check, un non-admin che condivide il browser vedrebbe
+                // lavorlog filtrati per un altro dipendente senza poter rimuovere
+                // il filtro (il select dipendente è nascosto).
                 if (IsAdmin)
                 {
                     if (Guid.TryParse(data.EmployeeId, out var empId) && empId != Guid.Empty)
@@ -75,6 +98,8 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch (Exception ex)
             {
+                // JS non ancora disponibile o localStorage corrotto: ignora,
+                // i default del costruttore restano in vigore.
                 Console.Error.WriteLine($"Errore caricamento filtri da localStorage: {ex}");
             }
         }
@@ -95,8 +120,18 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch
             {
+                // Ambiente non browser (test/SSR) o localStorage pieno: ignora.
+                // Lo stato in memoria resta valido per la sessione corrente.
             }
         }
+
+        /// <summary>
+        /// Riporta il servizio allo stato "pulito" quando cambia l'utente autenticato (login/logout)
+        /// senza un refresh completo della pagina. Essendo registrato come Scoped, in Blazor WASM
+        /// questo servizio vive per l'intera durata della tab del browser: senza questo reset, un
+        /// logout/login rapido farebbe "ereditare" al nuovo utente IsAdmin, i filtri e le liste di
+        /// lookup (es. Employees) della sessione precedente.
+        /// </summary>
         public async Task ResetForNewSession()
         {
             IsAdmin = false;
@@ -110,8 +145,15 @@ namespace GestionaleRendicontazione.Client.Services
             FilterStatusName = string.Empty;
             FilterPanelOpen = false;
 
+            // Le date (FilterFromString/FilterToString) NON vengono resettate —
+            // anche dopo un logout/login ha senso mantenere il "periodo di
+            // osservazione" preferito dall'utente. Il filtro dipendente/progetto/stato
+            // viene azzerato per evitare leak cross-account.
+
+            // Pulisce anche lo storage per evitare che i filtri admin-only del
+            // precedente utente "resistano" sul nuovo account non-admin.
             try { await _js.InvokeVoidAsync("gestionaleFilters.clear"); }
-            catch {  }
+            catch { /* ignora — ambiente non browser */ }
 
             OnFiltersChanged?.Invoke();
         }
@@ -145,6 +187,11 @@ namespace GestionaleRendicontazione.Client.Services
         private static readonly TimeSpan ReloadDebounce = TimeSpan.FromMilliseconds(500);
         private CancellationTokenSource? _reloadCts;
 
+        /// <summary>
+        /// Ricarica le liste di lookup dal server e notifica gli ascoltatori di <see cref="OnLookupsChanged"/>.
+        /// Da chiamare dalle pagine admin dopo un Create/Update/Delete andato a buon fine.
+        /// È debounced internamente per evitare N reload quando l'admin fa molte modifiche di fila.
+        /// </summary>
         public async Task ReloadLookupsAsync()
         {
             _reloadCts?.Cancel();
@@ -172,6 +219,10 @@ namespace GestionaleRendicontazione.Client.Services
             }
         }
 
+        /// <summary>
+        /// DTO serializzato in localStorage per ricordare i filtri Dashboard tra
+        /// refresh/navigazione. Campi nullable/empty-string-safe.
+        /// </summary>
         private sealed class PersistentFilters
         {
             public string FilterFrom { get; set; } = string.Empty;

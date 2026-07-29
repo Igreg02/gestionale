@@ -2,6 +2,10 @@ using System.Net.Http.Json;
 
 namespace GestionaleRendicontazione.Client.Services
 {
+    /// <summary>
+    /// Client tipizzato per l'endpoint <c>api/project</c>.
+    /// GET è accessibile a tutti gli autenticati; POST/PUT/DELETE richiedono Admin.
+    /// </summary>
     public sealed class ProjectApiClient
     {
         private readonly HttpClient _http;
@@ -38,6 +42,7 @@ namespace GestionaleRendicontazione.Client.Services
         }
     }
 
+    // ── DTO client-side ──────────────────────────────────────────────────────
 
     public sealed class ProjectResponse
     {

@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace GestionaleRendicontazione.Domain.Dtos
 {
+    /// <summary>
+    /// Server -> Client
+    /// </summary>
+    /// 
     public class TypeDto
     {
         public class Response
@@ -10,8 +14,15 @@ namespace GestionaleRendicontazione.Domain.Dtos
 
             public string Name { get; set; } = string.Empty;
 
+
         }
 
+
+        /// <summary>
+
+        /// Client -> Server
+
+        /// </summary>
 
         public class Create
         {

@@ -2,6 +2,10 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
+// Logica della modale "Nuova/Modifica azienda".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del form (modello + flag modal-open) e la chiamata API
+// specifica di CompanyApiClient.
 public partial class Companies
 {
     private bool _formModalOpen;
@@ -62,6 +66,7 @@ public partial class Companies
     }
 }
 
+// Modello del form, esposto (non-privato) perché usato anche da CompanyFormModal.razor.
 public sealed class CompanyFormModel
 {
     public string Name { get; set; } = string.Empty;

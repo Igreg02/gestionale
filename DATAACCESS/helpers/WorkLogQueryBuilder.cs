@@ -4,6 +4,11 @@ using GestionaleRendicontazione.Domain.Entities;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
+    /// <summary>
+    /// Catena di filtri opzionali applicabili a una query <see cref="WorkLog"/>.
+    /// Estratto perché WorkLogAdminService e WorkLogUserService applicano lo stesso
+    /// insieme di filtri (employeeId, projectId, dateFrom, dateTo, statusName).
+    /// </summary>
     public static class WorkLogQueryBuilder
     {
         public static IQueryable<WorkLog> ApplyFilters(

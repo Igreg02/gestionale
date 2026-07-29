@@ -39,6 +39,12 @@ namespace GestionaleRendicontazione.Client.Services
             NotifyAuthenticationStateChanged(Task.FromResult(anonymous));
         }
 
+        /// <summary>
+        /// Costruisce l'identità a partire dai claim reali contenuti nel JWT (inclusi i ruoli), invece
+        /// che da soli UserName/DisplayName: è il presupposto perché &lt;AuthorizeView Roles="Admin"&gt;
+        /// e le route protette per ruolo (Fase F3) funzionino correttamente. Il DisplayName restituito
+        /// dal login (comodo per la UI ma non presente nel token) viene aggiunto come claim separato.
+        /// </summary>
         private static ClaimsIdentity BuildIdentity(StoredSession session)
         {
             try
@@ -54,6 +60,9 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch
             {
+                // Token presente ma non decodificabile (corrotto/manomesso): trattiamo l'utente come
+                // anonimo piuttosto che fallire l'intera pagina. Al prossimo giro TokenStorageService
+                // lo ripulirà comunque se anche la scadenza risulta superata.
                 return new ClaimsIdentity();
             }
         }

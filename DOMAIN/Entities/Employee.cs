@@ -5,6 +5,8 @@ using DevExpress.Xpo;
 
 namespace GestionaleRendicontazione.Domain.Entities
 {
+    // PermissionPolicyUser estende BaseObject (XPBaseObject) —Possiede Oid Guid, persistenza, session.
+    // In più fornisce UserName, Email, IsActive, Roles collection, password hashing, lockout.
     [Persistent("Employee")]
     [DefaultClassOptions]
     public class Employee : PermissionPolicyUser

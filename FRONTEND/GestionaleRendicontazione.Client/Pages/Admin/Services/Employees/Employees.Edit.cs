@@ -2,6 +2,10 @@ using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
+// Logica della modale "Modifica dipendente".
+// Lo stato UI (IsSaving/ModalError) vive in CrudPageService; qui ci sono solo
+// lo stato locale del form (modello + flag modal-open) e la chiamata API
+// specifica di EmployeeApiClient.UpdateAsync.
 public partial class Employees
 {
     private bool _formModalOpen;
@@ -64,6 +68,7 @@ public partial class Employees
     }
 }
 
+// Modello del form, esposto (non-privato) perché usato anche da EmployeeEditModal.razor.
 public sealed class EmployeeFormModel
 {
     public string Username { get; set; } = string.Empty;

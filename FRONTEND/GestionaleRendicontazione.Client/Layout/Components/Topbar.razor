@@ -14,6 +14,10 @@
     @ChildContent
 
     <div class="d-flex align-items-center gap-3">
+        <!-- Toggle dark/light (Uiverse Galahhad).
+             Stato persistito in localStorage da wwwroot/js/theme.js.
+             La classe .dark sul <body> è già stata applicata al boot
+             dallo stesso script, quindi questo è solo il binding UI. -->
         <label class="theme-switch" title="Tema scuro / chiaro" aria-label="Cambia tema">
             <input type="checkbox" class="theme-switch__checkbox"
                    checked="@Theme"
@@ -62,6 +66,12 @@
     [Parameter] public bool ShowBurger { get; set; }
     [Parameter] public bool Theme { get; set; }
     [Parameter] public EventCallback<bool> ThemeChanged { get; set; }
+    // Coordinate schermo (clientX/clientY) del mousedown sul toggle tema.
+    // Servono al JS per posizionare l'origine del "reveal" circolare
+    // esattamente dove l'utente ha cliccato. Catturate su @onmousedown
+    // (e non @onclick) perché su input custom con grafica Uiverse il
+    // click sull'etichetta potrebbe non esporre l'evento originale
+    // dell'<input>.
     [Parameter] public EventCallback<MouseEventArgs> ThemeToggleMouseDown { get; set; }
     [Parameter] public EventCallback OnBurgerClick { get; set; }
     [Parameter] public EventCallback OnUserMenuToggle { get; set; }
@@ -73,6 +83,10 @@
 
     private async Task OnThemeCheckboxChanged(ChangeEventArgs e)
     {
+        // Non aggiornare la copia locale di Theme: il parent riceve il nuovo
+        // valore via ThemeChanged.InvokeAsync(...) e lo ribadisce al prossimo
+        // render passando Theme="_darkMode". Scrivere il [Parameter] qui
+        // non propaga al parent e lascia lo stato fuori sync dopo il primo click.
         var value = (bool)(e.Value ?? false);
         await ThemeChanged.InvokeAsync(value);
     }

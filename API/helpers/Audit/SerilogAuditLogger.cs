@@ -2,6 +2,10 @@ using Serilog;
 
 namespace GestionaleRendicontazione.Api.Helpers.Audit
 {
+    /// <summary>
+    /// Implementazione che delega direttamente al Serilog statico già
+    /// configurato in Program.cs (con sink XpoSerilogSink per il DB).
+    /// </summary>
     public sealed class SerilogAuditLogger : IAuditLogger
     {
         public void BusinessAction(string action, object? details = null)

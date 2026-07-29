@@ -20,6 +20,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             if (string.IsNullOrWhiteSpace(jti)) return;
 
+            // Inseriamo il token in blacklist nel DB
             await _dbContextService.ReadWriteAsync(async uow =>
             {
                 var existing = await uow.GetObjectByKeyAsync<BlacklistedToken>(jti);
@@ -33,6 +34,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 }
             });
 
+            // Avviamo anche una potatura asincrona dei token scaduti per pulire la tabella
             _ = PruneExpiredTokensAsync();
         }
 
@@ -74,6 +76,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }
             catch
             {
+                // Ignoriamo silenti errori di manutenzione in background per non bloccare la chiamata principale
             }
         }
     }

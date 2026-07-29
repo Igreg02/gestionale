@@ -15,6 +15,10 @@ using Serilog;
 var builder = WebApplication.CreateBuilder(args);
 Serilog.Debugging.SelfLog.Enable(msg => Console.Error.WriteLine(msg));
 
+// ---------------------------------------------------------------------
+// DataLayer XPO + Serilog (devono essere costruiti PRIMA di UseSerilog,
+// perché il sink XpoSerilogSink ha bisogno di un'IDataLayer già pronta).
+// ---------------------------------------------------------------------
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? "XpoProvider=SQLite;Data Source=rendicontazione.db;";
 
@@ -39,6 +43,11 @@ builder.Services.AddApplicationServices();
 
 var app = builder.Build();
 
+// CORS deve essere il primo middleware della pipeline: deve intercettare
+// la richiesta (ed eseguire eventuale preflight OPTIONS) prima di qualunque
+// altro middleware che possa generare direttamente la risposta — Swagger
+// compreso — altrimenti l'header Access-Control-Allow-Origin non viene mai
+// aggiunto e il browser blocca la risposta lato client.
 app.UseCors(BlazorClientCorsExtensions.PolicyName);
 
 if (app.Environment.IsDevelopment())

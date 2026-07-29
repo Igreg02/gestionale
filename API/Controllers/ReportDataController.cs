@@ -19,7 +19,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             _reportService = reportService;
         }
 
-        
+        /// <summary>Admin: report aggregato per progetto/periodo.</summary>
         [HttpGet("project/{projectId:guid}")]
         [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(ReportDto.Project.Response), StatusCodes.Status200OK)]
@@ -40,7 +40,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             return Ok(report);
         }
 
-        
+        /// <summary>Admin: report aggregato per dipendente/periodo (id esplicito).</summary>
         [HttpGet("employee/{employeeId:guid}")]
         [Authorize(Roles = RoleNames.Admin)]
         [ProducesResponseType(typeof(ReportDto.Employee.Response), StatusCodes.Status200OK)]
@@ -61,7 +61,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             return Ok(report);
         }
 
-        
+        /// <summary>User: report aggregato del dipendente autenticato/periodo.</summary>
         [HttpGet("employee")]
         [Authorize]
         [ProducesResponseType(typeof(ReportDto.Employee.Response), StatusCodes.Status200OK)]
@@ -82,10 +82,10 @@ namespace GestionaleRendicontazione.Api.Controllers
             return Ok(report);
         }
 
-        
-        
-        
-        
+        /// <summary>
+        /// Valida from/to solo quando entrambi sono valorizzati (sono opzionali: se assenti, il filtro
+        /// di data non viene applicato lato service). Ritorna un ObjectResult in caso di errore, altrimenti null.
+        /// </summary>
         private ObjectResult? ValidateDateRange(DateOnly? from, DateOnly? to)
         {
             if (from is null || to is null) return null;
