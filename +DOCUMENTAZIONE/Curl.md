@@ -248,3 +248,5 @@ curl.exe -X GET "http://localhost:5182/api/report-data/employee/{employeeId}?fro
 ```bash
 curl.exe -X GET "http://localhost:5182/api/report-data/employee?from=2026-01-01&to=2026-01-31" -H "Authorization: Bearer $TOKEN" -i
 ```
+
+.
