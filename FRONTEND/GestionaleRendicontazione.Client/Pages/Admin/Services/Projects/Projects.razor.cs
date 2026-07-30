@@ -44,17 +44,4 @@ public partial class Projects : ComponentBase, IDisposable
         _projects = (await projectsTask).OrderBy(p => p.Name).ToList();
         _companies = (await companiesTask).OrderBy(c => c.Name).ToList();
     }
-
-    internal void ApplySaved(ProjectResponse saved)
-    {
-        var idx = _projects.FindIndex(p => p.Id == saved.Id);
-        if (idx >= 0) _projects[idx] = saved;
-        else _projects.Add(saved);
-        _projects = _projects.OrderBy(p => p.Name).ToList();
-    }
-
-    internal void ApplyRemoved(Guid id)
-    {
-        _projects.RemoveAll(p => p.Id == id);
-    }
 }

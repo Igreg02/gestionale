@@ -30,14 +30,23 @@ public partial class Projects
         if (_deleteTarget is null) return;
 
         var id = _deleteTarget.Id;
-        await Crud.RunCrudAsync(
+        var deleted = await Crud.RunCrudAsync(
             operation: () => ProjectApiClient.DeleteAsync(id),
             networkErrorMessage: "Errore di rete. Riprova più tardi.",
-            onSuccess: () =>
+            onSuccess: () => { });
+
+        if (deleted)
+        {
+            try
             {
-                ApplyRemoved(id);
-                _ = FilterState.ReloadLookupsAsync();
+                await ReloadListsAsync();
+                await FilterState.ReloadLookupsAsync();
                 CloseDeleteModal();
-            });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore nel reload post-CRUD: {ex}");
+            }
+        }
     }
 }
