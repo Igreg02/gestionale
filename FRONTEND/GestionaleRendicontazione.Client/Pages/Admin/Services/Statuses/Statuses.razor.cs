@@ -37,20 +37,4 @@ public partial class Statuses : ComponentBase, IDisposable
     {
         _items = (await ApiClient.GetAllAsync()).OrderBy(i => i.Name).ToList();
     }
-
-    // Esponiamo helper di utilità per i partial Form.cs/Delete.cs: loro invocano
-    // le API direttamente e ricevono in cambio i delegate da chiamare su successo.
-
-    internal void ApplySaved(StatusResponse saved)
-    {
-        var idx = _items.FindIndex(i => i.Id == saved.Id);
-        if (idx >= 0) _items[idx] = saved;
-        else _items.Add(saved);
-        _items = _items.OrderBy(i => i.Name).ToList();
-    }
-
-    internal void ApplyRemoved(Guid id)
-    {
-        _items.RemoveAll(i => i.Id == id);
-    }
 }

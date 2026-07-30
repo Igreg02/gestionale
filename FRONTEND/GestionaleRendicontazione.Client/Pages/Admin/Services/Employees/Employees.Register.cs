@@ -53,15 +53,15 @@ public partial class Employees
             }
 
             var created = result.Data!;
-            _employees.Add(new EmployeeResponse
+            try
             {
-                Id = created.Id,
-                Username = created.UserName,
-                FirstName = created.FirstName,
-                LastName = created.LastName,
-            });
-            _employees = _employees.OrderBy(e => e.Username).ToList();
-            _ = FilterState.ReloadLookupsAsync();
+                await ReloadListAsync();
+                await FilterState.ReloadLookupsAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore nel reload post-CRUD: {ex}");
+            }
 
             CloseRegisterModal();
         }

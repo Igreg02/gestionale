@@ -57,12 +57,21 @@ public partial class Companies
                 ? () => CompanyApiClient.UpdateAsync(_editingId, new CompanyUpdateRequest { Name = _formModel.Name, Email = _formModel.Email })
                 : () => CompanyApiClient.CreateAsync(new CompanyCreateRequest { Name = _formModel.Name, Email = _formModel.Email }),
             networkErrorMessage: "Errore di rete. Riprova più tardi.",
-            onSuccess: saved =>
+            onSuccess: _ => { });
+
+        if (Crud.ModalError is null)
+        {
+            try
             {
-                ApplySaved(saved);
-                _ = FilterState.ReloadLookupsAsync();
+                await ReloadListAsync();
+                await FilterState.ReloadLookupsAsync();
                 CloseFormModal();
-            });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore nel reload post-CRUD: {ex}");
+            }
+        }
     }
 }
 

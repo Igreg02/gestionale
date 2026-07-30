@@ -57,12 +57,21 @@ public partial class Projects
                 ? () => ProjectApiClient.UpdateAsync(_editingId, new ProjectUpdateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany })
                 : () => ProjectApiClient.CreateAsync(new ProjectCreateRequest { Name = _formModel.Name, IdCompany = _formModel.IdCompany }),
             networkErrorMessage: "Errore di rete. Riprova più tardi.",
-            onSuccess: saved =>
+            onSuccess: _ => { });
+
+        if (Crud.ModalError is null)
+        {
+            try
             {
-                ApplySaved(saved);
-                _ = FilterState.ReloadLookupsAsync();
+                await ReloadListsAsync();
+                await FilterState.ReloadLookupsAsync();
                 CloseFormModal();
-            });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore nel reload post-CRUD: {ex}");
+            }
+        }
     }
 }
 

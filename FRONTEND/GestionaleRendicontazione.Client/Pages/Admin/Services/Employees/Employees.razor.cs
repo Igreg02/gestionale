@@ -40,17 +40,4 @@ public partial class Employees : ComponentBase, IDisposable
     {
         _employees = (await EmployeeApiClient.GetAllAsync()).OrderBy(e => e.Username).ToList();
     }
-
-    internal void ApplySaved(EmployeeResponse saved)
-    {
-        var idx = _employees.FindIndex(e => e.Id == saved.Id);
-        if (idx >= 0) _employees[idx] = saved;
-        else _employees.Add(saved);
-        _employees = _employees.OrderBy(e => e.Username).ToList();
-    }
-
-    internal void ApplyRemoved(Guid id)
-    {
-        _employees.RemoveAll(e => e.Id == id);
-    }
 }
