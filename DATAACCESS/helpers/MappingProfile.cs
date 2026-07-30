@@ -5,11 +5,6 @@ using GestionaleRendicontazione.Domain.Dtos;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
-    /// <summary>
-    /// Chiavi convenzionali usate in <c>MappingOptions.Items</c>. Il service vi
-    /// inserisce l'oggetto XPO di sessione (UnitOfWork) e - per il solo User.Create -
-    /// il dipendente autenticato, prima di invocare il mapper.
-    /// </summary>
     public static class WorkLogMappingContextKeys
     {
         public const string Uow = "Uow";
@@ -31,27 +26,18 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
 
         public MappingProfile()
         {
-            // Company
+            // ======================================================================
+            // ENTITY -> RESPONSE DTO (lettura: l'istanza esiste già, mapping normale)
+            // ======================================================================
             CreateMap<Company, CompanyDto.Response>();
-
-            // Employee
             CreateMap<Employee, EmployeeDto.Response>();
-
-            // Project
             CreateMap<Project, ProjectDto.Response>()
                 .ForMember(dest => dest.IdCompany, opt => opt.MapFrom(src => src.Company != null ? src.Company.Id : Guid.Empty))
                 .ForMember(dest => dest.CompanyName, opt => opt.MapFrom(src => src.Company != null ? src.Company.Name : string.Empty));
-
-            // Status
             CreateMap<Status, StatusDto.Response>();
-
-            // Type
             CreateMap<Domain.Entities.Type, TypeDto.Response>();
-
-            // LogApplicativo: mappato solo in lettura, escludendo StackTrace dal payload
             CreateMap<LogApplicativo, LogDto.Response>();
 
-            // WorkLog
             CreateMap<WorkLog, WorkLogDto.Admin.Response>()
                 .ForMember(dest => dest.IdProject, opt => opt.MapFrom(src => src.Project != null ? src.Project.Id : Guid.Empty))
                 .ForMember(dest => dest.ProjectName, opt => opt.MapFrom(src => src.Project != null ? src.Project.Name : string.Empty))
@@ -70,41 +56,110 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                 .ForMember(dest => dest.IdStatus, opt => opt.MapFrom(src => src.Status != null ? src.Status.Id : Guid.Empty))
                 .ForMember(dest => dest.StatusName, opt => opt.MapFrom(src => src.Status != null ? src.Status.Name : string.Empty));
 
-            // DTO -> Entity mapping (write/update)
+            // ======================================================================
+            // DTO -> ENTITY (scrittura: l'istanza XPO esiste già, NON istanziare)
+            //
+            // Le entity XPO hanno solo ctor(Session): AutoMapper non può fare new T().
+            // Il service crea l'istanza con new T(uow) PRIMA di chiamare Mapper.Map(dto, entity),
+            // quindi qui usiamo .ConvertUsing per dire "l'istanza è già pronta, copia solo
+            // le proprietà scalari e lascia in pace tutto il resto".
+            // ======================================================================
+
+            // ----- Company -----
             CreateMap<CompanyDto.Create, Company>()
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Project, opt => opt.Ignore());
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    dest.Email = src.Email;
+                    return dest;
+                });
 
             CreateMap<CompanyDto.Update, Company>()
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.Project, opt => opt.Ignore());
-
-            CreateMap<EmployeeDto.Update, Employee>()
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.Username))
-                .ForMember(dest => dest.Oid, opt => opt.Ignore())
-                .ForMember(dest => dest.WorkLogs, opt => opt.Ignore());
-
-            // WorkLog — DTO -> Entity (write/update).
-            // Il mapper copia gli scalari (Description, HoursCounter, Date) per
-            // convenzione; FK, timestamp e flag soft-delete sono risolti in AfterMap
-            // prelevando la UnitOfWork da ctx.Items.
-            // Update: CreateAt/IsWorkLogDeleted restano sull'entity caricata.
-
-            // ----- Admin.Create -----
-            CreateMap<WorkLogDto.Admin.Create, WorkLog>()
-                .ForMember(d => d.Id, o => o.Ignore())
-                .ForMember(d => d.CreateAt, o => o.Ignore())
-                .ForMember(d => d.UpdateAt, o => o.Ignore())
-                .ForMember(d => d.IsWorkLogDeleted, o => o.Ignore())
-                .ForMember(d => d.Project, o => o.Ignore())
-                .ForMember(d => d.Type, o => o.Ignore())
-                .ForMember(d => d.Status, o => o.Ignore())
-                .ForMember(d => d.Employee, o => o.Ignore())
-                .AfterMap((src, dest, ctx) =>
+                .ConvertUsing((src, dest, ctx) =>
                 {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    dest.Email = src.Email;
+                    return dest;
+                });
+
+            // ----- Employee: solo Update (Create passa da AuthService.RegisterAsync) -----
+            CreateMap<EmployeeDto.Update, Employee>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    // Oid (Id), PasswordHash, Roles, IsActive, ChangePasswordOnFirstLogon
+                    // sono gestiti altrove e NON vanno toccati dal mapper.
+                    dest.UserName = src.Username;
+                    dest.FirstName = src.FirstName;
+                    dest.LastName = src.LastName;
+                    return dest;
+                });
+
+            // ----- Project (FK Company risolta in OnBeforeCreate/UpdateAsync) -----
+            CreateMap<ProjectDto.Create, Project>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    // Company ignorata: viene impostata nell'hook OnBeforeCreateAsync del service.
+                    return dest;
+                });
+
+            CreateMap<ProjectDto.Update, Project>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    return dest;
+                });
+
+            // ----- Type -----
+            CreateMap<TypeDto.Create, Domain.Entities.Type>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    return dest;
+                });
+
+            CreateMap<TypeDto.Update, Domain.Entities.Type>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    return dest;
+                });
+
+            // ----- Status -----
+            CreateMap<StatusDto.Create, Status>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    return dest;
+                });
+
+            CreateMap<StatusDto.Update, Status>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
+                    dest.Name = src.Name;
+                    return dest;
+                });
+
+            // ----- WorkLog: campi scalari + risoluzione FK da UoW -----
+            // Tutta la logica (campi + FK + timestamp) vive dentro ConvertUsing.
+
+            CreateMap<WorkLogDto.Admin.Create, WorkLog>()
+                .ConvertUsing((src, dest, ctx) =>
+                {
+                    if (dest is null) return null!;
                     var now = DateTime.UtcNow;
+                    dest.Description = src.Description;
+                    dest.HoursCounter = src.HoursCounter;
+                    dest.Date = src.Date;
                     dest.Project = LoadXpo<Project>(ctx, src.IdProject);
                     dest.Type = LoadXpo<Domain.Entities.Type>(ctx, src.IdType);
                     dest.Status = LoadXpo<Status>(ctx, src.IdStatus);
@@ -112,39 +167,32 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                     dest.CreateAt = now;
                     dest.UpdateAt = now;
                     dest.IsWorkLogDeleted = false;
+                    return dest;
                 });
 
-            // ----- Admin.Update -----
             CreateMap<WorkLogDto.Admin.Update, WorkLog>()
-                .ForMember(d => d.Id, o => o.Ignore())
-                .ForMember(d => d.CreateAt, o => o.Ignore())
-                .ForMember(d => d.IsWorkLogDeleted, o => o.Ignore())
-                .ForMember(d => d.Project, o => o.Ignore())
-                .ForMember(d => d.Type, o => o.Ignore())
-                .ForMember(d => d.Status, o => o.Ignore())
-                .ForMember(d => d.Employee, o => o.Ignore())
-                .AfterMap((src, dest, ctx) =>
+                .ConvertUsing((src, dest, ctx) =>
                 {
+                    if (dest is null) return null!;
+                    dest.Description = src.Description;
+                    dest.HoursCounter = src.HoursCounter;
+                    dest.Date = src.Date;
                     dest.Project = LoadXpo<Project>(ctx, src.IdProject);
                     dest.Type = LoadXpo<Domain.Entities.Type>(ctx, src.IdType);
                     dest.Status = LoadXpo<Status>(ctx, src.IdStatus);
                     dest.Employee = LoadXpo<Employee>(ctx, src.IdEmployee);
                     dest.UpdateAt = DateTime.UtcNow;
+                    return dest;
                 });
 
-            // ----- User.Create: Employee dal dipendente autenticato (ctx.Items) -----
             CreateMap<WorkLogDto.User.Create, WorkLog>()
-                .ForMember(d => d.Id, o => o.Ignore())
-                .ForMember(d => d.CreateAt, o => o.Ignore())
-                .ForMember(d => d.UpdateAt, o => o.Ignore())
-                .ForMember(d => d.IsWorkLogDeleted, o => o.Ignore())
-                .ForMember(d => d.Project, o => o.Ignore())
-                .ForMember(d => d.Type, o => o.Ignore())
-                .ForMember(d => d.Status, o => o.Ignore())
-                .ForMember(d => d.Employee, o => o.Ignore())
-                .AfterMap((src, dest, ctx) =>
+                .ConvertUsing((src, dest, ctx) =>
                 {
+                    if (dest is null) return null!;
                     var now = DateTime.UtcNow;
+                    dest.Description = src.Description;
+                    dest.HoursCounter = src.HoursCounter;
+                    dest.Date = src.Date;
                     dest.Project = LoadXpo<Project>(ctx, src.IdProject);
                     dest.Type = LoadXpo<Domain.Entities.Type>(ctx, src.IdType);
                     dest.Status = LoadXpo<Status>(ctx, src.IdStatus);
@@ -152,23 +200,22 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                     dest.CreateAt = now;
                     dest.UpdateAt = now;
                     dest.IsWorkLogDeleted = false;
+                    return dest;
                 });
 
-            // ----- User.Update: Employee invariato -----
             CreateMap<WorkLogDto.User.Update, WorkLog>()
-                .ForMember(d => d.Id, o => o.Ignore())
-                .ForMember(d => d.CreateAt, o => o.Ignore())
-                .ForMember(d => d.IsWorkLogDeleted, o => o.Ignore())
-                .ForMember(d => d.Project, o => o.Ignore())
-                .ForMember(d => d.Type, o => o.Ignore())
-                .ForMember(d => d.Status, o => o.Ignore())
-                .ForMember(d => d.Employee, o => o.Ignore())
-                .AfterMap((src, dest, ctx) =>
+                .ConvertUsing((src, dest, ctx) =>
                 {
+                    if (dest is null) return null!;
+                    dest.Description = src.Description;
+                    dest.HoursCounter = src.HoursCounter;
+                    dest.Date = src.Date;
                     dest.Project = LoadXpo<Project>(ctx, src.IdProject);
                     dest.Type = LoadXpo<Domain.Entities.Type>(ctx, src.IdType);
                     dest.Status = LoadXpo<Status>(ctx, src.IdStatus);
+                    // Employee invariato in Update
                     dest.UpdateAt = DateTime.UtcNow;
+                    return dest;
                 });
         }
     }

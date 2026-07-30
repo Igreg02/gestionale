@@ -5,10 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace GestionaleRendicontazione.Api.Services.Cors
 {
     /// <summary>
-    /// CORS — necessario a partire dalla Fase F1 del frontend Blazor WebAssembly,
+    /// CORS — necessario per far  partire Blazor WebAssembly,
     /// che gira su un'origine diversa (es. https://localhost:7210) da quella
-    /// dell'API. Le origini consentite sono in appsettings.json ("Cors:AllowedOrigins"),
-    /// così da poter differenziare sviluppo/produzione senza toccare il codice.
+    /// dell'API.
     /// </summary>
     public static class BlazorClientCorsExtensions
     {

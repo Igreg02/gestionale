@@ -1,77 +1,45 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using DevExpress.Xpo;
+using GestionaleRendicontazione.Dataaccess.Services.Abstractions;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
-using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-    public class EmployeeService : IEmployeeService
+
+    public class EmployeeService
+        : XpoCrudServiceBaseNoCreate<Employee, EmployeeDto.Response, EmployeeDto.Update>,
+          IEmployeeService
     {
-        private readonly IDbContextService _dbContextService;
-        private readonly IMapper _mapper;
+        public EmployeeService(IDbContextService db, IMapper mapper) : base(db, mapper) { }
 
-        public EmployeeService(IDbContextService dbContextService, IMapper mapper)
-        {
-            _dbContextService = dbContextService;
-            _mapper = mapper;
-        }
+        protected override Employee CreateEntity(UnitOfWork uow) => new Employee(uow);
 
-        public Task<List<EmployeeDto.Response>> GetAllAsync(CancellationToken ct = default)
+        protected override Expression<Func<Employee, string>> OrderByExpr => e => e.UserName;
+
+        protected override string EntityKindSingular => "il dipendente";
+
+        protected override string EntityLogName(Employee entity) => entity.UserName;
+
+        protected override int? GetRelatedChildrenCount(Employee entity) => entity.WorkLogs.Count;
+
+        protected override string RelatedCollectionLabel => "worklog associati";
+
+        protected override Task OnBeforeUpdateAsync(UnitOfWork uow, Guid id, EmployeeDto.Update dto, Employee entity, CancellationToken ct)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
+            if (!string.Equals(entity.UserName, dto.Username, StringComparison.Ordinal))
             {
-                var list = session.GetAllOrderedBy<Employee, string>(e => e.UserName);
-                return _mapper.Map<List<EmployeeDto.Response>>(list);
-            }));
-        }
-
-        public Task<EmployeeDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {
-                var e = session.GetObjectByKey<Employee>(id);
-                return e is null ? null : _mapper.Map<EmployeeDto.Response>(e);
-            }));
-        }
-
-        public async Task<EmployeeDto.Response?> UpdateAsync(Guid id, EmployeeDto.Update dto, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<EmployeeDto.Response?>(async uow =>
-            {
-                var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
-                if (entity is null) return null;
-                if (!string.Equals(entity.UserName, dto.Username, StringComparison.Ordinal))
+                var usernameTaken = uow.Query<Employee>()
+                    .Any(e => e.UserName == dto.Username && e.Id != id);
+                if (usernameTaken)
                 {
-                    var usernameTaken = uow.Query<Employee>()
-                        .Any(e => e.UserName == dto.Username && e.Id != id);
-                    if (usernameTaken)
-                    {
-                        throw new InvalidOperationException(
-                            $"Lo username '{dto.Username}' è già utilizzato da un altro dipendente.");
-                    }
+                    throw new InvalidOperationException(
+                        $"Lo username '{dto.Username}' è già utilizzato da un altro dipendente.");
                 }
-
-                _mapper.Map(dto, entity);
-                return _mapper.Map<EmployeeDto.Response>(entity);
-            });
-        }
-
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
-            {
-                var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
-                if (entity is null) return false;
-
-                DeleteGuard.ThrowIfHasRelated(
-                    entity.WorkLogs,
-                    $"Impossibile eliminare il dipendente '{entity.UserName}': esistono {entity.WorkLogs.Count} worklog associati.");
-
-                uow.Delete(entity);
-                return true;
-            });
+            }
+            return Task.CompletedTask;
         }
     }
 }

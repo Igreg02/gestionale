@@ -1,85 +1,49 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using DevExpress.Xpo;
+using GestionaleRendicontazione.Dataaccess.Helpers;
+using GestionaleRendicontazione.Dataaccess.Services.Abstractions;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
-using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-    public class ProjectService : IProjectService
+    
+    public class ProjectService
+        : XpoCrudServiceBase<Project, ProjectDto.Response, ProjectDto.Create, ProjectDto.Update>,
+          IProjectService
     {
-        private readonly IDbContextService _dbContextService;
-        private readonly IMapper _mapper;
+        public ProjectService(IDbContextService db, IMapper mapper) : base(db, mapper) { }
 
-        public ProjectService(IDbContextService dbContextService, IMapper mapper)
+        protected override Project CreateEntity(UnitOfWork uow) => new Project(uow);
+
+        protected override Expression<Func<Project, string>> OrderByExpr => p => p.Name;
+
+        protected override string EntityKindSingular => "il progetto";
+
+        protected override string EntityLogName(Project entity) => entity.Name;
+
+        protected override int? GetRelatedChildrenCount(Project entity) => entity.WorkLog.Count;
+
+        protected override string RelatedCollectionLabel => "worklog";
+
+        protected override Task OnBeforeCreateAsync(UnitOfWork uow, ProjectDto.Create dto, Project entity, CancellationToken ct)
         {
-            _dbContextService = dbContextService;
-            _mapper = mapper;
+            // Risolve la FK Company prima del commit. Il mapper ha già popolato
+            // Name (scalare); Company è Ignored nel mapping perché richiede la UoW.
+            // Cf. MappingProfile.cs: CreateMap<ProjectDto.Create, Project>().
+            return ResolveCompanyAsync(uow, dto.IdCompany, entity, ct);
         }
 
-        public Task<List<ProjectDto.Response>> GetAllAsync(CancellationToken ct = default)
+        protected override Task OnBeforeUpdateAsync(UnitOfWork uow, Guid id, ProjectDto.Update dto, Project entity, CancellationToken ct)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {
-                var list = session.GetAllOrderedBy<Project, string>(p => p.Name);
-                return _mapper.Map<List<ProjectDto.Response>>(list);
-            }));
+            return ResolveCompanyAsync(uow, dto.IdCompany, entity, ct);
         }
 
-        public Task<ProjectDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
+        private static async Task ResolveCompanyAsync(UnitOfWork uow, Guid idCompany, Project entity, CancellationToken ct)
         {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {
-                var p = session.GetObjectByKey<Project>(id);
-                return p is null ? null : _mapper.Map<ProjectDto.Response>(p);
-            }));
-        }
-
-        public async Task<ProjectDto.Response> CreateAsync(ProjectDto.Create dto, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<ProjectDto.Response>(async uow =>
-            {
-                var company = await uow.GetRequiredAsync<Company>(dto.IdCompany, "Azienda non trovata", ct);
-
-                var entity = new Project(uow)
-                {
-                    Name = dto.Name,
-                    Company = company
-                };
-                return _mapper.Map<ProjectDto.Response>(entity);
-            });
-        }
-
-        public async Task<ProjectDto.Response?> UpdateAsync(Guid id, ProjectDto.Update dto, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<ProjectDto.Response?>(async uow =>
-            {
-                var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
-                if (entity is null) return null;
-
-                var company = await uow.GetRequiredAsync<Company>(dto.IdCompany, "Azienda non trovata", ct);
-
-                entity.Name = dto.Name;
-                entity.Company = company;
-                return _mapper.Map<ProjectDto.Response>(entity);
-            });
-        }
-
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
-            {
-                var entity = await uow.GetObjectByKeyAsync<Project>(id, ct);
-                if (entity is null) return false;
-
-                DeleteGuard.ThrowIfHasRelated(
-                    entity.WorkLog,
-                    $"Impossibile eliminare il progetto '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
-
-                uow.Delete(entity);
-                return true;
-            });
+            entity.Company = await uow.GetRequiredAsync<Company>(idCompany, "Azienda non trovata", ct);
         }
     }
 }
