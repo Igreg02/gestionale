@@ -58,25 +58,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response>(async uow =>
             {
-                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
-                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
-                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
-                var employee = await uow.GetRequiredAsync<Employee>(dto.IdEmployee, "Una delle FK fornite non esiste", ct);
-
-                var now = DateTime.UtcNow;
-                var entity = new WorkLog(uow)
-                {
-                    Description = dto.Description,
-                    HoursCounter = dto.HoursCounter,
-                    Date = dto.Date,
-                    CreateAt = now,
-                    UpdateAt = now,
-                    IsWorkLogDeleted = false,
-                    Project = project,
-                    Type = type,
-                    Status = status,
-                    Employee = employee
-                };
+                var entity = new WorkLog(uow);
+                _mapper.Map(dto, entity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
 
                 return _mapper.Map<WorkLogDto.Admin.Response>(entity);
             });
@@ -89,19 +72,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
                 if (entity == null || entity.IsWorkLogDeleted) return null;
 
-                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
-                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
-                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
-                var employee = await uow.GetRequiredAsync<Employee>(dto.IdEmployee, "Una delle FK fornite non esiste", ct);
-
-                entity.Description = dto.Description;
-                entity.HoursCounter = dto.HoursCounter;
-                entity.Date = dto.Date;
-                entity.Project = project;
-                entity.Type = type;
-                entity.Status = status;
-                entity.Employee = employee;
-                entity.UpdateAt = DateTime.UtcNow;
+                _mapper.Map(dto, entity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
 
                 return _mapper.Map<WorkLogDto.Admin.Response>(entity);
             });
@@ -176,27 +147,16 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
             {
-                // Lato User ignoriamo dto.IdEmployee e creiamo sempre per il dipendente autenticato.
-                var employee = await uow.GetRequiredAsync<Employee>(currentEmployeeId, "Dipendente autenticato non trovato", ct);
+                // Il dipendente è SEMPRE quello autenticato (il DTO non lo porta).
+                var employee = await uow.GetRequiredAsync<Employee>(
+                    currentEmployeeId, "Dipendente autenticato non trovato", ct);
 
-                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
-                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
-                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
-
-                var now = DateTime.UtcNow;
-                var entity = new WorkLog(uow)
+                var entity = new WorkLog(uow);
+                _mapper.Map(dto, entity, opt =>
                 {
-                    Description = dto.Description,
-                    HoursCounter = dto.HoursCounter,
-                    Date = dto.Date,
-                    CreateAt = now,
-                    UpdateAt = now,
-                    IsWorkLogDeleted = false,
-                    Project = project,
-                    Type = type,
-                    Status = status,
-                    Employee = employee
-                };
+                    opt.Items[WorkLogMappingContextKeys.Uow] = uow;
+                    opt.Items[WorkLogMappingContextKeys.CurrentEmployee] = employee;
+                });
 
                 return _mapper.Map<WorkLogDto.User.Response>(entity);
             });
@@ -214,17 +174,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (entity == null || entity.IsWorkLogDeleted) return null;
                 if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return null;
 
-                var project = await uow.GetRequiredAsync<Project>(dto.IdProject, "Una delle FK fornite non esiste", ct);
-                var type = await uow.GetRequiredAsync<Domain.Entities.Type>(dto.IdType, "Una delle FK fornite non esiste", ct);
-                var status = await uow.GetRequiredAsync<Status>(dto.IdStatus, "Una delle FK fornite non esiste", ct);
-
-                entity.Description = dto.Description;
-                entity.HoursCounter = dto.HoursCounter;
-                entity.Date = dto.Date;
-                entity.Project = project;
-                entity.Type = type;
-                entity.Status = status;
-                entity.UpdateAt = DateTime.UtcNow;
+                _mapper.Map(dto, entity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
 
                 return _mapper.Map<WorkLogDto.User.Response>(entity);
             });

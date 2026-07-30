@@ -71,11 +71,20 @@ public partial class Dashboard
         await Crud.RunCrudAsync<WorkLogResponseDto>(
             operation: () => WorkLogApiClient.UpdateAsync(sourceId, _editModel),
             networkErrorMessage: "Errore di rete. Riprova più tardi.",
-            onSuccess: updated =>
+            onSuccess: _ => {  });
+
+
+        if (Crud.ModalError is null)
+        {
+            try
             {
-                var idx = _worklogs.FindIndex(w => w.Id == updated.Id);
-                if (idx >= 0) _worklogs[idx] = updated;
+                await LoadWorklogsAsync();
                 CloseEditModal();
-            });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore nel reload post-CRUD: {ex}");
+            }
+        }
     }
 }

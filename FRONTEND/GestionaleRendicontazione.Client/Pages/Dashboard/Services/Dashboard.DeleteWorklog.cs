@@ -30,13 +30,22 @@ public partial class Dashboard
         if (_deleteTarget is null) return;
 
         var id = _deleteTarget.Id;
-        await Crud.RunCrudAsync(
+        var deleted = await Crud.RunCrudAsync(
             operation: () => WorkLogApiClient.DeleteAsync(id),
             networkErrorMessage: "Errore di rete. Riprova più tardi.",
-            onSuccess: () =>
+            onSuccess: () => {  });
+
+        if (deleted)
+        {
+            try
             {
-                _worklogs.RemoveAll(w => w.Id == id);
+                await LoadWorklogsAsync();
                 CloseDeleteModal();
-            });
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore nel reload post-CRUD: {ex}");
+            }
+        }
     }
 }

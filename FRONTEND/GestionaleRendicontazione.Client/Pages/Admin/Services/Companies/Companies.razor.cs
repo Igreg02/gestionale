@@ -37,17 +37,4 @@ public partial class Companies : ComponentBase, IDisposable
     {
         _companies = (await CompanyApiClient.GetAllAsync()).OrderBy(c => c.Name).ToList();
     }
-
-    internal void ApplySaved(CompanyResponse saved)
-    {
-        var idx = _companies.FindIndex(c => c.Id == saved.Id);
-        if (idx >= 0) _companies[idx] = saved;
-        else _companies.Add(saved);
-        _companies = _companies.OrderBy(c => c.Name).ToList();
-    }
-
-    internal void ApplyRemoved(Guid id)
-    {
-        _companies.RemoveAll(c => c.Id == id);
-    }
 }
