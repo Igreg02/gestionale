@@ -43,6 +43,11 @@ builder.Services.AddApplicationServices();
 
 var app = builder.Build();
 
+// Verifica della configurazione AutoMapper al boot: se un mapping è
+// configurato in modo non valido (es. proprietà typo sul DTO) l'app fallisce
+// qui invece che alla prima richiesta API coinvolta. Cf. AutoMapperDiagnostics.
+app.AddAutoMapperStartupCheck();
+
 // CORS deve essere il primo middleware della pipeline: deve intercettare
 // la richiesta (ed eseguire eventuale preflight OPTIONS) prima di qualunque
 // altro middleware che possa generare direttamente la risposta — Swagger

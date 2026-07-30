@@ -10,7 +10,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 {
 
     public class EmployeeService
-        : XpoCrudServiceBase<Employee, EmployeeDto.Response, EmployeeDto.Update, EmployeeDto.Update>,
+        : XpoCrudServiceBaseNoCreate<Employee, EmployeeDto.Response, EmployeeDto.Update>,
           IEmployeeService
     {
         public EmployeeService(IDbContextService db, IMapper mapper) : base(db, mapper) { }
@@ -26,12 +26,6 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         protected override int? GetRelatedChildrenCount(Employee entity) => entity.WorkLogs.Count;
 
         protected override string RelatedCollectionLabel => "worklog associati";
-
-        /// <summary>
-        /// Employee NON è creabile via questo service: la creazione passa solo
-        /// da <c>AuthService.RegisterAsync</c> (POST /api/auth/register).
-        /// </summary>
-        protected override bool SupportsCreate => false;
 
         protected override Task OnBeforeUpdateAsync(UnitOfWork uow, Guid id, EmployeeDto.Update dto, Employee entity, CancellationToken ct)
         {
