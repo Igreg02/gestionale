@@ -33,6 +33,17 @@ namespace GestionaleRendicontazione.Api.Controllers
 
         private bool IsAdmin => User.IsInRole(RoleNames.Admin);
 
+        /// <summary>
+        /// Recupera l'Id del dipendente autenticato dal claim NameIdentifier.
+        /// Centralizza il controllo altrimenti ripetuto in ogni action non-Admin.
+        /// </summary>
+        private bool TryGetCurrentEmployeeId(out Guid employeeId)
+        {
+            var value = User.GetEmployeeId();
+            employeeId = value ?? Guid.Empty;
+            return value is not null;
+        }
+
         [HttpGet]
         [ProducesResponseType(typeof(List<WorkLogDto.Admin.Response>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -52,10 +63,9 @@ namespace GestionaleRendicontazione.Api.Controllers
 
             // Un utente normale non può filtrare per employeeId/projectId/statusName altrui:
             // vede solo i propri worklog, indipendentemente da cosa passa in query.
-            var currentEmployeeId = User.GetEmployeeId();
-            if (currentEmployeeId is null) return Unauthorized();
+            if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
-            var ownList = await _userService.GetAllAsync(currentEmployeeId.Value, dateFrom, dateTo, ct);
+            var ownList = await _userService.GetAllAsync(currentEmployeeId, dateFrom, dateTo, ct);
             return Ok(ownList);
         }
 
@@ -72,10 +82,9 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return Ok(item);
             }
 
-            var currentEmployeeId = User.GetEmployeeId();
-            if (currentEmployeeId is null) return Unauthorized();
+            if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
-            var ownItem = await _userService.GetByIdAsync(id, currentEmployeeId.Value, ct);
+            var ownItem = await _userService.GetByIdAsync(id, currentEmployeeId, ct);
             if (ownItem is null) return NotFound();
             return Ok(ownItem);
         }
@@ -91,28 +100,27 @@ namespace GestionaleRendicontazione.Api.Controllers
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-                if (IsAdmin)
-                {
-                    var created = await _adminService.CreateAsync(dto, ct);
-                    return CreatedAtRoute("GetWorkLogById", new { id = created.Id }, created);
-                }
+            if (IsAdmin)
+            {
+                var created = await _adminService.CreateAsync(dto, ct);
+                return CreatedAtRoute("GetWorkLogById", new { id = created.Id }, created);
+            }
 
-                var currentEmployeeId = User.GetEmployeeId();
-                if (currentEmployeeId is null) return Unauthorized();
+            if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
-                // IdEmployee dal body viene ignorato: si usa sempre quello del token.
-                var userDto = new WorkLogDto.User.Create
-                {
-                    Description = dto.Description,
-                    HoursCounter = dto.HoursCounter,
-                    Date = dto.Date,
-                    IdProject = dto.IdProject,
-                    IdType = dto.IdType,
-                    IdStatus = dto.IdStatus
-                };
+            // IdEmployee dal body viene ignorato: si usa sempre quello del token.
+            var userDto = new WorkLogDto.User.Create
+            {
+                Description = dto.Description,
+                HoursCounter = dto.HoursCounter,
+                Date = dto.Date,
+                IdProject = dto.IdProject,
+                IdType = dto.IdType,
+                IdStatus = dto.IdStatus
+            };
 
-                var ownCreated = await _userService.CreateAsync(userDto, currentEmployeeId.Value, ct);
-                return CreatedAtRoute("GetWorkLogById", new { id = ownCreated.Id }, ownCreated);
+            var ownCreated = await _userService.CreateAsync(userDto, currentEmployeeId, ct);
+            return CreatedAtRoute("GetWorkLogById", new { id = ownCreated.Id }, ownCreated);
         }
 
         [HttpPut("{id:guid}")]
@@ -128,30 +136,28 @@ namespace GestionaleRendicontazione.Api.Controllers
         {
             if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
+            if (IsAdmin)
+            {
+                var updated = await _adminService.UpdateAsync(id, dto, ct);
+                if (updated is null) return NotFound();
+                return Ok(updated);
+            }
 
-                if (IsAdmin)
-                {
-                    var updated = await _adminService.UpdateAsync(id, dto, ct);
-                    if (updated is null) return NotFound();
-                    return Ok(updated);
-                }
+            if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
-                var currentEmployeeId = User.GetEmployeeId();
-                if (currentEmployeeId is null) return Unauthorized();
+            var userDto = new WorkLogDto.User.Update
+            {
+                Description = dto.Description,
+                HoursCounter = dto.HoursCounter,
+                Date = dto.Date,
+                IdProject = dto.IdProject,
+                IdType = dto.IdType,
+                IdStatus = dto.IdStatus
+            };
 
-                var userDto = new WorkLogDto.User.Update
-                {
-                    Description = dto.Description,
-                    HoursCounter = dto.HoursCounter,
-                    Date = dto.Date,
-                    IdProject = dto.IdProject,
-                    IdType = dto.IdType,
-                    IdStatus = dto.IdStatus
-                };
-
-                var ownUpdated = await _userService.UpdateAsync(id, userDto, currentEmployeeId.Value, ct);
-                if (ownUpdated is null) return NotFound();
-                return Ok(ownUpdated);
+            var ownUpdated = await _userService.UpdateAsync(id, userDto, currentEmployeeId, ct);
+            if (ownUpdated is null) return NotFound();
+            return Ok(ownUpdated);
         }
 
         [HttpDelete("{id:guid}")]
@@ -167,13 +173,11 @@ namespace GestionaleRendicontazione.Api.Controllers
                 return NoContent();
             }
 
-            var currentEmployeeId = User.GetEmployeeId();
-            if (currentEmployeeId is null) return Unauthorized();
+            if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
-            var ownOk = await _userService.DeleteAsync(id, currentEmployeeId.Value, ct);
+            var ownOk = await _userService.DeleteAsync(id, currentEmployeeId, ct);
             if (!ownOk) return NotFound();
             return NoContent();
         }
-
-        }
+    }
 }
