@@ -5,11 +5,6 @@ using GestionaleRendicontazione.Domain.Dtos;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
-    /// <summary>
-    /// Chiavi convenzionali usate in <c>MappingOptions.Items</c>. Il service vi
-    /// inserisce l'oggetto XPO di sessione (UnitOfWork) e - per il solo User.Create -
-    /// il dipendente autenticato, prima di invocare il mapper.
-    /// </summary>
     public static class WorkLogMappingContextKeys
     {
         public const string Uow = "Uow";
@@ -86,11 +81,27 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                 .ForMember(dest => dest.Oid, opt => opt.Ignore())
                 .ForMember(dest => dest.WorkLogs, opt => opt.Ignore());
 
-            // WorkLog — DTO -> Entity (write/update).
-            // Il mapper copia gli scalari (Description, HoursCounter, Date) per
-            // convenzione; FK, timestamp e flag soft-delete sono risolti in AfterMap
-            // prelevando la UnitOfWork da ctx.Items.
-            // Update: CreateAt/IsWorkLogDeleted restano sull'entity caricata.
+            CreateMap<ProjectDto.Create, Project>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Company, opt => opt.Ignore());
+            CreateMap<ProjectDto.Update, Project>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Company, opt => opt.Ignore());
+
+            CreateMap<TypeDto.Create, Domain.Entities.Type>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkLog, opt => opt.Ignore());
+            CreateMap<TypeDto.Update, Domain.Entities.Type>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkLog, opt => opt.Ignore());
+
+            CreateMap<StatusDto.Create, Status>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkLog, opt => opt.Ignore());
+            CreateMap<StatusDto.Update, Status>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.WorkLog, opt => opt.Ignore());
+
 
             // ----- Admin.Create -----
             CreateMap<WorkLogDto.Admin.Create, WorkLog>()

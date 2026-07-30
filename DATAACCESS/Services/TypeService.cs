@@ -1,78 +1,29 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using DevExpress.Xpo;
+using GestionaleRendicontazione.Dataaccess.Services.Abstractions;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
-using GestionaleRendicontazione.Dataaccess.Helpers;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
-    public class TypeService : ITypeService
+    public class TypeService
+        : XpoCrudServiceBase<Domain.Entities.Type, TypeDto.Response, TypeDto.Create, TypeDto.Update>,
+          ITypeService
     {
-        private readonly IDbContextService _dbContextService;
-        private readonly IMapper _mapper;
+        public TypeService(IDbContextService db, IMapper mapper) : base(db, mapper) { }
 
-        public TypeService(IDbContextService dbContextService, IMapper mapper)
-        {
-            _dbContextService = dbContextService;
-            _mapper = mapper;
-        }
+        protected override Domain.Entities.Type CreateEntity(UnitOfWork uow) => new Domain.Entities.Type(uow);
 
-        public Task<List<TypeDto.Response>> GetAllAsync(CancellationToken ct = default)
-        {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {
-                var list = session.GetAllOrderedBy<Domain.Entities.Type, string>(t => t.Name);
-                return _mapper.Map<List<TypeDto.Response>>(list);
-            }));
-        }
+        protected override Expression<Func<Domain.Entities.Type, string>> OrderByExpr => t => t.Name;
 
-        public Task<TypeDto.Response?> GetByIdAsync(Guid id, CancellationToken ct = default)
-        {
-            return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
-            {
-                var t = session.GetObjectByKey<Domain.Entities.Type>(id);
-                return t is null ? null : _mapper.Map<TypeDto.Response>(t);
-            }));
-        }
+        protected override string EntityKindSingular => "il tipo";
 
-        public async Task<TypeDto.Response> CreateAsync(TypeDto.Create dto, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<TypeDto.Response>(async uow =>
-            {
-                var entity = new Domain.Entities.Type(uow)
-                {
-                    Name = dto.Name
-                };
-                return _mapper.Map<TypeDto.Response>(entity);
-            });
-        }
+        protected override string EntityLogName(Domain.Entities.Type entity) => entity.Name;
 
-        public async Task<TypeDto.Response?> UpdateAsync(Guid id, TypeDto.Update dto, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<TypeDto.Response?>(async uow =>
-            {
-                var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
-                if (entity is null) return null;
-                entity.Name = dto.Name;
-                return _mapper.Map<TypeDto.Response>(entity);
-            });
-        }
+        protected override int? GetRelatedChildrenCount(Domain.Entities.Type entity) => entity.WorkLog.Count;
 
-        public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            return await _dbContextService.ReadWriteAsync<bool>(async uow =>
-            {
-                var entity = await uow.GetObjectByKeyAsync<Domain.Entities.Type>(id, ct);
-                if (entity is null) return false;
-
-                DeleteGuard.ThrowIfHasRelated(
-                    entity.WorkLog,
-                    $"Impossibile eliminare il tipo '{entity.Name}': esistono {entity.WorkLog.Count} worklog collegati.");
-
-                uow.Delete(entity);
-                return true;
-            });
-        }
+        protected override string RelatedCollectionLabel => "worklog";
     }
 }
