@@ -63,10 +63,10 @@ public partial class Dashboard : IDisposable
     /// non è presente o non è un Guid valido. Usato per pre-popolare IdEmployee sui worklog
     /// creati da utenti non-admin (per loro il dipendente è sempre sé stessi).
     /// </summary>
-    private Guid GetCurrentUserId()
+    private async Task<Guid> GetCurrentUserIdAsync()
     {
         if (AuthStateTask is null) return Guid.Empty;
-        var authState = AuthStateTask.GetAwaiter().GetResult();
+        var authState = await AuthStateTask;
         var raw = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
     }

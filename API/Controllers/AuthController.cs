@@ -5,6 +5,7 @@ using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GestionaleRendicontazione.Api.Controllers
 {
@@ -30,9 +31,11 @@ namespace GestionaleRendicontazione.Api.Controllers
 
         [HttpPost("login")]
         [AllowAnonymous]
+        [EnableRateLimiting("login")]
         [ProducesResponseType(typeof(AuthDto.LoginResponseDto), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public async Task<IActionResult> Login(
             [FromBody] AuthDto.LoginRequestDto request,
             CancellationToken cancellationToken)
@@ -65,16 +68,21 @@ namespace GestionaleRendicontazione.Api.Controllers
             var userName = User.GetUserName() ?? "(sconosciuto)";
 
             var jti = User.FindFirst("jti")?.Value;
-            var expClaim = User.FindFirst("exp")?.Value;
-            if (!string.IsNullOrEmpty(jti))
+            if (string.IsNullOrEmpty(jti))
             {
-                var expiresAt = DateTime.UtcNow.AddHours(1); // fallback
-                if (long.TryParse(expClaim, out var expUnix))
-                {
-                    expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
-                }
-                await _blacklistService.BlacklistTokenAsync(jti, expiresAt);
+                // Nessun jti sul token: non possiamo revocarlo lato server.
+                // Tracciato come fallimento di audit invece di sparire silenziosamente.
+                _audit.AuthEvent("Logout", userName, success: false);
+                return NoContent();
             }
+
+            var expClaim = User.FindFirst("exp")?.Value;
+            var expiresAt = DateTime.UtcNow.AddHours(1); // fallback
+            if (long.TryParse(expClaim, out var expUnix))
+            {
+                expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix).UtcDateTime;
+            }
+            await _blacklistService.BlacklistTokenAsync(jti, expiresAt);
 
             _audit.AuthEvent("Logout", userName, success: true);
             return NoContent();

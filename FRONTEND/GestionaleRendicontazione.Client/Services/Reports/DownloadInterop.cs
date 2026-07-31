@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.JSInterop;
 
@@ -27,8 +28,30 @@ namespace GestionaleRendicontazione.Client.Services.Reports
         {
             if (data is null || data.Length == 0) return false;
             var base64 = Convert.ToBase64String(data);
-            var result = await _js.InvokeAsync<bool>("downloadHelper.saveAs", fileName, contentType, base64);
+            var result = await _js.InvokeAsync<bool>("downloadHelper.saveAs", SanitizeFileName(fileName), contentType, base64);
             return result;
+        }
+
+        // Il nome file arriva da un campo di testo libero (es. ReportDownloadModal): rimuoviamo
+        // separatori di path e caratteri non validi su Windows/macOS/Linux prima di passarlo
+        // all'attributo <a download>, così l'utente non può iniettare percorsi o nomi anomali.
+        private static readonly char[] InvalidFileNameChars = "\\/:*?\"<>|".ToCharArray();
+
+        private static string SanitizeFileName(string fileName)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return "download";
+
+            var cleaned = new string(fileName
+                .Where(c => !char.IsControl(c) && !InvalidFileNameChars.Contains(c))
+                .ToArray())
+                .Trim(' ', '.');
+
+            if (cleaned.Length > 200)
+            {
+                cleaned = cleaned[..200];
+            }
+
+            return string.IsNullOrEmpty(cleaned) ? "download" : cleaned;
         }
     }
 }

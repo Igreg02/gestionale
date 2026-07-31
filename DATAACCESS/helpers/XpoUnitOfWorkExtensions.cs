@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DevExpress.Xpo;
+using GestionaleRendicontazione.Domain.Exceptions;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
@@ -12,7 +13,7 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
     {
         /// <summary>
         /// Come <see cref="UnitOfWork.GetObjectByKeyAsync{T}(object, CancellationToken)"/>,
-        /// ma lancia <see cref="InvalidOperationException"/> con il messaggio passato dal
+        /// ma lancia <see cref="ForeignKeyNotFoundException"/> con il messaggio passato dal
         /// chiamante se la foreign key non esiste. Il messaggio arriva al client tramite
         /// ProblemDetails.Detail, quindi è già il wording user-facing.
         /// </summary>
@@ -26,7 +27,7 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
             var entity = await uow.GetObjectByKeyAsync<T>(key, ct);
             if (entity is null)
             {
-                throw new InvalidOperationException(messageWhenMissing);
+                throw new ForeignKeyNotFoundException(messageWhenMissing);
             }
             return entity;
         }

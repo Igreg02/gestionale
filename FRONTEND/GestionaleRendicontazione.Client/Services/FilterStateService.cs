@@ -35,6 +35,12 @@ namespace GestionaleRendicontazione.Client.Services
         /// </summary>
         public event Action? OnLookupsChanged;
 
+        /// <summary>
+        /// Scatta quando un caricamento/ricaricamento delle lookup fallisce, così le pagine
+        /// possono mostrare un feedback visibile invece di lasciare solo il log in console.
+        /// </summary>
+        public event Action? LookupsLoadFailed;
+
         // Stato dei Filtri applicati
         public string SearchQuery { get; set; } = string.Empty;
         public string FilterFromString { get; set; }
@@ -158,16 +164,16 @@ namespace GestionaleRendicontazione.Client.Services
             OnFiltersChanged?.Invoke();
         }
 
-        public async Task LoadLookupsAsync()
+        public async Task LoadLookupsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                var projTask = _apiClient.GetProjectsAsync();
-                var statusTask = _apiClient.GetStatusesAsync();
+                var projTask = _apiClient.GetProjectsAsync(cancellationToken);
+                var statusTask = _apiClient.GetStatusesAsync(cancellationToken);
 
                 if (IsAdmin)
                 {
-                    var empTask = _apiClient.GetEmployeesAsync();
+                    var empTask = _apiClient.GetEmployeesAsync(cancellationToken);
                     await Task.WhenAll(projTask, statusTask, empTask);
                     Employees = await empTask;
                 }
@@ -179,9 +185,13 @@ namespace GestionaleRendicontazione.Client.Services
                 Projects = await projTask;
                 Statuses = await statusTask;
             }
+            catch (OperationCanceledException)
+            {
+            }
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Errore caricamento lookup nel FilterStateService: {ex}");
+                LookupsLoadFailed?.Invoke();
             }
         }
         private static readonly TimeSpan ReloadDebounce = TimeSpan.FromMilliseconds(500);
@@ -205,7 +215,7 @@ namespace GestionaleRendicontazione.Client.Services
                 await Task.Delay(ReloadDebounce, token);
                 if (token.IsCancellationRequested) return;
 
-                await LoadLookupsAsync();
+                await LoadLookupsAsync(token);
                 if (token.IsCancellationRequested) return;
 
                 OnLookupsChanged?.Invoke();
@@ -216,6 +226,7 @@ namespace GestionaleRendicontazione.Client.Services
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"Errore durante ReloadLookupsAsync: {ex}");
+                LookupsLoadFailed?.Invoke();
             }
         }
 

@@ -9,31 +9,21 @@ namespace GestionaleRendicontazione.Client.Services
     /// </summary>
     public sealed class EmployeeApiClient
     {
-        private readonly HttpClient _http;
+        // Nessuna Create: la creazione avviene solo tramite AuthController.Register.
+        // TCreate = object perché il motore condiviso la richiede comunque, ma il
+        // metodo non viene esposto qui e quindi non è mai invocabile dall'esterno.
+        private readonly CrudApiClient<EmployeeResponse, object, EmployeeUpdateRequest> _inner;
 
-        public EmployeeApiClient(HttpClient http) => _http = http;
+        public EmployeeApiClient(HttpClient http) => _inner = new(http, "api/employee");
 
-        public async Task<List<EmployeeResponse>> GetAllAsync(CancellationToken ct = default)
-        {
-            var result = await _http.GetFromJsonAsync<List<EmployeeResponse>>("api/employee", ct);
-            return result ?? [];
-        }
+        public Task<List<EmployeeResponse>> GetAllAsync(CancellationToken ct = default) => _inner.GetAllAsync(ct);
 
-        public async Task<EmployeeResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
-            => await _http.GetFromJsonAsync<EmployeeResponse>($"api/employee/{id}", ct);
+        public Task<EmployeeResponse?> GetByIdAsync(Guid id, CancellationToken ct = default) => _inner.GetByIdAsync(id, ct);
 
-        public async Task<ApiResult<EmployeeResponse>> UpdateAsync(
-            Guid id, EmployeeUpdateRequest dto, CancellationToken ct = default)
-        {
-            var response = await _http.PutAsJsonAsync($"api/employee/{id}", dto, ct);
-            return await response.ToApiResultAsync<EmployeeResponse>(ct);
-        }
+        public Task<ApiResult<EmployeeResponse>> UpdateAsync(Guid id, EmployeeUpdateRequest dto, CancellationToken ct = default)
+            => _inner.UpdateAsync(id, dto, ct);
 
-        public async Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            var response = await _http.DeleteAsync($"api/employee/{id}", ct);
-            return await response.ToApiResultAsync(ct);
-        }
+        public Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default) => _inner.DeleteAsync(id, ct);
     }
 
     // ── DTO client-side ──────────────────────────────────────────────────────

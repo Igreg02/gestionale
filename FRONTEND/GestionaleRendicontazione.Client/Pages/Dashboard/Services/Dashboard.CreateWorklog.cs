@@ -26,7 +26,7 @@ public partial class Dashboard
         // ricavato dai claim (NameIdentifier = id utente). L'admin invece sceglie liberamente.
         var defaultEmployeeId = FilterState.IsAdmin
             ? Guid.Empty
-            : GetCurrentUserId();
+            : await GetCurrentUserIdAsync();
         _createModel = new WorkLogUpdateRequestDto
         {
             Date = today,

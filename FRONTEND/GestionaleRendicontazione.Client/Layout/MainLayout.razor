@@ -18,6 +18,14 @@
 
     <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
 
+    @if (_lookupsLoadFailed)
+    {
+        <div class="alert alert-warning d-flex align-items-center justify-content-between m-2 py-2 px-3" role="alert">
+            <span><i class="bi bi-exclamation-triangle me-1"></i> Impossibile aggiornare le liste (progetti/dipendenti/stati). Riprova più tardi.</span>
+            <button type="button" class="btn-close" aria-label="Chiudi" @onclick="() => _lookupsLoadFailed = false"></button>
+        </div>
+    }
+
     <div class="app-main">
         <AuthorizeView>
             <Authorized Context="outerAuth">
@@ -221,6 +229,8 @@
     private const int SearchDebounceMs = 300;
     private System.Timers.Timer? _searchDebounceTimer;
     private System.Timers.Timer? _logSearchDebounceTimer;
+    private bool _disposed;
+    private bool _lookupsLoadFailed;
 
     protected override async Task OnInitializedAsync()
     {
@@ -238,6 +248,7 @@
 
         await FilterState.LoadLookupsAsync();
         FilterState.OnFiltersChanged += StateHasChanged;
+        FilterState.LookupsLoadFailed += OnLookupsLoadFailed;
         LogFilterState.OnFiltersChanged += StateHasChanged;
 
         // Verifica l'URL iniziale all'avvio
@@ -245,6 +256,12 @@
 
         // Registra l'evento che intercetta i cambi di pagina/URL
         NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLookupsLoadFailed()
+    {
+        _lookupsLoadFailed = true;
+        InvokeAsync(StateHasChanged);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -342,6 +359,10 @@
         {
             _searchDebounceTimer?.Dispose();
             _searchDebounceTimer = null;
+            // Il timer gira su un thread separato: può scattare dopo che il componente
+            // è già stato smontato (navigazione via). Senza questa guardia InvokeAsync
+            // rischia una race con Dispose() sul renderer già rilasciato.
+            if (_disposed) return;
             InvokeAsync(() => FilterState.NotifyFiltersChanged());
         };
         _searchDebounceTimer.Start();
@@ -396,6 +417,7 @@
         {
             _logSearchDebounceTimer?.Dispose();
             _logSearchDebounceTimer = null;
+            if (_disposed) return;
             InvokeAsync(() => LogFilterState.NotifyFiltersChanged());
         };
         _logSearchDebounceTimer.Start();
@@ -459,7 +481,9 @@
 
     public void Dispose()
     {
+        _disposed = true;
         FilterState.OnFiltersChanged -= StateHasChanged;
+        FilterState.LookupsLoadFailed -= OnLookupsLoadFailed;
         LogFilterState.OnFiltersChanged -= StateHasChanged;
         NavigationManager.LocationChanged -= OnLocationChanged;
 

@@ -68,14 +68,22 @@ namespace GestionaleRendicontazione.Dataaccess.Services.Abstractions
                     $"CreateAsync non è supportato per {typeof(TEntity).Name}.");
             }
 
-            return await Db.ReadWriteAsync<TResponse>(async uow =>
+            // La Guid key [Key(AutoGenerate = true)] viene generata da XPO solo durante il
+            // commit fisico (CommitChangesAsync), non quando l'oggetto viene creato/Save()-ato:
+            // se si mappa la Response DENTRO questo delegate (prima del commit fatto da
+            // IDbContextService.ReadWriteAsync SUBITO DOPO che ritorna), l'Id risulta sempre
+            // Guid.Empty. Si ritorna quindi l'entity e si mappa alla Response solo dopo che
+            // ReadWriteAsync ha già committato (i soli scalari già caricati restano leggibili
+            // anche a UnitOfWork disposta).
+            var entity = await Db.ReadWriteAsync<TEntity>(async uow =>
             {
-                var entity = CreateEntity(uow);
-                Mapper.Map(dto, entity);
-                await OnBeforeCreateAsync(uow, dto, entity, ct);
-
-                return Mapper.Map<TResponse>(entity);
+                var newEntity = CreateEntity(uow);
+                Mapper.Map(dto, newEntity);
+                await OnBeforeCreateAsync(uow, dto, newEntity, ct);
+                return newEntity;
             }, ct);
+
+            return Mapper.Map<TResponse>(entity);
         }
 
         public async Task<TResponse?> UpdateAsync(Guid id, TUpdate dto, CancellationToken ct = default)

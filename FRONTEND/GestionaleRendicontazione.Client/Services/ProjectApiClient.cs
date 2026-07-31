@@ -8,38 +8,21 @@ namespace GestionaleRendicontazione.Client.Services
     /// </summary>
     public sealed class ProjectApiClient
     {
-        private readonly HttpClient _http;
+        private readonly CrudApiClient<ProjectResponse, ProjectCreateRequest, ProjectUpdateRequest> _inner;
 
-        public ProjectApiClient(HttpClient http) => _http = http;
+        public ProjectApiClient(HttpClient http) => _inner = new(http, "api/project");
 
-        public async Task<List<ProjectResponse>> GetAllAsync(CancellationToken ct = default)
-        {
-            var result = await _http.GetFromJsonAsync<List<ProjectResponse>>("api/project", ct);
-            return result ?? [];
-        }
+        public Task<List<ProjectResponse>> GetAllAsync(CancellationToken ct = default) => _inner.GetAllAsync(ct);
 
-        public async Task<ProjectResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
-            => await _http.GetFromJsonAsync<ProjectResponse>($"api/project/{id}", ct);
+        public Task<ProjectResponse?> GetByIdAsync(Guid id, CancellationToken ct = default) => _inner.GetByIdAsync(id, ct);
 
-        public async Task<ApiResult<ProjectResponse>> CreateAsync(
-            ProjectCreateRequest dto, CancellationToken ct = default)
-        {
-            var response = await _http.PostAsJsonAsync("api/project", dto, ct);
-            return await response.ToApiResultAsync<ProjectResponse>(ct);
-        }
+        public Task<ApiResult<ProjectResponse>> CreateAsync(ProjectCreateRequest dto, CancellationToken ct = default)
+            => _inner.CreateAsync(dto, ct);
 
-        public async Task<ApiResult<ProjectResponse>> UpdateAsync(
-            Guid id, ProjectUpdateRequest dto, CancellationToken ct = default)
-        {
-            var response = await _http.PutAsJsonAsync($"api/project/{id}", dto, ct);
-            return await response.ToApiResultAsync<ProjectResponse>(ct);
-        }
+        public Task<ApiResult<ProjectResponse>> UpdateAsync(Guid id, ProjectUpdateRequest dto, CancellationToken ct = default)
+            => _inner.UpdateAsync(id, dto, ct);
 
-        public async Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            var response = await _http.DeleteAsync($"api/project/{id}", ct);
-            return await response.ToApiResultAsync(ct);
-        }
+        public Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default) => _inner.DeleteAsync(id, ct);
     }
 
     // ── DTO client-side ──────────────────────────────────────────────────────

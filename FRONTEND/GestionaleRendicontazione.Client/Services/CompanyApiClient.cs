@@ -9,38 +9,21 @@ namespace GestionaleRendicontazione.Client.Services
     /// </summary>
     public sealed class CompanyApiClient
     {
-        private readonly HttpClient _http;
+        private readonly CrudApiClient<CompanyResponse, CompanyCreateRequest, CompanyUpdateRequest> _inner;
 
-        public CompanyApiClient(HttpClient http) => _http = http;
+        public CompanyApiClient(HttpClient http) => _inner = new(http, "api/company");
 
-        public async Task<List<CompanyResponse>> GetAllAsync(CancellationToken ct = default)
-        {
-            var result = await _http.GetFromJsonAsync<List<CompanyResponse>>("api/company", ct);
-            return result ?? [];
-        }
+        public Task<List<CompanyResponse>> GetAllAsync(CancellationToken ct = default) => _inner.GetAllAsync(ct);
 
-        public async Task<CompanyResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
-            => await _http.GetFromJsonAsync<CompanyResponse>($"api/company/{id}", ct);
+        public Task<CompanyResponse?> GetByIdAsync(Guid id, CancellationToken ct = default) => _inner.GetByIdAsync(id, ct);
 
-        public async Task<ApiResult<CompanyResponse>> CreateAsync(
-            CompanyCreateRequest dto, CancellationToken ct = default)
-        {
-            var response = await _http.PostAsJsonAsync("api/company", dto, ct);
-            return await response.ToApiResultAsync<CompanyResponse>(ct);
-        }
+        public Task<ApiResult<CompanyResponse>> CreateAsync(CompanyCreateRequest dto, CancellationToken ct = default)
+            => _inner.CreateAsync(dto, ct);
 
-        public async Task<ApiResult<CompanyResponse>> UpdateAsync(
-            Guid id, CompanyUpdateRequest dto, CancellationToken ct = default)
-        {
-            var response = await _http.PutAsJsonAsync($"api/company/{id}", dto, ct);
-            return await response.ToApiResultAsync<CompanyResponse>(ct);
-        }
+        public Task<ApiResult<CompanyResponse>> UpdateAsync(Guid id, CompanyUpdateRequest dto, CancellationToken ct = default)
+            => _inner.UpdateAsync(id, dto, ct);
 
-        public async Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default)
-        {
-            var response = await _http.DeleteAsync($"api/company/{id}", ct);
-            return await response.ToApiResultAsync(ct);
-        }
+        public Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default) => _inner.DeleteAsync(id, ct);
     }
 
     // ── DTO client-side (speculari a CompanyDto del domain) ─────────────────

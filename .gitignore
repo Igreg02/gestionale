@@ -3,4 +3,5 @@ bin
 rendicontazione.db
 rendicontazione.db-shm
 rendicontazione.db-wal
+ADMIN_PASSWORD_FIRST_RUN.txt
 .claude

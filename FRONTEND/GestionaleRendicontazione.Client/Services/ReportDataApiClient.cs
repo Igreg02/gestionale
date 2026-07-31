@@ -22,9 +22,24 @@ namespace GestionaleRendicontazione.Client.Services
             CancellationToken cancellationToken = default)
         {
             var url = BuildUrl($"api/report-data/project/{projectId}", from, to);
-            var response = await _http.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<ProjectReportResponseDto>(cancellationToken: cancellationToken);
+            try
+            {
+                var response = await _http.GetAsync(url, cancellationToken);
+                if (!response.IsSuccessStatusCode) return null;
+                return await response.Content.ReadFromJsonAsync<ProjectReportResponseDto>(cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Network error / DNS / TLS / JSON non valido: i chiamanti (es. ReportDownloadModal)
+                // trattano già "null" come fallimento, quindi restiamo coerenti con quel contratto
+                // invece di lasciare propagare un'eccezione non gestita.
+                Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
+                return null;
+            }
         }
 
         public async Task<EmployeeReportResponseDto?> GetEmployeeReportAsync(
@@ -34,9 +49,21 @@ namespace GestionaleRendicontazione.Client.Services
             CancellationToken cancellationToken = default)
         {
             var url = BuildUrl($"api/report-data/employee/{employeeId}", from, to);
-            var response = await _http.GetAsync(url, cancellationToken);
-            if (!response.IsSuccessStatusCode) return null;
-            return await response.Content.ReadFromJsonAsync<EmployeeReportResponseDto>(cancellationToken: cancellationToken);
+            try
+            {
+                var response = await _http.GetAsync(url, cancellationToken);
+                if (!response.IsSuccessStatusCode) return null;
+                return await response.Content.ReadFromJsonAsync<EmployeeReportResponseDto>(cancellationToken: cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
+                return null;
+            }
         }
 
         private static string BuildUrl(string basePath, DateOnly? from, DateOnly? to)

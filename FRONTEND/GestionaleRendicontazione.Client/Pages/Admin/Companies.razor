@@ -1,7 +1,8 @@
 @page "/admin/aziende"
 @attribute [Authorize(Roles = RoleNames.Admin)]
 @using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
-@inject CompanyApiClient CompanyApiClient
+@inherits SimpleCrudAdminPage<CompanyResponse, CompanyCreateRequest, CompanyUpdateRequest, CompanyFormModel>
+@inject CompanyApiClient ApiClient
 @inject FilterStateService FilterState
 
 <PageTitle>Aziende</PageTitle>
@@ -36,7 +37,7 @@
     else
     {
         <NamedItemTable TItem="CompanyResponse"
-                        Items="_companies"
+                        Items="_items"
                         Colspan="3"
                         EmptyMessage="Nessuna azienda registrata.">
             <HeaderContent>

@@ -10,6 +10,8 @@ using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +43,22 @@ builder.Services.AddApiDocumentation();
 builder.Services.AddJwtAuthenticationWithBlacklist(builder.Configuration);
 builder.Services.AddApplicationServices();
 
+// Rate limiting sul login: max 5 tentativi/minuto per IP, nessuna coda
+// (oltre soglia rifiuta subito con 429), per rendere il brute-force impraticabile.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("login", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 var app = builder.Build();
 
 // Verifica della configurazione AutoMapper al boot: se un mapping è
@@ -62,6 +80,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseGlobalProblemDetails();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -71,7 +90,8 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContextService = scope.ServiceProvider.GetRequiredService<IDbContextService>();
     var passwordHasher = scope.ServiceProvider.GetRequiredService<PasswordHasher<Employee>>();
-    await DataSeeder.SeedAsync(dbContextService, passwordHasher, CancellationToken.None);
+    var seederLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("DataSeeder");
+    await DataSeeder.SeedAsync(dbContextService, passwordHasher, app.Configuration, seederLogger, CancellationToken.None);
 }
 
 app.Run();

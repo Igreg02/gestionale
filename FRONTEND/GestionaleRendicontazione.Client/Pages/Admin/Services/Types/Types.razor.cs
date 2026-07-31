@@ -1,40 +1,32 @@
 using GestionaleRendicontazione.Client.Services;
-using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Types.razor.cs  -> stato condiviso, ciclo di vita, caricamento tipologie
-//  - Types.Form.cs   -> modale "Nuovo/Modifica tipologia"
-//  - Types.Delete.cs -> modale conferma eliminazione
-//
-// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
-// CrudPageService — qui rimane solo la lista _items e il ciclo di vita Blazor.
-public partial class Types : ComponentBase, IDisposable
+// Tutta la logica CRUD (load/create/update/delete + stato dei due modali) vive nella
+// base SimpleCrudAdminPage: qui restano solo gli adapter verso TypeApiClient (@inject
+// nel .razor) e le conversioni DTO/FormModel specifiche di questa entità.
+public partial class Types
 {
-    [Inject] private CrudPageService Crud { get; set; } = default!;
+    protected override string LoadErrorMessage => "Impossibile recuperare i dati dal server. Riprova più tardi.";
 
-    private List<WorkTypeResponse> _items = new();
+    protected override Task<List<WorkTypeResponse>> FetchAllAsync() => ApiClient.GetAllAsync();
+    protected override Task<ApiResult<WorkTypeResponse>> CreateAsync(WorkTypeCreateRequest dto) => ApiClient.CreateAsync(dto);
+    protected override Task<ApiResult<WorkTypeResponse>> UpdateAsync(Guid id, WorkTypeUpdateRequest dto) => ApiClient.UpdateAsync(id, dto);
+    protected override Task<ApiResult> DeleteAsync(Guid id) => ApiClient.DeleteAsync(id);
 
-    protected override void OnInitialized()
-    {
-        Crud.OnChanged += OnCrudStateChanged;
-        _ = LoadAsync();
-    }
+    protected override List<WorkTypeResponse> Sort(List<WorkTypeResponse> items) => items.OrderBy(i => i.Name).ToList();
 
-    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
+    protected override Guid GetId(WorkTypeResponse item) => item.Id;
+    protected override TypeFormModel ToFormModel(WorkTypeResponse item) => new() { Name = item.Name };
+    protected override WorkTypeCreateRequest ToCreateDto(TypeFormModel model) => new() { Name = model.Name };
+    protected override WorkTypeUpdateRequest ToUpdateDto(TypeFormModel model) => new() { Name = model.Name };
 
-    public void Dispose() => Crud.OnChanged -= OnCrudStateChanged;
+    protected override string? Validate(TypeFormModel model)
+        => string.IsNullOrWhiteSpace(model.Name) ? "Il nome è obbligatorio." : null;
+}
 
-    private async Task LoadAsync()
-    {
-        await Crud.RunLoadAsync(
-            load: () => ReloadListAsync(),
-            errorMessage: "Impossibile recuperare i dati dal server. Riprova più tardi.");
-    }
-
-    private async Task ReloadListAsync()
-    {
-        _items = (await ApiClient.GetAllAsync()).OrderBy(i => i.Name).ToList();
-    }
+// Modello del form, esposto (non-privato) perché usato anche da TypeFormModal.razor.
+public sealed class TypeFormModel
+{
+    public string Name { get; set; } = string.Empty;
 }
