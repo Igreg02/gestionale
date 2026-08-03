@@ -1,3 +1,4 @@
+using GestionaleRendicontazione.Client.Models;
 using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;

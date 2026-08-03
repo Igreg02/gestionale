@@ -1,6 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using GestionaleRendicontazione.Client.Constants;
+using GestionaleRendicontazione.Client.Models;
 
 namespace GestionaleRendicontazione.Client.Services
 {
@@ -99,31 +100,12 @@ namespace GestionaleRendicontazione.Client.Services
 
             if ((int)response.StatusCode == 422)
             {
-                var detail = await TryReadProblemDetailAsync(response);
+                var detail = await ApiResultExtensions.TryReadProblemDetailAsync(response);
                 return ApiResult<RegisterResponseDto>.WithError(
                     detail ?? "Impossibile creare l'utente. Lo username potrebbe essere già in uso.");
             }
 
             return await response.ToApiResultAsync<RegisterResponseDto>();
-        }
-
-        private static async Task<string?> TryReadProblemDetailAsync(HttpResponseMessage response)
-        {
-            try
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("detail", out var detailEl))
-                {
-                    return detailEl.GetString();
-                }
-            }
-            catch
-            {
-                // ignora: se il body non è un ProblemDetails valido usiamo il messaggio di default del chiamante
-            }
-
-            return null;
         }
     }
 }

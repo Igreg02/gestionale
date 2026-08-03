@@ -1,3 +1,4 @@
+using GestionaleRendicontazione.Client.Models;
 using GestionaleRendicontazione.Client.Services;
 using Microsoft.AspNetCore.Components;
 

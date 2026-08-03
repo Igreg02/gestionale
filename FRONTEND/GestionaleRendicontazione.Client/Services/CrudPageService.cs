@@ -83,22 +83,13 @@ namespace GestionaleRendicontazione.Client.Services
         /// Restituisce il testo italiano user-facing per un fallimento API:
         /// preferisce i messaggi di validation (400) del backend, poi il mapping
         /// per status code (409/422/5xx/...), poi il fallback generico.
+        /// Thin wrapper su <see cref="ApiResultExtensions.ToUserMessage"/> — unica sede della logica.
         /// </summary>
         public static string FormatError(
             Dictionary<string, string[]> validationErrors,
             string? errorMessage,
             int statusCode = 0)
-        {
-            // Sui 400 senza validation errors preferiamo il mapping generico di
-            // ApiResultExtensions (più completo: include un fallback contestuale).
-            if (statusCode == 400)
-                return ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
-
-            if (validationErrors.Count > 0)
-                return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
-
-            return ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
-        }
+            => ApiResultExtensions.ToUserMessage(statusCode, validationErrors, errorMessage, null);
 
         // ── Lifecycle / CRUD orchestrators ────────────────────────────────────
 

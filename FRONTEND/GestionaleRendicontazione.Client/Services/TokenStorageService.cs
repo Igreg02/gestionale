@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GestionaleRendicontazione.Client.Models;
 using Microsoft.JSInterop;
 
 namespace GestionaleRendicontazione.Client.Services

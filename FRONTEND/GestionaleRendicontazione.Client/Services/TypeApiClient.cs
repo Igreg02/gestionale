@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using GestionaleRendicontazione.Client.Models;
 
 namespace GestionaleRendicontazione.Client.Services
 {
@@ -23,25 +24,5 @@ namespace GestionaleRendicontazione.Client.Services
             => _inner.UpdateAsync(id, dto, ct);
 
         public Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default) => _inner.DeleteAsync(id, ct);
-    }
-
-    // ── DTO client-side ──────────────────────────────────────────────────────
-
-    public sealed class WorkTypeResponse
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
-
-    public sealed class WorkTypeCreateRequest
-    {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "La tipologia deve avere un nome")]
-        public string Name { get; set; } = string.Empty;
-    }
-
-    public sealed class WorkTypeUpdateRequest
-    {
-        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "La tipologia deve avere un nome")]
-        public string Name { get; set; } = string.Empty;
     }
 }

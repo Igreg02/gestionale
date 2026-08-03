@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using GestionaleRendicontazione.Client.Models;
 using Microsoft.JSInterop;
 
 namespace GestionaleRendicontazione.Client.Services
@@ -55,9 +56,9 @@ namespace GestionaleRendicontazione.Client.Services
         public bool Loading { get; set; }
 
         // Liste di lookup centralizzate
-        public List<EmployeeResponseDto> Employees { get; private set; } = new();
-        public List<ProjectResponseDto> Projects { get; private set; } = new();
-        public List<StatusResponseDto> Statuses { get; private set; } = new();
+        public List<EmployeeResponse> Employees { get; private set; } = new();
+        public List<ProjectResponse> Projects { get; private set; } = new();
+        public List<StatusResponse> Statuses { get; private set; } = new();
 
         public bool HasActiveFilters =>
             FilterEmployeeId != Guid.Empty || FilterProjectId != Guid.Empty || !string.IsNullOrWhiteSpace(FilterStatusName);

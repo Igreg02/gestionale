@@ -1,13 +1,13 @@
 using System.Net.Http.Json;
+using GestionaleRendicontazione.Client.Models;
 
 namespace GestionaleRendicontazione.Client.Services
 {
     /// <summary>
-    /// Client per gli endpoint di report aggregato <c>api/report-data/project/{id}</c> e
-    /// <c>api/report-data/employee/{id}</c> (vedi backend, Domain.Dtos.ReportDto). Entrambi richiedono
-    /// il ruolo Admin e restituiscono, tra le altre cose, l'elenco worklog già filtrato lato server
-    /// per il progetto/dipendente e il periodo richiesti — riusabile così com'è dal generatore PDF
-    /// client-side (stessa forma di WorkLogResponseDto).
+    /// Client per l'endpoint di report aggregato <c>api/report-data/project/{id}</c>
+    /// (vedi backend, Domain.Dtos.ReportDto). Richiede il ruolo Admin e restituisce, tra le altre cose,
+    /// l'elenco worklog già filtrato lato server per il progetto e il periodo richiesti — riusabile così
+    /// com'è dal generatore PDF client-side (stessa forma di WorkLogResponseDto).
     /// </summary>
     public sealed class ReportDataApiClient
     {
@@ -15,7 +15,7 @@ namespace GestionaleRendicontazione.Client.Services
 
         public ReportDataApiClient(HttpClient http) => _http = http;
 
-        public async Task<ProjectReportResponseDto?> GetProjectReportAsync(
+        public async Task<ApiResult<ProjectReportResponseDto>> GetProjectReportAsync(
             Guid projectId,
             DateOnly? from,
             DateOnly? to,
@@ -25,8 +25,7 @@ namespace GestionaleRendicontazione.Client.Services
             try
             {
                 var response = await _http.GetAsync(url, cancellationToken);
-                if (!response.IsSuccessStatusCode) return null;
-                return await response.Content.ReadFromJsonAsync<ProjectReportResponseDto>(cancellationToken: cancellationToken);
+                return await response.ToApiResultAsync<ProjectReportResponseDto>(cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -34,35 +33,12 @@ namespace GestionaleRendicontazione.Client.Services
             }
             catch (Exception ex)
             {
-                // Network error / DNS / TLS / JSON non valido: i chiamanti (es. ReportDownloadModal)
-                // trattano già "null" come fallimento, quindi restiamo coerenti con quel contratto
-                // invece di lasciare propagare un'eccezione non gestita.
+                // Network error / DNS / TLS: arriva qui invece che a ToApiResultAsync
+                // perché GetAsync lancia prima di avere una HttpResponseMessage.
                 Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
-                return null;
-            }
-        }
-
-        public async Task<EmployeeReportResponseDto?> GetEmployeeReportAsync(
-            Guid employeeId,
-            DateOnly? from,
-            DateOnly? to,
-            CancellationToken cancellationToken = default)
-        {
-            var url = BuildUrl($"api/report-data/employee/{employeeId}", from, to);
-            try
-            {
-                var response = await _http.GetAsync(url, cancellationToken);
-                if (!response.IsSuccessStatusCode) return null;
-                return await response.Content.ReadFromJsonAsync<EmployeeReportResponseDto>(cancellationToken: cancellationToken);
-            }
-            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Errore di rete GET {url}: {ex.Message}");
-                return null;
+                return ApiResult<ProjectReportResponseDto>.WithError(
+                    $"Errore di rete: {ex.Message}",
+                    statusCode: 0);
             }
         }
 
@@ -73,29 +49,5 @@ namespace GestionaleRendicontazione.Client.Services
             if (to is not null) query.Add($"to={to:yyyy-MM-dd}");
             return query.Count > 0 ? $"{basePath}?{string.Join('&', query)}" : basePath;
         }
-    }
-
-    // ── DTO client-side (sottoinsieme di Domain.Dtos.ReportDto utile al PDF) ──
-
-    public sealed class ProjectReportResponseDto
-    {
-        public Guid ProjectId { get; set; }
-        public string ProjectName { get; set; } = string.Empty;
-        public Guid CompanyId { get; set; }
-        public string CompanyName { get; set; } = string.Empty;
-        public decimal TotalHours { get; set; }
-        public int TotalWorkLogs { get; set; }
-        public int UniqueEmployees { get; set; }
-        public List<WorkLogResponseDto> WorkLogs { get; set; } = new();
-    }
-
-    public sealed class EmployeeReportResponseDto
-    {
-        public Guid EmployeeId { get; set; }
-        public string UserName { get; set; } = string.Empty;
-        public string FullName { get; set; } = string.Empty;
-        public decimal TotalHours { get; set; }
-        public int TotalWorkLogs { get; set; }
-        public List<WorkLogResponseDto> WorkLogs { get; set; } = new();
     }
 }
