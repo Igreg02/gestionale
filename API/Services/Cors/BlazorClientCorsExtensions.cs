@@ -1,4 +1,5 @@
 using System;
+using GestionaleRendicontazione.Api.Services.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -26,7 +27,12 @@ namespace GestionaleRendicontazione.Api.Services.Cors
                 {
                     policy.WithOrigins(allowedOrigins)
                           .AllowAnyHeader()
-                          .AllowAnyMethod();
+                          .AllowAnyMethod()
+                          // Senza questo, il browser non lascia leggere l'header custom al
+                          // codice JS/Blazor lato client anche se il server lo invia — le
+                          // richieste cross-origin esporgono di default solo un set ristretto
+                          // di header "safe" (vedi AuthenticatedHttpMessageHandler.cs lato client).
+                          .WithExposedHeaders(PasswordChangeGate.RequiredHeaderName);
                 });
             });
 

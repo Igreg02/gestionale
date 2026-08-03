@@ -1,6 +1,7 @@
 using GestionaleRendicontazione.Api.Helpers;
 using GestionaleRendicontazione.Api.Helpers.ProblemDetails;
 using GestionaleRendicontazione.Api.Services;
+using GestionaleRendicontazione.Api.Services.Auth;
 using GestionaleRendicontazione.Api.Services.Cors;
 using GestionaleRendicontazione.Api.Services.Jwt;
 using GestionaleRendicontazione.Api.Services.Swagger;
@@ -83,6 +84,7 @@ app.UseGlobalProblemDetails();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMustChangePasswordGate();
 app.MapControllers();
 app.UseStatusCodePages();
 

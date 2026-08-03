@@ -90,7 +90,7 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                 .ConvertUsing((src, dest, ctx) =>
                 {
                     if (dest is null) return null!;
-                    // Oid (Id), PasswordHash, Roles, IsActive, ChangePasswordOnFirstLogon
+                    // Oid (Id), PasswordHash, Roles, IsActive, MustChangePassword
                     // sono gestiti altrove e NON vanno toccati dal mapper.
                     dest.UserName = src.Username;
                     dest.FirstName = src.FirstName;

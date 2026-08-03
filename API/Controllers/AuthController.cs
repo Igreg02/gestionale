@@ -1,5 +1,6 @@
 using GestionaleRendicontazione.Api.Helpers;
 using GestionaleRendicontazione.Api.Helpers.Audit;
+using GestionaleRendicontazione.Api.Services.Auth;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
 using GestionaleRendicontazione.Domain.Constants;
@@ -61,6 +62,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 
         [HttpPost("logout")]
         [Authorize]
+        [AllowPasswordChangeRequired]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Logout()
@@ -112,6 +114,46 @@ namespace GestionaleRendicontazione.Api.Controllers
             }
 
             _audit.AuthEvent("Register", request.UserName, success: true);
+            return Ok(result);
+        }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        [AllowPasswordChangeRequired]
+        [ProducesResponseType(typeof(AuthDto.LoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword(
+            [FromBody] AuthDto.ChangePasswordRequestDto request,
+            CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
+
+            var employeeId = User.GetEmployeeId();
+            if (employeeId is null)
+            {
+                return Problem(
+                    title: "Token non valido",
+                    detail: "Impossibile identificare l'utente autenticato.",
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
+
+            var result = await _authService.ChangePasswordAsync(
+                employeeId.Value, request.CurrentPassword, request.NewPassword, cancellationToken);
+
+            if (result is null)
+            {
+                _audit.AuthEvent("ChangePassword", User.GetUserName() ?? "(sconosciuto)", success: false);
+                return Problem(
+                    title: "Cambio password fallito",
+                    detail: "La password attuale non è corretta.",
+                    statusCode: StatusCodes.Status400BadRequest);
+            }
+
+            _audit.AuthEvent("ChangePassword", User.GetUserName() ?? "(sconosciuto)", success: true);
             return Ok(result);
         }
     }

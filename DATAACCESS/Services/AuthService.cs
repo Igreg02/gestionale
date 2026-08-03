@@ -36,7 +36,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }
 
 
-            var (verifyResult, newHash, userId, userName, firstName, lastName, roles) =
+            var (verifyResult, newHash, userId, userName, firstName, lastName, roles, mustChangePassword) =
                 _dbContextService.ExecuteReadOnly(session =>
             {
                 var user = session.FindObject<Employee>(
@@ -45,14 +45,14 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 if (user is null || string.IsNullOrEmpty(user.PasswordHash))
                 {
                     return (PasswordVerificationResult.Failed, string.Empty, Guid.Empty,
-                            string.Empty, string.Empty, string.Empty, Array.Empty<string>());
+                            string.Empty, string.Empty, string.Empty, Array.Empty<string>(), false);
                 }
 
                 var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
                 if (result == PasswordVerificationResult.Failed)
                 {
                     return (PasswordVerificationResult.Failed, string.Empty, Guid.Empty,
-                            string.Empty, string.Empty, string.Empty, Array.Empty<string>());
+                            string.Empty, string.Empty, string.Empty, Array.Empty<string>(), false);
                 }
 
                 string rehash = string.Empty;
@@ -67,7 +67,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     .ToArray();
 
                 return (result, rehash, user.Id, user.UserName ?? string.Empty,
-                        user.FirstName ?? string.Empty, user.LastName ?? string.Empty, snapshot);
+                        user.FirstName ?? string.Empty, user.LastName ?? string.Empty, snapshot,
+                        user.MustChangePassword);
             });
 
             if (verifyResult == PasswordVerificationResult.Failed)
@@ -88,13 +89,56 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 }, cancellationToken);
             }
 
-            var claims = BuildClaims(userId, userName, firstName, lastName, roles);
+            var claims = BuildClaims(userId, userName, firstName, lastName, roles, mustChangePassword);
             var token = _jwtTokenService.CreateToken(claims);
             var expiresAt = _jwtTokenService.GetExpiry();
 
             var displayName = BuildDisplayName(firstName, lastName, userName);
 
             return new AuthDto.LoginResponseDto(token, expiresAt, userName, displayName);
+        }
+
+        public async Task<AuthDto.LoginResponseDto?> ChangePasswordAsync(
+            Guid employeeId, string currentPassword, string newPassword, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                return null;
+            }
+
+            AuthDto.LoginResponseDto? response = null;
+
+            await _dbContextService.ReadWriteAsync(async uow =>
+            {
+                var employee = await uow.GetObjectByKeyAsync<Employee>(employeeId, cancellationToken);
+                if (employee is null || string.IsNullOrEmpty(employee.PasswordHash))
+                {
+                    return;
+                }
+
+                var verify = _passwordHasher.VerifyHashedPassword(employee, employee.PasswordHash, currentPassword);
+                if (verify == PasswordVerificationResult.Failed)
+                {
+                    return;
+                }
+
+                employee.PasswordHash = _passwordHasher.HashPassword(employee, newPassword);
+                employee.MustChangePassword = false;
+
+                var roles = employee.Roles
+                    .Where(r => !string.IsNullOrWhiteSpace(r.Name))
+                    .Select(r => r.Name!)
+                    .ToArray();
+
+                var claims = BuildClaims(employee.Id, employee.UserName ?? string.Empty,
+                    employee.FirstName ?? string.Empty, employee.LastName ?? string.Empty, roles, false);
+                var token = _jwtTokenService.CreateToken(claims);
+                var displayName = BuildDisplayName(employee.FirstName, employee.LastName, employee.UserName ?? string.Empty);
+
+                response = new AuthDto.LoginResponseDto(token, _jwtTokenService.GetExpiry(), employee.UserName ?? string.Empty, displayName);
+            }, cancellationToken);
+
+            return response;
         }
 
         public async Task<AuthDto.RegisterResponseDto?> RegisterAsync(AuthDto.RegisterRequestDto request, CancellationToken cancellationToken = default)
@@ -125,7 +169,11 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     UserName = request.UserName,
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    IsActive = true
+                    IsActive = true,
+                    // Il dipendente registrato dall'Admin riceve una password provvisoria:
+                    // deve cambiarla al primo accesso prima di poter fare qualunque altra cosa
+                    // (enforcement lato server in PasswordChangeGate, non solo lato client).
+                    MustChangePassword = true
                 };
 
                 newEmployee.PasswordHash = _passwordHasher.HashPassword(newEmployee, request.Password);
@@ -167,7 +215,7 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             return string.IsNullOrEmpty(full) ? userName : full;
         }
 
-        private static IEnumerable<Claim> BuildClaims(Guid oid, string userName, string firstName, string lastName, IReadOnlyList<string> roles)
+        private static IEnumerable<Claim> BuildClaims(Guid oid, string userName, string firstName, string lastName, IReadOnlyList<string> roles, bool mustChangePassword)
         {
             var claims = new List<Claim>
             {
@@ -175,7 +223,10 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                 new Claim("jti", Guid.NewGuid().ToString()),
                 // ClaimTypes.Name contiene lo UserName (vedi commento su NameClaimType in Program.cs).
                 new Claim(ClaimTypes.Name, userName),
-                new Claim(ClaimTypes.NameIdentifier, oid.ToString())
+                new Claim(ClaimTypes.NameIdentifier, oid.ToString()),
+                // Hint per il frontend (redirect immediato a /change-password): NON è l'enforcement,
+                // quello è sempre PasswordChangeGate che legge il flag live dal DB (vedi Program.cs).
+                new Claim("mustChangePassword", mustChangePassword ? "true" : "false")
             };
 
             if (!string.IsNullOrWhiteSpace(firstName))

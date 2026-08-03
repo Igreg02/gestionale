@@ -13,9 +13,14 @@ namespace GestionaleRendicontazione.Client.Services
         // Nessuna Create: la creazione avviene solo tramite AuthController.Register.
         // TCreate = object perché il motore condiviso la richiede comunque, ma il
         // metodo non viene esposto qui e quindi non è mai invocabile dall'esterno.
+        private readonly HttpClient _http;
         private readonly CrudApiClient<EmployeeResponse, object, EmployeeUpdateRequest> _inner;
 
-        public EmployeeApiClient(HttpClient http) => _inner = new(http, "api/employee");
+        public EmployeeApiClient(HttpClient http)
+        {
+            _http = http;
+            _inner = new(http, "api/employee");
+        }
 
         public Task<List<EmployeeResponse>> GetAllAsync(CancellationToken ct = default) => _inner.GetAllAsync(ct);
 
@@ -25,5 +30,11 @@ namespace GestionaleRendicontazione.Client.Services
             => _inner.UpdateAsync(id, dto, ct);
 
         public Task<ApiResult> DeleteAsync(Guid id, CancellationToken ct = default) => _inner.DeleteAsync(id, ct);
+
+        public async Task<ApiResult> ForcePasswordResetAsync(Guid id, CancellationToken ct = default)
+        {
+            var response = await _http.PostAsync($"api/employee/{id}/force-password-reset", null, ct);
+            return await response.ToApiResultAsync(ct);
+        }
     }
 }

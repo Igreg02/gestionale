@@ -10,15 +10,18 @@
 
 <div class="app-shell @(_sidebarOpen ? "sidebar-open" : "")">
 
-    <AuthorizeView Roles="@RoleNames.Admin">
-        <Authorized>
-            <Sidebar OnNavigate="CloseSidebar" />
-        </Authorized>
-    </AuthorizeView>
+    @if (!_isChangePassword)
+    {
+        <AuthorizeView Roles="@RoleNames.Admin">
+            <Authorized>
+                <Sidebar OnNavigate="CloseSidebar" />
+            </Authorized>
+        </AuthorizeView>
+    }
 
     <div class="app-sidebar-backdrop" @onclick="CloseSidebar"></div>
 
-    @if (_lookupsLoadFailed)
+    @if (_lookupsLoadFailed && !_isChangePassword)
     {
         <div class="alert alert-warning d-flex align-items-center justify-content-between m-2 py-2 px-3" role="alert">
             <span><i class="bi bi-exclamation-triangle me-1"></i> Impossibile aggiornare le liste (progetti/dipendenti/stati). Riprova più tardi.</span>
@@ -219,7 +222,9 @@
     private bool _userMenuOpen;
     private bool _isDashboard;
     private bool _isLogs;
+    private bool _isChangePassword;
     private bool _isAdmin;
+    private bool _isAuthenticated;
     // Stato del toggle dark/light. Sincronizzato con localStorage via
     // wwwroot/js/theme.js (window.gestionaleTheme). Lo script JS applica
     // già la classe .dark al <body> al boot prima di Blazor, quindi qui
@@ -231,31 +236,49 @@
     private System.Timers.Timer? _logSearchDebounceTimer;
     private bool _disposed;
     private bool _lookupsLoadFailed;
+    private bool _lookupsLoaded;
 
     protected override async Task OnInitializedAsync()
     {
         if (AuthStateTask is not null)
         {
             var authState = await AuthStateTask;
+            _isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
             _isAdmin = authState.User.IsInRole(RoleNames.Admin);
             FilterState.IsAdmin = _isAdmin;
+            RedirectIfMustChangePassword(authState.User);
         }
+
+        // Verifica l'URL iniziale all'avvio, PRIMA di caricare i lookup: sulla pagina
+        // di cambio password (obbligatorio o forzato dall'admin) non servono liste
+        // progetti/dipendenti/stati, quindi si evita la chiamata e il relativo alert d'errore.
+        CheckCurrentLocation();
 
         // Ripristina i filtri persistenti (date + selezioni dropdown) da localStorage.
         // Va fatto DOPO aver determinato IsAdmin perché alcuni filtri sono significativi
         // solo per admin (es. dipendente). Se nessun filtro è salvato, l'operazione è no-op.
         await FilterState.LoadFromStorageAsync();
 
-        await FilterState.LoadLookupsAsync();
+        // Niente lookup se non autenticati (es. pagina di login): le API sono protette
+        // e la chiamata anonima darebbe solo 401 + alert "riprova" senza motivo.
+        if (!_isChangePassword && _isAuthenticated)
+        {
+            await EnsureLookupsLoadedAsync();
+        }
+
         FilterState.OnFiltersChanged += StateHasChanged;
         FilterState.LookupsLoadFailed += OnLookupsLoadFailed;
         LogFilterState.OnFiltersChanged += StateHasChanged;
 
-        // Verifica l'URL iniziale all'avvio
-        CheckCurrentLocation();
-
         // Registra l'evento che intercetta i cambi di pagina/URL
         NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private async Task EnsureLookupsLoadedAsync()
+    {
+        if (_lookupsLoaded) return;
+        _lookupsLoaded = true;
+        await FilterState.LoadLookupsAsync();
     }
 
     private void OnLookupsLoadFailed()
@@ -264,10 +287,44 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    private async void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         CheckCurrentLocation();
+        if (AuthStateTask is not null)
+        {
+            var authState = await AuthStateTask;
+            _isAuthenticated = authState.User.Identity?.IsAuthenticated ?? false;
+            RedirectIfMustChangePassword(authState.User);
+        }
+
+        // Se all'avvio i lookup erano stati saltati (pagina cambio password) e ora si è
+        // usciti da quella pagina, li carica ora: servono a dashboard/filtri.
+        if (!_isChangePassword && _isAuthenticated)
+        {
+            await EnsureLookupsLoadedAsync();
+        }
+
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Rimbalza su /change-password se il claim mustChangePassword del token è "true" (hint
+    /// lato client, aggiornato ad ogni login/cambio password riuscito — vedi AuthService.cs).
+    /// Non è la difesa: quella è sempre il backend (PasswordChangeGate, check live sul DB),
+    /// questo serve solo a evitare che l'utente veda/usi la UI mentre è bloccato.
+    /// </summary>
+    private void RedirectIfMustChangePassword(System.Security.Claims.ClaimsPrincipal user)
+    {
+        if (user.FindFirst("mustChangePassword")?.Value != "true") return;
+
+        var path = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        if (path.StartsWith("change-password", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("logout", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        NavigationManager.NavigateTo("/change-password", replace: true);
     }
 
     // Al primo render sincronizza il checkbox con lo stato persistito.
@@ -346,6 +403,9 @@
 
         // Pagina Logs admin
         _isLogs = relativeUri.StartsWith("admin/logs", StringComparison.OrdinalIgnoreCase);
+
+        // Pagina cambio password: niente sidebar (utente/admin bloccato finché non la cambia)
+        _isChangePassword = relativeUri.StartsWith("change-password", StringComparison.OrdinalIgnoreCase);
     }
 
     private void OnSearchInput(ChangeEventArgs e)

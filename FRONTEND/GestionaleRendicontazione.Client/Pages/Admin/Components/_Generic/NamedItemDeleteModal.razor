@@ -43,7 +43,7 @@
                         }
                         else
                         {
-                            <i class="bi bi-trash3 me-1"></i> <span>@ConfirmLabel</span>
+                            <i class="bi @Icon me-1"></i> <span>@ConfirmLabel</span>
                         }
                     </button>
                 </div>
@@ -69,4 +69,5 @@
     [Parameter] public string ConfirmLabel { get; set; } = "Conferma elimina";
     [Parameter] public string DeletingLabel { get; set; } = "Eliminazione...";
     [Parameter] public string Width { get; set; } = "440px";
+    [Parameter] public string Icon { get; set; } = "bi-trash3";
 }

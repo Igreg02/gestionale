@@ -46,5 +46,16 @@ namespace GestionaleRendicontazione.Domain.Dtos
             string FirstName,
             string LastName,
             bool IsActive);
+
+        public record ChangePasswordRequestDto
+        {
+            [Required(AllowEmptyStrings = false, ErrorMessage = "La password attuale è obbligatoria")]
+            [StringLength(256, MinimumLength = 1)]
+            public string CurrentPassword { get; init; } = string.Empty;
+
+            [Required(AllowEmptyStrings = false, ErrorMessage = "La nuova password è obbligatoria")]
+            [StringLength(256, MinimumLength = 6, ErrorMessage = "La password deve essere di almeno 6 caratteri")]
+            public string NewPassword { get; init; } = string.Empty;
+        }
     }
 }

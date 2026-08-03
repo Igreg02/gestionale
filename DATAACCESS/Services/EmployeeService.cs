@@ -41,5 +41,17 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             }
             return Task.CompletedTask;
         }
+
+        public async Task<bool> ForcePasswordResetAsync(Guid id, CancellationToken ct = default)
+        {
+            return await Db.ReadWriteAsync(async uow =>
+            {
+                var entity = await uow.GetObjectByKeyAsync<Employee>(id, ct);
+                if (entity is null) return false;
+
+                entity.MustChangePassword = true;
+                return true;
+            }, ct);
+        }
     }
 }

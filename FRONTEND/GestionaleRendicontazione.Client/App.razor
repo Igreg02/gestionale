@@ -1,3 +1,5 @@
+@inject NavigationManager NavigationManager
+
 <CascadingAuthenticationState>
     <Router AppAssembly="@typeof(App).Assembly">
         <Found Context="routeData">
@@ -15,9 +17,12 @@
                     }
                 </NotAuthorized>
                 <Authorizing>
-                    <div class="p-5 text-center">
-                        <Heading Size="HeadingSize.Is4">Verifica autenticazione...</Heading>
-                    </div>
+                    @if (!IsChangePasswordRoute)
+                    {
+                        <div class="p-5 text-center">
+                            <Heading Size="HeadingSize.Is4">Verifica autenticazione...</Heading>
+                        </div>
+                    }
                 </Authorizing>
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
@@ -39,3 +44,9 @@
         </NotFound>
     </Router>
 </CascadingAuthenticationState>
+
+@code {
+    private bool IsChangePasswordRoute =>
+        NavigationManager.ToBaseRelativePath(NavigationManager.Uri)
+            .StartsWith("change-password", StringComparison.OrdinalIgnoreCase);
+}

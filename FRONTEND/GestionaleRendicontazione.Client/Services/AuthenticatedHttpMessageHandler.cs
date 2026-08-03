@@ -13,9 +13,17 @@ namespace GestionaleRendicontazione.Client.Services
     /// l'utente viene rimandato al login, invece di restare "loggato" nella UI con un token morto.
     /// Un 401 senza token allegato (es. credenziali errate su /api/auth/login) non è una scadenza
     /// di sessione e resta gestito dal chiamante (AuthService.LoginAsync).
+    ///
+    /// Un 403 con l'header <see cref="PasswordChangeRequiredHeader"/> significa che il backend ha
+    /// bloccato la richiesta perché l'utente deve cambiare password (PasswordChangeGate lato server,
+    /// letto live dal DB — vedi API/Services/Auth/PasswordChangeGate.cs). A differenza del 401 qui
+    /// l'utente NON va sloggato: il token resta valido, va solo rimandato alla pagina di cambio
+    /// password. Serve come rete di sicurezza anche se il claim JWT locale è ancora "false" (es.
+    /// l'Admin ha forzato il reset mentre l'utente aveva già un token in mano).
     /// </summary>
     public sealed class AuthenticatedHttpMessageHandler : DelegatingHandler
     {
+        public const string PasswordChangeRequiredHeader = "X-Password-Change-Required";
         private readonly TokenStorageService _tokenStorageService;
         private readonly CustomAuthenticationStateProvider _authenticationStateProvider;
         private readonly NavigationManager _navigationManager;
@@ -45,6 +53,11 @@ namespace GestionaleRendicontazione.Client.Services
             {
                 await _authenticationStateProvider.MarkUserAsLoggedOutAsync();
                 _navigationManager.NavigateTo("/login", forceLoad: false);
+            }
+            else if (hadToken && response.StatusCode == HttpStatusCode.Forbidden
+                && response.Headers.Contains(PasswordChangeRequiredHeader))
+            {
+                _navigationManager.NavigateTo("/change-password", forceLoad: false);
             }
 
             return response;

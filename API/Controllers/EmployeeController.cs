@@ -74,5 +74,18 @@ namespace GestionaleRendicontazione.Api.Controllers
             _audit.ResourceLifecycle("Deleted", "Employee", id);
             return NoContent();
         }
+
+        [HttpPost("{id:guid}/force-password-reset")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> ForcePasswordReset(Guid id, CancellationToken ct)
+        {
+            var ok = await _employeeService.ForcePasswordResetAsync(id, ct);
+            if (!ok) return NotFound();
+            _audit.ResourceLifecycle("ForcePasswordReset", "Employee", id);
+            return NoContent();
+        }
     }
 }

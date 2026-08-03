@@ -41,6 +41,14 @@ namespace GestionaleRendicontazione.Domain.Entities
             set => SetPropertyValue(nameof(PasswordHash), ref _passwordHash, value);
         }
 
+        private bool _mustChangePassword;
+        [Persistent("mustChangePassword")]
+        public bool MustChangePassword
+        {
+            get => _mustChangePassword;
+            set => SetPropertyValue(nameof(MustChangePassword), ref _mustChangePassword, value);
+        }
+
         [Association("Employee-WorkLogs")]
         public XPCollection<WorkLog> WorkLogs => GetCollection<WorkLog>(nameof(WorkLogs));
     }

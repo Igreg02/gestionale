@@ -107,5 +107,37 @@ namespace GestionaleRendicontazione.Client.Services
 
             return await response.ToApiResultAsync<RegisterResponseDto>();
         }
+
+        /// <summary>
+        /// Cambia la password dell'utente autenticato. Su successo il backend ritorna un token
+        /// fresco (con claim mustChangePassword=false) che sostituisce quello corrente, così
+        /// l'utente può continuare senza un nuovo login.
+        /// </summary>
+        public async Task<ApiResult<LoginResponseDto>> ChangePasswordAsync(string currentPassword, string newPassword)
+        {
+            var request = new ChangePasswordRequestDto
+            {
+                CurrentPassword = currentPassword,
+                NewPassword = newPassword
+            };
+
+            HttpResponseMessage response;
+            try
+            {
+                response = await _httpClient.PostAsJsonAsync("api/auth/change-password", request, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                return ApiResult<LoginResponseDto>.WithError($"Errore di rete: {ex.Message}", statusCode: 0);
+            }
+
+            var result = await response.ToApiResultAsync<LoginResponseDto>();
+            if (result.IsSuccess && result.Data is not null)
+            {
+                await _authenticationStateProvider.MarkUserAsAuthenticatedAsync(result.Data);
+            }
+
+            return result;
+        }
     }
 }
