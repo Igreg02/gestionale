@@ -92,8 +92,8 @@
     window.gestionaleTheme = {
         get() { return read(); },
 
-        set(dark, x, y) {
-            animateThemeSwitch(dark, x, y);
+        set(dark) {
+            animateThemeSwitch(dark, 2000, 1);
         }
     };
 
