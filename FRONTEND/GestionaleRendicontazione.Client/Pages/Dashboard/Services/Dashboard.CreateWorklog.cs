@@ -60,12 +60,8 @@ public partial class Dashboard
     private async Task SaveCreateAsync()
     {
         if (_createModel is null) return;
-        if (string.IsNullOrWhiteSpace(_createModel.Description)) { Crud.SetClientModalError("La descrizione è obbligatoria."); return; }
-        if (_createModel.HoursCounter < 1 || _createModel.HoursCounter > 24) { Crud.SetClientModalError("Le ore devono essere comprese tra 1 e 24."); return; }
-        if (_createModel.IdProject == Guid.Empty) { Crud.SetClientModalError("Seleziona un progetto."); return; }
-        if (_createModel.IdType == Guid.Empty) { Crud.SetClientModalError("Seleziona una tipologia."); return; }
-        if (_createModel.IdStatus == Guid.Empty) { Crud.SetClientModalError("Seleziona uno stato."); return; }
-        if (FilterState.IsAdmin && _createModel.IdEmployee == Guid.Empty) { Crud.SetClientModalError("Seleziona un dipendente."); return; }
+        var validationError = ValidateWorkLog(_createModel, FilterState.IsAdmin);
+        if (validationError is not null) { Crud.SetClientModalError(validationError); return; }
 
         await Crud.RunCrudAsync<WorkLogResponseDto>(
             operation: () => WorkLogApiClient.CreateAsync(_createModel),

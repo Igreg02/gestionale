@@ -46,7 +46,7 @@ public partial class Dashboard
         Crud.ResetModalError();
     }
 
-    private void OnDateInput(ChangeEventArgs e)
+    private void OnEditDateInput(ChangeEventArgs e)
     {
         _editDateString = e.Value?.ToString() ?? string.Empty;
         if (_editModel is not null && DateOnly.TryParseExact(_editDateString, "yyyy-MM-dd", null, DateTimeStyles.None, out var parsed))
@@ -58,12 +58,8 @@ public partial class Dashboard
     private async Task SaveEditAsync()
     {
         if (_editModel is null || _editSource is null) return;
-        if (string.IsNullOrWhiteSpace(_editModel.Description)) { Crud.SetClientModalError("La descrizione è obbligatoria."); return; }
-        if (_editModel.HoursCounter < 1 || _editModel.HoursCounter > 24) { Crud.SetClientModalError("Le ore devono essere comprese tra 1 e 24."); return; }
-        if (_editModel.IdProject == Guid.Empty) { Crud.SetClientModalError("Seleziona un progetto."); return; }
-        if (_editModel.IdType == Guid.Empty) { Crud.SetClientModalError("Seleziona una tipologia."); return; }
-        if (_editModel.IdStatus == Guid.Empty) { Crud.SetClientModalError("Seleziona uno stato."); return; }
-        if (FilterState.IsAdmin && _editModel.IdEmployee == Guid.Empty) { Crud.SetClientModalError("Seleziona un dipendente."); return; }
+        var validationError = ValidateWorkLog(_editModel, FilterState.IsAdmin);
+        if (validationError is not null) { Crud.SetClientModalError(validationError); return; }
 
         if (!FilterState.IsAdmin)
             _editModel.IdEmployee = _editSource.IdEmployee ?? Guid.Empty;

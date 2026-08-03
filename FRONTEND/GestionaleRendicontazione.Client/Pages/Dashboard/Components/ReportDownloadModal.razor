@@ -298,24 +298,10 @@
 
         try
         {
-            if (_reportByProject)
-            {
-                var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo, cts.Token);
-                _previewWorklogs = report.IsSuccess ? report.Data?.WorkLogs ?? new() : new();
-                if (!report.IsSuccess)
-                    _modalError = "Impossibile caricare il report per il progetto selezionato.";
-            }
-            else
-            {
-                Guid? employeeFilter = null;
-                if (FilterState.IsAdmin && _selectedEmployeeId != Guid.Empty)
-                    employeeFilter = _selectedEmployeeId;
-
-                var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null);
-                _previewWorklogs = result.IsSuccess && result.Data is not null
-                    ? result.Data.ToList()
-                    : new List<WorkLogResponseDto>();
-            }
+            var (worklogs, error) = await FetchWorklogsAsync(cts.Token);
+            _previewWorklogs = worklogs;
+            if (error is not null)
+                _modalError = error;
         }
         catch (OperationCanceledException) { /* cambio filtri: scarto il risultato */ }
         catch (Exception ex)
@@ -332,6 +318,31 @@
                 StateHasChanged();
             }
         }
+    }
+
+    /// <summary>
+    /// Fetch dei worklog secondo il filtro corrente (per progetto o per dipendente),
+    /// condiviso tra anteprima (<see cref="LoadPreviewAsync"/>) e generazione PDF
+    /// (<see cref="GenerateAndDownloadAsync"/>) — stessa identica logica di branching.
+    /// </summary>
+    private async Task<(List<WorkLogResponseDto> Worklogs, string? Error)> FetchWorklogsAsync(CancellationToken ct = default)
+    {
+        if (_reportByProject)
+        {
+            var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo, ct);
+            if (!report.IsSuccess || report.Data is null)
+                return (new(), "Impossibile caricare il report per il progetto selezionato.");
+            return (report.Data.WorkLogs, null);
+        }
+
+        Guid? employeeFilter = null;
+        if (FilterState.IsAdmin && _selectedEmployeeId != Guid.Empty)
+            employeeFilter = _selectedEmployeeId;
+
+        var result = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null, ct);
+        return result.IsSuccess && result.Data is not null
+            ? (result.Data.ToList(), null)
+            : (new List<WorkLogResponseDto>(), null);
     }
 
     private double SumHours() => _previewWorklogs.Sum(w => (double)w.HoursCounter);
@@ -376,29 +387,15 @@
         List<WorkLogResponseDto> worklogs;
         try
         {
-            if (_reportByProject)
+            var (fetched, error) = await FetchWorklogsAsync();
+            if (error is not null)
             {
-                var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo);
-                if (!report.IsSuccess || report.Data is null)
-                {
-                    _modalError = "Impossibile recuperare il report per il progetto selezionato. Riprova.";
-                    _busy = false;
-                    _statusMessage = null;
-                    return;
-                }
-                worklogs = report.Data.WorkLogs;
+                _modalError = "Impossibile recuperare il report per il progetto selezionato. Riprova.";
+                _busy = false;
+                _statusMessage = null;
+                return;
             }
-            else
-            {
-                Guid? employeeFilter = null;
-                if (FilterState.IsAdmin && _selectedEmployeeId != Guid.Empty)
-                    employeeFilter = _selectedEmployeeId;
-
-                var fetched = await WorkLogApiClient.GetAsync(_periodFrom, _periodTo, employeeFilter, null, null);
-                worklogs = fetched.IsSuccess && fetched.Data is not null
-                    ? fetched.Data.ToList()
-                    : new List<WorkLogResponseDto>();
-            }
+            worklogs = fetched;
         }
         catch (Exception ex)
         {

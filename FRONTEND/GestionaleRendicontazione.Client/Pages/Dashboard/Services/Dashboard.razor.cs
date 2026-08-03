@@ -59,6 +59,21 @@ public partial class Dashboard : IDisposable
         !string.IsNullOrEmpty(source) && source.Contains(query, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Validazione client-side condivisa tra Create ed Edit (stessi campi obbligatori
+    /// su entrambi i flussi). Ritorna il primo messaggio d'errore trovato, o null se valido.
+    /// </summary>
+    private static string? ValidateWorkLog(WorkLogUpdateRequestDto model, bool isAdmin)
+    {
+        if (string.IsNullOrWhiteSpace(model.Description)) return "La descrizione è obbligatoria.";
+        if (model.HoursCounter < 1 || model.HoursCounter > 24) return "Le ore devono essere comprese tra 1 e 24.";
+        if (model.IdProject == Guid.Empty) return "Seleziona un progetto.";
+        if (model.IdType == Guid.Empty) return "Seleziona una tipologia.";
+        if (model.IdStatus == Guid.Empty) return "Seleziona uno stato.";
+        if (isAdmin && model.IdEmployee == Guid.Empty) return "Seleziona un dipendente.";
+        return null;
+    }
+
+    /// <summary>
     /// Restituisce l'ID (Guid) dell'utente attualmente autenticato leggendo il claim
     /// <see cref="ClaimTypes.NameIdentifier"/>. Ritorna <see cref="Guid.Empty"/> se il claim
     /// non è presente o non è un Guid valido. Usato per pre-popolare IdEmployee sui worklog
