@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using GestionaleRendicontazione.Domain.Exceptions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
@@ -37,6 +38,7 @@ namespace GestionaleRendicontazione.Api.Helpers.ProblemDetails
                     var (status, title) = exception switch
                     {
                         ArgumentException => (StatusCodes.Status400BadRequest, "Richiesta non valida"),
+                        ForeignKeyNotFoundException => (StatusCodes.Status422UnprocessableEntity, "Riferimento non valido"),
                         UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Non autorizzato"),
                         KeyNotFoundException => (StatusCodes.Status404NotFound, "Risorsa non trovata"),
                         InvalidOperationException => (StatusCodes.Status409Conflict, "Operazione non valida"),

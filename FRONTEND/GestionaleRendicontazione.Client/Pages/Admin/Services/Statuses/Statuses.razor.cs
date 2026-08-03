@@ -1,40 +1,33 @@
+using GestionaleRendicontazione.Client.Models;
 using GestionaleRendicontazione.Client.Services;
-using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Statuses.razor.cs  -> stato condiviso, ciclo di vita, caricamento stati
-//  - Statuses.Form.cs   -> modale "Nuovo/Modifica stato"
-//  - Statuses.Delete.cs -> modale conferma eliminazione
-//
-// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
-// CrudPageService — qui rimane solo la lista _items e il ciclo di vita Blazor.
-public partial class Statuses : ComponentBase, IDisposable
+// Tutta la logica CRUD (load/create/update/delete + stato dei due modali) vive nella
+// base SimpleCrudAdminPage: qui restano solo gli adapter verso StatusApiClient (@inject
+// nel .razor) e le conversioni DTO/FormModel specifiche di questa entità.
+public partial class Statuses
 {
-    [Inject] private CrudPageService Crud { get; set; } = default!;
+    protected override string LoadErrorMessage => "Impossibile recuperare i dati dal server. Riprova più tardi.";
 
-    private List<StatusResponse> _items = new();
+    protected override Task<List<StatusResponse>> FetchAllAsync() => ApiClient.GetAllAsync();
+    protected override Task<ApiResult<StatusResponse>> CreateAsync(StatusCreateRequest dto) => ApiClient.CreateAsync(dto);
+    protected override Task<ApiResult<StatusResponse>> UpdateAsync(Guid id, StatusUpdateRequest dto) => ApiClient.UpdateAsync(id, dto);
+    protected override Task<ApiResult> DeleteAsync(Guid id) => ApiClient.DeleteAsync(id);
 
-    protected override void OnInitialized()
-    {
-        Crud.OnChanged += OnCrudStateChanged;
-        _ = LoadAsync();
-    }
+    protected override List<StatusResponse> Sort(List<StatusResponse> items) => items.OrderBy(i => i.Name).ToList();
 
-    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
+    protected override Guid GetId(StatusResponse item) => item.Id;
+    protected override StatusFormModel ToFormModel(StatusResponse item) => new() { Name = item.Name };
+    protected override StatusCreateRequest ToCreateDto(StatusFormModel model) => new() { Name = model.Name };
+    protected override StatusUpdateRequest ToUpdateDto(StatusFormModel model) => new() { Name = model.Name };
 
-    public void Dispose() => Crud.OnChanged -= OnCrudStateChanged;
+    protected override string? Validate(StatusFormModel model)
+        => string.IsNullOrWhiteSpace(model.Name) ? "Il nome è obbligatorio." : null;
+}
 
-    private async Task LoadAsync()
-    {
-        await Crud.RunLoadAsync(
-            load: () => ReloadListAsync(),
-            errorMessage: "Impossibile recuperare i dati dal server. Riprova più tardi.");
-    }
-
-    private async Task ReloadListAsync()
-    {
-        _items = (await ApiClient.GetAllAsync()).OrderBy(i => i.Name).ToList();
-    }
+// Modello del form, esposto (non-privato) perché usato anche da StatusFormModal.razor.
+public sealed class StatusFormModel
+{
+    public string Name { get; set; } = string.Empty;
 }

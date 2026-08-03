@@ -1,40 +1,38 @@
+using GestionaleRendicontazione.Client.Models;
 using GestionaleRendicontazione.Client.Services;
-using Microsoft.AspNetCore.Components;
 
 namespace GestionaleRendicontazione.Client.Pages.Admin;
 
-// Questa classe è suddivisa in più file (partial) per responsabilità:
-//  - Companies.razor.cs  -> stato condiviso, ciclo di vita, caricamento aziende
-//  - Companies.Form.cs   -> modale "Nuova/Modifica azienda"
-//  - Companies.Delete.cs -> modale conferma eliminazione
-//
-// Lo stato UI (IsLoading/IsSaving/ModalError/ErrorMessage) è centralizzato in
-// CrudPageService — qui rimane solo la lista _companies e il ciclo di vita Blazor.
-public partial class Companies : ComponentBase, IDisposable
+// Tutta la logica CRUD (load/create/update/delete + stato dei due modali) vive nella
+// base SimpleCrudAdminPage: qui restano solo gli adapter verso CompanyApiClient (@inject
+// nel .razor, come ApiClient) e le conversioni DTO/FormModel specifiche di questa entità.
+public partial class Companies
 {
-    [Inject] private CrudPageService Crud { get; set; } = default!;
+    protected override string LoadErrorMessage => "Impossibile recuperare le aziende dal server. Riprova più tardi.";
 
-    private List<CompanyResponse> _companies = new();
+    protected override Task<List<CompanyResponse>> FetchAllAsync() => ApiClient.GetAllAsync();
+    protected override Task<ApiResult<CompanyResponse>> CreateAsync(CompanyCreateRequest dto) => ApiClient.CreateAsync(dto);
+    protected override Task<ApiResult<CompanyResponse>> UpdateAsync(Guid id, CompanyUpdateRequest dto) => ApiClient.UpdateAsync(id, dto);
+    protected override Task<ApiResult> DeleteAsync(Guid id) => ApiClient.DeleteAsync(id);
 
-    protected override void OnInitialized()
+    protected override List<CompanyResponse> Sort(List<CompanyResponse> items) => items.OrderBy(c => c.Name).ToList();
+
+    protected override Guid GetId(CompanyResponse item) => item.Id;
+    protected override CompanyFormModel ToFormModel(CompanyResponse item) => new() { Name = item.Name, Email = item.Email };
+    protected override CompanyCreateRequest ToCreateDto(CompanyFormModel model) => new() { Name = model.Name, Email = model.Email };
+    protected override CompanyUpdateRequest ToUpdateDto(CompanyFormModel model) => new() { Name = model.Name, Email = model.Email };
+
+    protected override string? Validate(CompanyFormModel model)
     {
-        Crud.OnChanged += OnCrudStateChanged;
-        _ = LoadAsync();
+        if (string.IsNullOrWhiteSpace(model.Name)) return "Il nome dell'azienda è obbligatorio.";
+        if (string.IsNullOrWhiteSpace(model.Email)) return "L'email dell'azienda è obbligatoria.";
+        return null;
     }
+}
 
-    private void OnCrudStateChanged() => InvokeAsync(StateHasChanged);
-
-    public void Dispose() => Crud.OnChanged -= OnCrudStateChanged;
-
-    private async Task LoadAsync()
-    {
-        await Crud.RunLoadAsync(
-            load: () => ReloadListAsync(),
-            errorMessage: "Impossibile recuperare le aziende dal server. Riprova più tardi.");
-    }
-
-    private async Task ReloadListAsync()
-    {
-        _companies = (await CompanyApiClient.GetAllAsync()).OrderBy(c => c.Name).ToList();
-    }
+// Modello del form, esposto (non-privato) perché usato anche da CompanyFormModal.razor.
+public sealed class CompanyFormModel
+{
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
 }

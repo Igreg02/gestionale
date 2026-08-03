@@ -1,7 +1,6 @@
-using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace GestionaleRendicontazione.Client.Services
+namespace GestionaleRendicontazione.Client.Models
 {
     public class WorkLogUpdateRequestDto
     {
@@ -26,33 +25,5 @@ namespace GestionaleRendicontazione.Client.Services
 
         [Required(ErrorMessage = "Devi indicare l'ID dello stato del lavoro")]
         public Guid IdStatus { get; set; }
-    }
-
-    public class ProjectResponseDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public Guid IdCompany { get; set; }
-        public string CompanyName { get; set; } = string.Empty;
-    }
-
-    public class StatusResponseDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
-
-    public class TypeResponseDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
-
-    public class EmployeeResponseDto
-    {
-        public Guid Id { get; set; }
-        public string Username { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
     }
 }

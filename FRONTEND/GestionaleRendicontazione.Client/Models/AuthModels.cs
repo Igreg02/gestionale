@@ -1,6 +1,4 @@
-using System;
-
-namespace GestionaleRendicontazione.Client.Services
+namespace GestionaleRendicontazione.Client.Models
 {
     public sealed class LoginRequestDto
     {

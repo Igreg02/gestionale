@@ -106,6 +106,11 @@ namespace GestionaleRendicontazione.Client.Services
             if (statusCode == 400)
                 return "Alcuni dati non sono validi. Controlla i campi evidenziati.";
 
+            // Status code diverso da 400 ma con validation errors popolati (backend non conforme):
+            // mostriamo comunque i messaggi specifici invece del testo generico per status code.
+            if (validationErrors.Count > 0)
+                return string.Join(" ", validationErrors.SelectMany(kv => kv.Value));
+
             // 401 viene gestito da AuthenticatedHttpMessageHandler prima di arrivare qui,
             // ma se capita (es. con un client che non usa l'handler) mostriamo un fallback decente
             if (statusCode == 401)
@@ -199,8 +204,8 @@ namespace GestionaleRendicontazione.Client.Services
             return ApiResult.WithError(detail, (int)response.StatusCode);
         }
 
-        private static async Task<string?> TryReadProblemDetailAsync(
-            HttpResponseMessage response, CancellationToken ct)
+        internal static async Task<string?> TryReadProblemDetailAsync(
+            HttpResponseMessage response, CancellationToken ct = default)
         {
             try
             {

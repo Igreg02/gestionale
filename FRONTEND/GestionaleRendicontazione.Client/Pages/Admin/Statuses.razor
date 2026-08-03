@@ -1,6 +1,7 @@
 @page "/admin/stati"
 @attribute [Authorize(Roles = RoleNames.Admin)]
 @using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
+@inherits SimpleCrudAdminPage<StatusResponse, StatusCreateRequest, StatusUpdateRequest, StatusFormModel>
 @inject StatusApiClient ApiClient
 @inject FilterStateService FilterState
 

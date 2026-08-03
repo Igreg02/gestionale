@@ -1,6 +1,7 @@
 @page "/admin/tipologie"
 @attribute [Authorize(Roles = RoleNames.Admin)]
 @using GestionaleRendicontazione.Client.Pages.Admin.Components._Generic
+@inherits SimpleCrudAdminPage<WorkTypeResponse, WorkTypeCreateRequest, WorkTypeUpdateRequest, TypeFormModel>
 @inject TypeApiClient ApiClient
 @inject FilterStateService FilterState
 

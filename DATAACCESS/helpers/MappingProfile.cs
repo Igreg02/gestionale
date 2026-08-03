@@ -2,6 +2,7 @@ using AutoMapper;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Dtos;
+using GestionaleRendicontazione.Domain.Exceptions;
 
 namespace GestionaleRendicontazione.Dataaccess.Helpers
 {
@@ -20,7 +21,7 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
             var uow = (UnitOfWork)ctx.Items[WorkLogMappingContextKeys.Uow];
             var loaded = (TForeign)uow.GetObjectByKey(typeof(TForeign), id);
             if (loaded is null)
-                throw new InvalidOperationException("Una delle FK fornite non esiste");
+                throw new ForeignKeyNotFoundException("Una delle FK fornite non esiste");
             return loaded;
         }
 
@@ -148,6 +149,13 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
                     dest.Name = src.Name;
                     return dest;
                 });
+
+            // ----- WorkLog Admin -> User: stessi campi scalari, IdEmployee escluso
+            // (il DTO User non lo espone: il dipendente è sempre quello autenticato).
+            // Usato da WorklogController per costruire il body verso IWorkLogUserService
+            // senza duplicare a mano la copia campo-per-campo tra Create e Update.
+            CreateMap<WorkLogDto.Admin.Create, WorkLogDto.User.Create>();
+            CreateMap<WorkLogDto.Admin.Update, WorkLogDto.User.Update>();
 
             // ----- WorkLog: campi scalari + risoluzione FK da UoW -----
             // Tutta la logica (campi + FK + timestamp) vive dentro ConvertUsing.

@@ -46,8 +46,11 @@ namespace GestionaleRendicontazione.Dataaccess.Helpers
             }
             if (dateTo.HasValue)
             {
-                var to = dateTo.Value;
-                query = query.Where(l => l.Data <= to);
+                // dateTo arriva come data pura (es. "2026-07-31" -> 00:00:00): un confronto <= lo
+                // tratterebbe come "fino a mezzanotte", escludendo tutti i log dello stesso giorno
+                // scritti dopo le 00:00. Confrontiamo invece con l'inizio del giorno successivo.
+                var toExclusive = dateTo.Value.Date.AddDays(1);
+                query = query.Where(l => l.Data < toExclusive);
             }
             return query;
         }

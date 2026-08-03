@@ -4,16 +4,19 @@ using System.Threading.Tasks;
 using DevExpress.Xpo;
 using GestionaleRendicontazione.Domain.Entities;
 using GestionaleRendicontazione.Domain.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
     public class TokenBlacklistService : ITokenBlacklistService
     {
         private readonly IDbContextService _dbContextService;
+        private readonly ILogger<TokenBlacklistService> _logger;
 
-        public TokenBlacklistService(IDbContextService dbContextService)
+        public TokenBlacklistService(IDbContextService dbContextService, ILogger<TokenBlacklistService> logger)
         {
             _dbContextService = dbContextService;
+            _logger = logger;
         }
 
         public async Task BlacklistTokenAsync(string jti, DateTime expiresAt)
@@ -74,9 +77,11 @@ namespace GestionaleRendicontazione.Dataaccess.Services
                     await Task.CompletedTask;
                 });
             }
-            catch
+            catch (Exception ex)
             {
-                // Ignoriamo silenti errori di manutenzione in background per non bloccare la chiamata principale
+                // Non rilanciamo: è manutenzione in background, non deve bloccare la chiamata principale.
+                // Il fallimento va comunque tracciato, altrimenti la tabella dei token scaduti cresce in silenzio.
+                _logger.LogWarning(ex, "Potatura dei token scaduti in blacklist fallita");
             }
         }
     }

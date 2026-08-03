@@ -46,7 +46,8 @@ namespace GestionaleRendicontazione.Client.Services
 
         public async Task ReloadAsync()
         {
-            // Coerenza con FilterStateService: piccolo debounce per evitare N reload ravvicinati
+            // Task.Yield, non un vero debounce come FilterStateService.ReloadLookupsAsync:
+            // la pagina Logs ricarica solo su azione esplicita dell'utente (no raffiche di eventi).
             await Task.Yield();
             OnFiltersChanged?.Invoke();
         }

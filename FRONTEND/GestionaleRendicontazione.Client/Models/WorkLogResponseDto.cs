@@ -1,4 +1,4 @@
-namespace GestionaleRendicontazione.Client.Services
+namespace GestionaleRendicontazione.Client.Models
 {
     /// <summary>
     /// Rappresentazione client dei worklog restituiti da GET /api/worklog. È un superset dei campi

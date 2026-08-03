@@ -1,3 +1,4 @@
+using AutoMapper;
 using GestionaleRendicontazione.Api.Helpers;
 using GestionaleRendicontazione.Domain.Dtos;
 using GestionaleRendicontazione.Domain.Interfaces;
@@ -22,13 +23,16 @@ namespace GestionaleRendicontazione.Api.Controllers
     {
         private readonly IWorkLogAdminService _adminService;
         private readonly IWorkLogUserService _userService;
+        private readonly IMapper _mapper;
 
         public WorklogController(
             IWorkLogAdminService adminService,
-            IWorkLogUserService userService)
+            IWorkLogUserService userService,
+            IMapper mapper)
         {
             _adminService = adminService;
             _userService = userService;
+            _mapper = mapper;
         }
 
         private bool IsAdmin => User.IsInRole(RoleNames.Admin);
@@ -109,15 +113,7 @@ namespace GestionaleRendicontazione.Api.Controllers
             if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
             // IdEmployee dal body viene ignorato: si usa sempre quello del token.
-            var userDto = new WorkLogDto.User.Create
-            {
-                Description = dto.Description,
-                HoursCounter = dto.HoursCounter,
-                Date = dto.Date,
-                IdProject = dto.IdProject,
-                IdType = dto.IdType,
-                IdStatus = dto.IdStatus
-            };
+            var userDto = _mapper.Map<WorkLogDto.User.Create>(dto);
 
             var ownCreated = await _userService.CreateAsync(userDto, currentEmployeeId, ct);
             return CreatedAtRoute("GetWorkLogById", new { id = ownCreated.Id }, ownCreated);
@@ -145,15 +141,7 @@ namespace GestionaleRendicontazione.Api.Controllers
 
             if (!TryGetCurrentEmployeeId(out var currentEmployeeId)) return Unauthorized();
 
-            var userDto = new WorkLogDto.User.Update
-            {
-                Description = dto.Description,
-                HoursCounter = dto.HoursCounter,
-                Date = dto.Date,
-                IdProject = dto.IdProject,
-                IdType = dto.IdType,
-                IdStatus = dto.IdStatus
-            };
+            var userDto = _mapper.Map<WorkLogDto.User.Update>(dto);
 
             var ownUpdated = await _userService.UpdateAsync(id, userDto, currentEmployeeId, ct);
             if (ownUpdated is null) return NotFound();

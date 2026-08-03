@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using GestionaleRendicontazione.Client.Models;
 using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
@@ -29,8 +30,8 @@ public partial class Dashboard : IDisposable
     private DateOnly _periodTo;
     private string _periodLabel => $"{_periodFrom:dd/MM/yyyy} – {_periodTo:dd/MM/yyyy}";
 
-    private List<TypeResponseDto> _types = new();
-    private List<EmployeeResponseDto> _employees = new();
+    private List<WorkTypeResponse> _types = new();
+    private List<EmployeeResponse> _employees = new();
     private bool _employeesLoading;
 
     private CancellationTokenSource? _loadCts;
@@ -63,10 +64,10 @@ public partial class Dashboard : IDisposable
     /// non è presente o non è un Guid valido. Usato per pre-popolare IdEmployee sui worklog
     /// creati da utenti non-admin (per loro il dipendente è sempre sé stessi).
     /// </summary>
-    private Guid GetCurrentUserId()
+    private async Task<Guid> GetCurrentUserIdAsync()
     {
         if (AuthStateTask is null) return Guid.Empty;
-        var authState = AuthStateTask.GetAwaiter().GetResult();
+        var authState = await AuthStateTask;
         var raw = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(raw, out var id) ? id : Guid.Empty;
     }

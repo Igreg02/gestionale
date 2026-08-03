@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using GestionaleRendicontazione.Client.Models;
 using GestionaleRendicontazione.Client.Services;
 
 namespace GestionaleRendicontazione.Client.Pages.Dashboard;
@@ -26,7 +27,7 @@ public partial class Dashboard
         // ricavato dai claim (NameIdentifier = id utente). L'admin invece sceglie liberamente.
         var defaultEmployeeId = FilterState.IsAdmin
             ? Guid.Empty
-            : GetCurrentUserId();
+            : await GetCurrentUserIdAsync();
         _createModel = new WorkLogUpdateRequestDto
         {
             Date = today,

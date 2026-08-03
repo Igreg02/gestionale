@@ -301,8 +301,8 @@
             if (_reportByProject)
             {
                 var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo, cts.Token);
-                _previewWorklogs = report?.WorkLogs ?? new();
-                if (report is null)
+                _previewWorklogs = report.IsSuccess ? report.Data?.WorkLogs ?? new() : new();
+                if (!report.IsSuccess)
                     _modalError = "Impossibile caricare il report per il progetto selezionato.";
             }
             else
@@ -379,14 +379,14 @@
             if (_reportByProject)
             {
                 var report = await ReportDataApiClient.GetProjectReportAsync(_selectedProjectId, _periodFrom, _periodTo);
-                if (report is null)
+                if (!report.IsSuccess || report.Data is null)
                 {
                     _modalError = "Impossibile recuperare il report per il progetto selezionato. Riprova.";
                     _busy = false;
                     _statusMessage = null;
                     return;
                 }
-                worklogs = report.WorkLogs;
+                worklogs = report.Data.WorkLogs;
             }
             else
             {

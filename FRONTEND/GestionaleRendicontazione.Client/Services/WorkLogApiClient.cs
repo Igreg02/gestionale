@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using GestionaleRendicontazione.Client.Models;
 
 namespace GestionaleRendicontazione.Client.Services
 {
@@ -109,28 +110,28 @@ namespace GestionaleRendicontazione.Client.Services
             }
         }
 
-        public async Task<List<ProjectResponseDto>> GetProjectsAsync(CancellationToken cancellationToken = default)
+        public async Task<List<ProjectResponse>> GetProjectsAsync(CancellationToken cancellationToken = default)
         {
-            var result = await _httpClient.GetFromJsonAsync<List<ProjectResponseDto>>("api/project", cancellationToken);
-            return result ?? new List<ProjectResponseDto>();
+            var result = await _httpClient.GetFromJsonAsync<List<ProjectResponse>>("api/project", cancellationToken);
+            return result ?? new List<ProjectResponse>();
         }
 
-        public async Task<List<StatusResponseDto>> GetStatusesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<StatusResponse>> GetStatusesAsync(CancellationToken cancellationToken = default)
         {
-            var result = await _httpClient.GetFromJsonAsync<List<StatusResponseDto>>("api/status", cancellationToken);
-            return result ?? new List<StatusResponseDto>();
+            var result = await _httpClient.GetFromJsonAsync<List<StatusResponse>>("api/status", cancellationToken);
+            return result ?? new List<StatusResponse>();
         }
 
-        public async Task<List<TypeResponseDto>> GetTypesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<WorkTypeResponse>> GetTypesAsync(CancellationToken cancellationToken = default)
         {
-            var result = await _httpClient.GetFromJsonAsync<List<TypeResponseDto>>("api/type", cancellationToken);
-            return result ?? new List<TypeResponseDto>();
+            var result = await _httpClient.GetFromJsonAsync<List<WorkTypeResponse>>("api/type", cancellationToken);
+            return result ?? new List<WorkTypeResponse>();
         }
 
-        public async Task<List<EmployeeResponseDto>> GetEmployeesAsync(CancellationToken cancellationToken = default)
+        public async Task<List<EmployeeResponse>> GetEmployeesAsync(CancellationToken cancellationToken = default)
         {
-            var result = await _httpClient.GetFromJsonAsync<List<EmployeeResponseDto>>("api/employee", cancellationToken);
-            return result ?? new List<EmployeeResponseDto>();
+            var result = await _httpClient.GetFromJsonAsync<List<EmployeeResponse>>("api/employee", cancellationToken);
+            return result ?? new List<EmployeeResponse>();
         }
     }
 }

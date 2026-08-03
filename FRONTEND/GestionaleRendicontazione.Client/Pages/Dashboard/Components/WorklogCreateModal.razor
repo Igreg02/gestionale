@@ -45,9 +45,9 @@
     [Parameter] public bool Open { get; set; }
     [Parameter] public WorkLogUpdateRequestDto? Model { get; set; }
     [Parameter] public string DateString { get; set; } = string.Empty;
-    [Parameter] public List<EmployeeResponseDto> Employees { get; set; } = new();
+    [Parameter] public List<EmployeeResponse> Employees { get; set; } = new();
     [Parameter] public bool EmployeesLoading { get; set; }
-    [Parameter] public List<TypeResponseDto> Types { get; set; } = new();
+    [Parameter] public List<WorkTypeResponse> Types { get; set; } = new();
     [Parameter] public string? ModalError { get; set; }
     [Parameter] public bool IsSaving { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }

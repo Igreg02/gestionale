@@ -8,6 +8,34 @@ using GestionaleRendicontazione.Dataaccess.Helpers;
 namespace GestionaleRendicontazione.Dataaccess.Services
 {
     /// <summary>
+    /// Lookup condiviso tra <see cref="WorkLogAdminService"/> e <see cref="WorkLogUserService"/>:
+    /// entrambi devono scartare i worklog soft-deleted, e la versione utente in più deve
+    /// verificare che il worklog appartenga al dipendente autenticato. Centralizzato qui per
+    /// evitare che le due classi ripetano lo stesso controllo in ogni singolo metodo CRUD.
+    /// </summary>
+    internal static class WorkLogAccess
+    {
+        public static WorkLog? FindActive(Session session, Guid id, Guid? restrictToEmployeeId = null)
+        {
+            var w = session.GetObjectByKey<WorkLog>(id);
+            return IsAccessible(w, restrictToEmployeeId) ? w : null;
+        }
+
+        public static async Task<WorkLog?> FindActiveAsync(UnitOfWork uow, Guid id, Guid? restrictToEmployeeId, CancellationToken ct)
+        {
+            var w = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
+            return IsAccessible(w, restrictToEmployeeId) ? w : null;
+        }
+
+        private static bool IsAccessible(WorkLog? w, Guid? restrictToEmployeeId)
+        {
+            if (w is null || w.IsWorkLogDeleted) return false;
+            if (restrictToEmployeeId is { } ownerId && (w.Employee is null || w.Employee.Id != ownerId)) return false;
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Implementazione di <see cref="IWorkLogAdminService"/>: nessun filtro sul dipendente,
     /// accesso completo a tutti i worklog.
     /// </summary>
@@ -26,9 +54,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var obj = session.GetObjectByKey<WorkLog>(id);
-                if (obj is null || obj.IsWorkLogDeleted) return null;
-                return _mapper.Map<WorkLogDto.Admin.Response>(obj);
+                var obj = WorkLogAccess.FindActive(session, id);
+                return obj is null ? null : _mapper.Map<WorkLogDto.Admin.Response>(obj);
             }));
         }
 
@@ -56,21 +83,25 @@ namespace GestionaleRendicontazione.Dataaccess.Services
 
         public async Task<WorkLogDto.Admin.Response> CreateAsync(WorkLogDto.Admin.Create dto, CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response>(async uow =>
+            // La Guid key [Key(AutoGenerate = true)] di WorkLog viene generata da XPO solo al
+            // commit fisico: si mappa la Response solo DOPO che ReadWriteAsync ha committato,
+            // altrimenti Id risulterebbe sempre Guid.Empty (Cf. XpoCrudServiceBase.CreateAsync).
+            var entity = await _dbContextService.ReadWriteAsync<WorkLog>(async uow =>
             {
-                var entity = new WorkLog(uow);
-                _mapper.Map(dto, entity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
-
-                return _mapper.Map<WorkLogDto.Admin.Response>(entity);
+                var newEntity = new WorkLog(uow);
+                _mapper.Map(dto, newEntity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
+                return newEntity;
             });
+
+            return _mapper.Map<WorkLogDto.Admin.Response>(entity);
         }
 
         public async Task<WorkLogDto.Admin.Response?> UpdateAsync(Guid id, WorkLogDto.Admin.Update dto, CancellationToken ct = default)
         {
             return await _dbContextService.ReadWriteAsync<WorkLogDto.Admin.Response?>(async uow =>
             {
-                var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsWorkLogDeleted) return null;
+                var entity = await WorkLogAccess.FindActiveAsync(uow, id, restrictToEmployeeId: null, ct);
+                if (entity is null) return null;
 
                 _mapper.Map(dto, entity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
 
@@ -82,8 +113,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
-                var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsWorkLogDeleted) return false;
+                var entity = await WorkLogAccess.FindActiveAsync(uow, id, restrictToEmployeeId: null, ct);
+                if (entity is null) return false;
 
                 uow.Delete(entity);
                 return true;
@@ -133,10 +164,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return Task.FromResult(_dbContextService.ExecuteReadOnly(session =>
             {
-                var w = session.GetObjectByKey<WorkLog>(id);
-                if (w is null || w.IsWorkLogDeleted) return null;
-                if (w.Employee == null || w.Employee.Id != currentEmployeeId) return null;
-                return _mapper.Map<WorkLogDto.User.Response>(w);
+                var w = WorkLogAccess.FindActive(session, id, currentEmployeeId);
+                return w is null ? null : _mapper.Map<WorkLogDto.User.Response>(w);
             }));
         }
 
@@ -145,21 +174,25 @@ namespace GestionaleRendicontazione.Dataaccess.Services
             Guid currentEmployeeId,
             CancellationToken ct = default)
         {
-            return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response>(async uow =>
+            // Id valorizzato solo dopo il commit fatto da ReadWriteAsync: si mappa la Response
+            // dopo, non dentro il delegate (Cf. XpoCrudServiceBase.CreateAsync).
+            var entity = await _dbContextService.ReadWriteAsync<WorkLog>(async uow =>
             {
                 // Il dipendente è SEMPRE quello autenticato (il DTO non lo porta).
                 var employee = await uow.GetRequiredAsync<Employee>(
                     currentEmployeeId, "Dipendente autenticato non trovato", ct);
 
-                var entity = new WorkLog(uow);
-                _mapper.Map(dto, entity, opt =>
+                var newEntity = new WorkLog(uow);
+                _mapper.Map(dto, newEntity, opt =>
                 {
                     opt.Items[WorkLogMappingContextKeys.Uow] = uow;
                     opt.Items[WorkLogMappingContextKeys.CurrentEmployee] = employee;
                 });
 
-                return _mapper.Map<WorkLogDto.User.Response>(entity);
+                return newEntity;
             });
+
+            return _mapper.Map<WorkLogDto.User.Response>(entity);
         }
 
         public async Task<WorkLogDto.User.Response?> UpdateAsync(
@@ -170,9 +203,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<WorkLogDto.User.Response?>(async uow =>
             {
-                var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsWorkLogDeleted) return null;
-                if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return null;
+                var entity = await WorkLogAccess.FindActiveAsync(uow, id, currentEmployeeId, ct);
+                if (entity is null) return null;
 
                 _mapper.Map(dto, entity, opt => opt.Items[WorkLogMappingContextKeys.Uow] = uow);
 
@@ -184,9 +216,8 @@ namespace GestionaleRendicontazione.Dataaccess.Services
         {
             return await _dbContextService.ReadWriteAsync<bool>(async uow =>
             {
-                var entity = await uow.GetObjectByKeyAsync<WorkLog>(id, ct);
-                if (entity == null || entity.IsWorkLogDeleted) return false;
-                if (entity.Employee == null || entity.Employee.Id != currentEmployeeId) return false;
+                var entity = await WorkLogAccess.FindActiveAsync(uow, id, currentEmployeeId, ct);
+                if (entity is null) return false;
 
                 uow.Delete(entity);
                 return true;

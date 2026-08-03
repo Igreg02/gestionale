@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GestionaleRendicontazione.Client.Models;
 using Microsoft.JSInterop;
 
 namespace GestionaleRendicontazione.Client.Services
@@ -23,12 +24,14 @@ namespace GestionaleRendicontazione.Client.Services
                 session.DisplayName);
 
             var json = JsonSerializer.Serialize(storedSession, _jsonOptions);
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", StorageKey, json);
+            // sessionStorage invece di localStorage: il JWT non sopravvive alla chiusura
+            // della scheda/browser, riducendo la finestra di furto via XSS. Cf. audit sicurezza.
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.setItem", StorageKey, json);
         }
 
         public async Task<StoredSession?> GetSessionAsync()
         {
-            var json = await _jsRuntime.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+            var json = await _jsRuntime.InvokeAsync<string?>("sessionStorage.getItem", StorageKey);
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
@@ -66,7 +69,7 @@ namespace GestionaleRendicontazione.Client.Services
 
         public async Task ClearSessionAsync()
         {
-            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", StorageKey);
+            await _jsRuntime.InvokeVoidAsync("sessionStorage.removeItem", StorageKey);
         }
     }
 }

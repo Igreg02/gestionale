@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using GestionaleRendicontazione.Client.Models;
 using Microsoft.AspNetCore.Components.Authorization;
 
 namespace GestionaleRendicontazione.Client.Services
